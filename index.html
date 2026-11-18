@@ -259,9 +259,8 @@ body[data-sec=intv] .rec .th{background:var(--navy)}
 .durbig b{font-family:var(--serif);font-size:30px;color:var(--accent);font-variant-numeric:tabular-nums}
 .durbig span{color:var(--sub);font-size:13px}
 .vbox.aud video{height:58px;max-height:none}
-.fl input[type=password]{width:100%;border:1px solid #C4D0CA;border-radius:7px;padding:10px 12px;background:#fff;line-height:1.6}
 
-/* 받아쓴 글 · AI 정리 */
+/* 받아쓴 글 */
 .scr textarea{width:100%;min-height:220px;border:1px solid #C4D0CA;border-radius:7px;padding:12px 14px;background:#fff;line-height:1.75;resize:vertical}
 .scr textarea:focus{outline:3px solid var(--accent-soft);border-color:var(--accent)}
 .segs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 14px;max-height:460px;overflow:auto;border:1px solid var(--line);border-radius:7px;background:#fff;padding:14px 16px;line-height:1.75}
@@ -275,24 +274,6 @@ button.segt:hover{background:var(--accent);color:#fff}
 .scr .stats{margin:14px 0 0}
 .fills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;font-size:14px;color:var(--sub);align-items:center}
 .fills b{font-weight:500;color:var(--ink);background:var(--hl-soft);border-radius:999px;padding:1px 10px}
-.aih{display:flex;align-items:center;gap:10px;margin:22px 0 12px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap}
-.aih h4{margin:0;font-family:var(--serif);font-size:17px}
-.aih .sp{flex:1}
-.aih .hint{font-size:13px;color:var(--sub)}
-.aigist{margin:0 0 14px;line-height:1.75;max-width:72ch}
-.aiflow{list-style:none;margin:0 0 16px;padding:0;border-top:1px solid var(--line)}
-.aiflow li{display:grid;grid-template-columns:7em minmax(0,1fr);gap:12px;padding:9px 2px;border-bottom:1px solid var(--line);line-height:1.6}
-.aiflow li b{color:var(--accent)}
-.aicols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:700px){.aicols{grid-template-columns:1fr}.aiflow li{grid-template-columns:1fr;gap:2px}}
-.aicol h5{margin:0 0 6px;font-size:14px}
-.aicol.good h5{color:var(--ok)} .aicol.fix h5{color:#B4501E}
-.aicol ul{margin:0;padding:10px 14px 10px 30px;background:#fff;border:1px solid var(--line);border-radius:7px;line-height:1.65}
-.aicol.good ul{border-left:4px solid #5DAE7C} .aicol.fix ul{border-left:4px solid #E89A5A}
-.aicol li + li{margin-top:6px}
-.aifoot{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;font-size:13px;color:var(--sub)}
-.aifoot .sp{flex:1}
-.aierr{margin:0;padding:10px 14px;border:1px solid #E8C2BB;background:#FBEFEC;border-radius:7px;color:var(--warn)}
 
 /* 유형정리 */
 .tview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px;align-items:start}
@@ -1973,61 +1954,6 @@ function segsHtml(P, seek) {
   return `<div class="segs">${P.segs.map(s => `${seek ? `<button class="segt" data-a="seek" data-t="${s.t}" title="여기부터 듣기">${fmt(s.t)}</button>` : `<span class="segt">${fmt(s.t)}</span>`}<p>${multi && s.who ? `<span class="who">${esc(s.who)}</span>` : ''}${markFillers(s.text)}</p>`).join('')}</div>`;
 }
 
-/* ---------- AI 정리 (Claude API · 키는 교과서 분석과 함께 씀) ---------- */
-const AI_MODELS = [{id: 'claude-opus-5-5', name: 'Claude Opus 5.5 (가장 정확)'}, {id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5 (빠르고 저렴)'}, {id: 'claude-haiku-5-5', name: 'Claude Haiku 5.5 (가장 저렴)'}];
-const aiCfg = () => { let c = {}; try { c = JSON.parse(localStorage.getItem('tbl:ai')) || {}; } catch {} return {key: c.key || '', model: AI_MODELS.some(m => m.id === c.model) ? c.model : AI_MODELS[0].id}; };
-function openAiSettings(onSaved) {
-  const cfg = aiCfg();
-  modal('🔑 AI 설정', `<div class="form">
-    <div class="fl"><label for="aiKey">Anthropic API 키</label><input type="password" id="aiKey" value="${esc(cfg.key)}" placeholder="sk-ant-..." autocomplete="off">
-      <span class="hint">console.anthropic.com에서 발급받아요. 이 브라우저에만 저장되고 교과서 분석과 함께 써요.</span></div>
-    <div class="fl"><label for="aiModel">모델</label><select id="aiModel">${AI_MODELS.map(m => `<option value="${m.id}" ${m.id === cfg.model ? 'selected' : ''}>${m.name}</option>`).join('')}</select></div></div>`,
-    [{label: '취소'}, {label: '저장', primary: true, onClick: box => {
-      localStorage.setItem('tbl:ai', JSON.stringify({key: $('#aiKey', box).value.trim(), model: $('#aiModel', box).value}));
-      toast('AI 설정을 저장했어요'); if (onSaved) setTimeout(onSaved);
-    }}]);
-}
-async function aiJSON(system, content, schema) {
-  const cfg = aiCfg();
-  const body = {model: cfg.model, max_tokens: 16000, system, output_config: {effort: 'medium', format: {type: 'json_schema', schema}}, messages: [{role: 'user', content}]};
-  const headers = {'content-type': 'application/json', 'x-api-key': cfg.key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'};
-  // Opus/Sonnet 5.5: 안전 분류기가 거절하면 서버가 다른 모델로 자동 재시도
-  if (cfg.model !== 'claude-haiku-5-5') { headers['anthropic-beta'] = 'server-side-fallback-2026-07-01'; body.fallbacks = 'default'; }
-  let res;
-  try { res = await fetch('https://api.anthropic.com/v1/messages', {method: 'POST', headers, body: JSON.stringify(body)}); }
-  catch { throw new Error('인터넷 연결을 확인해 주세요.'); }
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    if (res.status === 401) throw new Error('API 키가 올바르지 않아요. AI 설정을 확인해 주세요.');
-    if (res.status === 429) throw new Error('요청이 너무 많아요. 잠시 후 다시 눌러 주세요.');
-    if (res.status === 529 || res.status >= 500) throw new Error('AI 서버가 바빠요. 잠시 후 다시 눌러 주세요.');
-    throw new Error(`(${res.status}) ${json.error?.message || res.statusText}`);
-  }
-  if (json.stop_reason === 'refusal') throw new Error('AI가 이 글의 정리를 거절했어요.');
-  if (json.stop_reason === 'max_tokens') throw new Error('글이 너무 길어 결과가 잘렸어요. 글을 나눠서 다시 눌러 주세요.');
-  return {data: JSON.parse((json.content || []).filter(c => c.type === 'text').map(c => c.text).join('')), model: json.model || cfg.model};
-}
-const INTV_SCHEMA = {type: 'object', properties: {
-  gist: {type: 'string', description: '답변이 결국 무엇을 말했는지 2~3문장'},
-  flow: {type: 'array', description: '답변이 흘러간 순서', items: {type: 'object', properties: {
-    part: {type: 'string', description: '이 대목의 역할 (예: 결론, 근거, 사례, 마무리)'},
-    said: {type: 'string', description: '그 대목에서 말한 내용 한두 문장'}
-  }, required: ['part', 'said'], additionalProperties: false}},
-  good: {type: 'array', items: {type: 'string'}, description: '좋은 점 2~4개'},
-  fix: {type: 'array', items: {type: 'string'}, description: '고칠 점 2~4개'}
-}, required: ['gist', 'flow', 'good', 'fix'], additionalProperties: false};
-const INTV_SYSTEM = `당신은 중등 교사 임용 2차 시험의 면접을 지도하는 선생님입니다. 수험생이 연습으로 말한 답변을 받아쓴 글을 읽고 정리합니다.
-- 받아쓴 글은 음성 인식 결과라 틀린 글자나 끊긴 문장이 있을 수 있습니다. 문맥으로 뜻을 헤아리되, 글에 없는 내용을 지어내지 않습니다.
-- 문항이 주어지지 않았으면 답변 내용에서 짐작합니다. 말한 사람이 여럿이면 질문하는 쪽과 답하는 쪽을 가려 답변만 평가합니다.
-- 좋은 점과 고칠 점은 답변의 어느 대목인지 짚어서, 다음 연습에서 바로 써먹을 수 있게 한 문장씩 구체적으로 씁니다. 내용(문항에 답했는지, 근거와 사례, 교직관)과 전달(구조, 길이, 말 속도, 말버릇)을 함께 봅니다.
-- 해요체로 씁니다.`;
-const intvPrompt = ({title, unit, sec, s, P}) => `${unit ? `[문항] ${unit}\n` : ''}${title ? `[제목] ${title}\n` : ''}${sec ? `[걸린 시간] ${fmtK(sec)}\n` : ''}${s.rate ? `[말 속도] 분당 ${s.rate}자\n` : ''}${s.top.length ? `[자주 쓴 말] ${s.top.map(([w, n]) => `${w} ${n}회`).join(', ')}\n` : ''}
-<transcript>
-${P.segs.map(x => (x.t != null ? `${x.who ? x.who + ' ' : ''}${fmt(x.t)}\n` : '') + x.text).join('\n\n')}
-</transcript>
-
-위 답변의 요지, 흐름, 좋은 점, 고칠 점을 정리해 주세요.`;
-
 /* ---------- 녹화 ---------- */
 async function openRecorder(kind) {
   const ov = document.createElement('div'); ov.className = 'ov recv';
@@ -2091,9 +2017,7 @@ async function openEditor(kind, rec, file) {
   const mw = () => r.audio ? '녹음' : '영상';
   const url = blob ? URL.createObjectURL(blob) : '';
   const scrSec = kind !== 'intv' ? '' : `<section class="card edsec scr"><div class="edh"><h3>받아쓴 글</h3><span class="sp"></span><button class="btn small" data-a="scrFile">📄 글 파일 올리기</button><button class="btn small" data-a="scrEdit" id="scrEditBtn"></button></div>
-      <div id="scrBox"></div><div id="scrStats"></div>
-      <div class="aih"><h4>AI 정리</h4><span class="sp"></span><button class="btn small primary" data-a="aiRun" id="aiBtn"></button></div>
-      <div id="aiBox"></div></section>`;
+      <div id="scrBox"></div><div id="scrStats"></div></section>`;
   const ov = document.createElement('div'); ov.className = 'ov ed';
   ov.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← ${isUpload ? '취소' : '닫기'}</button><div class="t">${K.name} 연습 기록</div>
       ${isUpload ? '' : `${noMedia ? '' : '<button class="btn small ghost" data-a="dl" title="파일로 저장">⬇ <span id="dlW">영상</span></button>'}<button class="btn small ghost danger" data-a="del">삭제</button>`}
@@ -2122,8 +2046,8 @@ async function openEditor(kind, rec, file) {
   $('#ovRoot').appendChild(ov); document.body.style.overflow = 'hidden';
   const v = $('video', ov) || document.createElement('video'), track = $('#track', ov);
   let D0 = r.dur || 0;
-  // 받아쓴 글과 AI 정리도 저장을 눌러야 기록에 들어감
-  let script = r.script || '', scrEditing = !script, ai = r.ai || null;
+  // 받아쓴 글도 저장을 눌러야 기록에 들어감
+  let script = r.script || '', scrEditing = !script;
   const curSec = () => noMedia ? parseDur($('#eDur', ov).value) : r.out != null ? r.out - r.in : 0;
   const scrParsed = () => { const P = parseScript(script); return {P, s: scriptStats(P, curSec(), noMedia ? null : r.in, noMedia ? null : r.out)}; };
   const drawStats = () => {
@@ -2140,17 +2064,6 @@ async function openEditor(kind, rec, file) {
     const box = $('#scrBox', ov); if (!box) return;
     box.innerHTML = scrEditing ? `<textarea id="scrTa" placeholder="클로바노트에서 복사한 글을 여기에 붙여 넣으세요." aria-label="받아쓴 글">${esc(script)}</textarea>` : segsHtml(parseScript(script), !noMedia);
     scrBtn(); drawStats();
-  };
-  const drawAi = err => {
-    const box = $('#aiBox', ov); if (!box) return;
-    $('#aiBtn', ov).textContent = ai ? '🤖 다시 정리하기' : '🤖 정리하기';
-    if (err) box.innerHTML = `<p class="aierr">정리하지 못했어요. ${esc(err)}</p>`;
-    else if (!ai) box.innerHTML = aiCfg().key ? '' : '<p class="picnone">API 키를 넣으면 답변 요지, 흐름, 좋은 점과 고칠 점을 정리해 줘요.</p>';
-    else box.innerHTML = `<p class="aigist">${esc(ai.gist)}</p>
-      <ol class="aiflow">${ai.flow.map(f => `<li><b>${esc(f.part)}</b><span>${esc(f.said)}</span></li>`).join('')}</ol>
-      <div class="aicols"><div class="aicol good"><h5>👍 좋은 점</h5><ul>${ai.good.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-        <div class="aicol fix"><h5>🔧 고칠 점</h5><ul>${ai.fix.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>
-      <div class="aifoot"><span>${esc(ai.model || '')} · ${dstr(ai.at)}</span><span class="sp"></span><button class="btn small" data-a="aiCopy">좋은 점·고칠 점 칸에 넣기</button></div>`;
   };
   // 문제 사진(img:<id>)과 체크리스트 표시는 저장을 눌러야 기록에 들어감
   let pics = [...(r.photos || [])], added = [], removed = [], marks = {...(r.checks || {})}, cmemo = {...(r.checkMemo || {})}, dirty = false;
@@ -2186,7 +2099,7 @@ async function openEditor(kind, rec, file) {
     }).join('')}</tbody></table>`;
     drawMarks();
   };
-  renderPics(); renderChecks(); renderScript(); drawAi();
+  renderPics(); renderChecks(); renderScript();
   if (noMedia && isUpload) $('#scrTa', ov)?.focus();
   ov.addEventListener('input', e => {
     dirty = true;
@@ -2270,22 +2183,6 @@ async function openEditor(kind, rec, file) {
       if (scrEditing) $('#scrTa', ov).focus();
       return;
     }
-    if (a === 'aiRun') {
-      if (scrEditing && $('#scrTa', ov)) script = $('#scrTa', ov).value;
-      if (!script.trim()) return toast('받아쓴 글을 먼저 넣어 주세요');
-      if (!aiCfg().key) return openAiSettings(() => { drawAi(); if (aiCfg().key) $('#aiBtn', ov).click(); });
-      const btn = $('#aiBtn', ov), {P, s} = scrParsed();
-      btn.disabled = true; btn.textContent = '정리하는 중…';
-      try {
-        const out = await aiJSON(INTV_SYSTEM, intvPrompt({title: $('#eTitle', ov).value.trim(), unit: r.unit || '', sec: curSec(), s, P}), INTV_SCHEMA);
-        ai = {...out.data, model: out.model, at: Date.now()}; dirty = true; drawAi();
-      } catch (err) { drawAi(err.message); }
-      btn.disabled = false; return;
-    }
-    if (a === 'aiCopy') {
-      const put = (sel, arr) => { const ta = $(sel, ov), add = arr.filter(x => !ta.value.includes(x)).map(x => '- ' + x).join('\n'); if (add) ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + add; };
-      put('#eGood', ai.good); put('#eFix', ai.fix); dirty = true; return toast('좋은 점·고칠 점 칸에 넣었어요');
-    }
     if (a === 'dl') {
       const x = document.createElement('a'); x.href = url;
       x.download = `${K.name}_${dstr(r.at).replace(/\./g, '')}_${(r.unit || '연습').replace(/[\\/:*?"<>|]/g, '_')}.${r.ext || (/mp4/.test(blob.type) ? 'mp4' : 'webm')}`; x.click();
@@ -2299,7 +2196,7 @@ async function openEditor(kind, rec, file) {
     if (a === 'save') {
       r.title = $('#eTitle', ov).value.trim(); if ($('#eUnit', ov)) r.unit = $('#eUnit', ov).value.trim(); r.good = $('#eGood', ov).value.trim(); r.fix = $('#eFix', ov).value.trim();
       r.photos = pics; r.checks = marks; r.checkMemo = cmemo;
-      if ($('#scrBox', ov)) { if (scrEditing && $('#scrTa', ov)) script = $('#scrTa', ov).value; r.script = script.trim(); r.ai = ai; }
+      if ($('#scrBox', ov)) { if (scrEditing && $('#scrTa', ov)) script = $('#scrTa', ov).value; r.script = script.trim(); }
       if (noMedia) {
         if (!r.script) return toast('받아쓴 글을 넣어 주세요');
         r.dur = r.out = parseDur($('#eDur', ov).value); r.in = 0;
@@ -2342,9 +2239,7 @@ $('#setBtn').onclick = () => {
       <span class="hint">영상은 기록 화면의 ⬇ 영상으로 따로 저장하세요.</span></div>
     <div class="fl"><label>전부 옮기기 (자료 · 내 기록 · PDF · 영상 모두)</label><div style="display:flex;gap:8px"><button class="btn" id="exA">⬇ 내보내기</button><button class="btn" id="imA">⬆ 불러오기</button></div>
       <span class="hint">다른 주소나 다른 브라우저로 옮길 때 파일 하나로 모두 옮겨요. 영상이 많으면 파일이 커요.</span></div>
-    <div class="fl"><label>AI 정리 (면접 연습)</label><div><button class="btn" id="aiSet">🔑 API 키 ${aiCfg().key ? '바꾸기' : '넣기'}</button></div></div>
     <div class="hint" id="quota" style="font-size:13px;color:var(--sub)"></div></div>`, [{label: '닫기', primary: true}], box => {
-    $('#aiSet', box).onclick = () => openAiSettings();
     navigator.storage?.estimate?.().then(e => $('#quota', box).textContent = `사용 중 ${(e.usage / 1048576).toFixed(0)}MB`);
     $('#exC', box).onclick = exportContent; $('#exM', box).onclick = exportMine; $('#exA', box).onclick = exportAll;
     $('#imC', box).onclick = $('#imM', box).onclick = $('#imA', box).onclick = async () => {
