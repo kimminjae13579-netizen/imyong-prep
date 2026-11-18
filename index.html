@@ -291,6 +291,21 @@ button.segt:hover{background:var(--accent);color:#fff}
 .iqfl{margin-top:10px;display:grid;gap:4px;line-height:1.65;max-width:76ch}
 .iqfl p{margin:0}
 .iqfl .lab{background:#7A8A84}
+.iqtop .sp{flex:1}
+.iqtop .btn{min-height:34px}
+.iq.ed{border-left-color:var(--hl)}
+.iq.ed .iqh .sp{flex:1;background:none;padding:0}
+.iqin{width:100%;border:1px solid #C4D0CA;border-radius:7px;padding:7px 10px;background:#fff;font-size:15px;line-height:1.6}
+.iqin:focus{outline:3px solid var(--accent-soft);border-color:var(--accent)}
+.scr textarea.iqin{resize:vertical;display:block;min-height:0;padding:7px 10px;line-height:1.6}
+.iqh .iqlabel{width:auto;flex:0 1 14em;padding:4px 9px;font-size:14px}
+.iqlab{display:block;margin:10px 0 4px;font-size:13.5px;font-weight:700;color:#33433D}
+.iqlab small{font-weight:400;color:var(--sub);margin-left:4px}
+.iqg.ed{margin-top:10px;background:#F6F8F7;border-radius:8px;padding:8px}
+.iqgh{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.iqgh .iqin{font-weight:700}
+.iq.ed > .btn{margin-top:8px}
+.iqs.editing > .btn{margin-top:2px}
 
 /* 유형정리 */
 .tview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px;align-items:start}
@@ -1970,7 +1985,11 @@ const IQ = {
   lead: /^((따라서|그래서|그리고|또한|그다음|그\s다음|다음|이어서|그러면|네|자|어|음|응|아)\s+)+/,
   num: /(한|두|세|네|다섯|[1-5])\s*가지/, numW: {한: 1, 두: 2, 세: 3, 네: 4, 다섯: 5}
 };
-// 말 더듬은 곳 정리: 군말 빼고, 바로 되풀이한 말("학교에서 학교에서", "준수 준수해서")을 하나로
+// 한 글자로 끊긴 말: 혼자 써도 되는 한 글자 낱말이 아니면 잘 안 들린 곳으로 봄
+const IQ_ONE = new Set('수것거게걸건데듯뿐척채체탓터셈줄만등및더잘꼭또안못좀각이그저제내네왜뭐한두세첫새큰온전후중때곳분명개번회날일점즉곧늘참예다막딱꽤대간상시양측편쪽차초말학장반조팀씩약총단해돼봐와가줘둬써놔서자나지보오주하되들도에의과로고며면니죠요까너'.split(''));
+const iqCutWord = w => { const b = bare(w); if (b.length !== 1 || !/[가-힣]/.test(b) || IQ_ONE.has(b)) return false; const jong = (b.charCodeAt(0) - 0xAC00) % 28; return jong !== 4 && jong !== 8; };   // ㄴ·ㄹ 받침(할, 될, 한…)은 꾸미는 말이라 둠
+// 말 더듬은 곳 정리: 군말 빼고, 되풀이한 말("학교에서 학교에서", "준수 준수해서", "개인 정 … 개인 정보를")을 하나로,
+// 끊겨서 알아들을 수 없는 한 글자는 "(인식 불가)"
 function iqClean(s) {
   let t = String(s).replace(/\s+/g, ' ').trim().split(' ').filter(w => !HES.has(bare(w)) && bare(w) !== '응'), rep = 0;
   for (let changed = true; changed;) {
@@ -1980,10 +1999,18 @@ function iqClean(s) {
     }
     if (!changed) for (let i = 0; i + 1 < t.length; i++) {
       const a = bare(t[i]), b = bare(t[i + 1]);
-      if (a.length >= 2 && b !== a && b.startsWith(a)) { t.splice(i, 1); rep++; changed = true; break; }
+      if (a && b !== a && b.startsWith(a) && (a.length >= 2 || /[가-힣]/.test(a))) { t.splice(i, 1); rep++; changed = true; break; }
+    }
+    // 다시 말하기: "개인 정 두 번째는 자신의 개인 정보를" → 앞의 "개인 정"을 뺌
+    if (!changed) for (let i = 1; i < t.length && !changed; i++) {
+      const a = bare(t[i]); if (a.length !== 1 || !/[가-힣]/.test(a)) continue;
+      for (let j = i + 1; j < Math.min(t.length, i + 9); j++) if (t[j - 1] === t[i - 1] && bare(t[j]).length > 1 && bare(t[j]).startsWith(a)) { t.splice(i - 1, 2); rep++; changed = true; break; }
     }
   }
-  return {text: t.join(' '), rep};
+  const out = [];
+  // 성(김 교사, 박 학생)은 그대로
+  t.forEach((w, i) => { if (!iqCutWord(w) || /^(교사|학생|선생|교감|교장|부장|담임|씨|군|님)/.test(t[i + 1] || '')) out.push(w); else if (out[out.length - 1] !== '(인식 불가)') out.push('(인식 불가)'); });
+  return {text: out.join(' '), rep};
 }
 const iqShort = (s, n = 120) => s.length > n ? s.slice(0, n - 1) + '…' : s;
 function analyzeInterview(P) {
@@ -2052,16 +2079,41 @@ function analyzeInterview(P) {
       dur: u.t0 != null && t1 != null ? Math.max(0, t1 - u.t0) : 0, think: u.think != null && u.t0 != null ? Math.max(0, u.t0 - u.think) : 0};
   });
 }
-function intvSumHtml(P) {
-  const us = analyzeInterview(P); if (!us || !us.length) return '';
-  return `<div class="iqs"><div class="iqtop"><h4>문제와 답변 나눠 보기</h4><span>받아쓴 글에서 규칙으로 뽑았어요 · 답변 ${us.length}개</span></div>
-    ${us.map(u => `<article class="iq">
-      <div class="iqh"><b>답변 ${u.no}${u.label ? ` · ${esc(u.label)}` : ''}</b>${u.dur ? `<span>말한 시간 ${fmtK(u.dur)}</span>` : ''}${u.think > 3 ? `<span>생각 ${fmtK(u.think)}</span>` : ''}</div>
+// 나눠 보기 자료 (기록의 qa에 저장되는 모양): [{label, question, dur, think, groups: [{head, points: [], fl}]}]
+// fl: 방안을 못 찾아 첫 문장·끝 문장을 대신 보여 주는 묶음
+function qaAuto(P) {
+  return (analyzeInterview(P) || []).map(u => {
+    const groups = u.groups.map(g => ({head: g.head, points: [...g.points]}));
+    if (!groups.some(g => g.points.length)) groups.push({head: '', points: [u.first, u.last].filter((x, i, a) => x && a.indexOf(x) === i), fl: true});
+    return {label: u.label, question: u.question, dur: u.dur, think: u.think, groups};
+  });
+}
+// 고친 뒤 정리: 빈 줄·빈 묶음·빈 답변 빼기
+const qaTidy = qa => qa.map(u => ({...u, label: (u.label || '').trim(), question: (u.question || '').trim(),
+  groups: u.groups.map(g => ({...g, head: (g.head || '').trim(), points: g.points.map(p => p.trim()).filter(Boolean)})).filter(g => g.head || g.points.length)}))
+  .filter(u => u.label || u.question || u.groups.length);
+function qaHtml(qa, editing, edited) {
+  if (!qa.length && !editing) return '';
+  const meta = u => `${u.dur ? `<span>말한 시간 ${fmtK(u.dur)}</span>` : ''}${u.think > 3 ? `<span>생각 ${fmtK(u.think)}</span>` : ''}`;
+  const view = (u, i) => `<article class="iq">
+      <div class="iqh"><b>답변 ${i + 1}${u.label ? ` · ${esc(u.label)}` : ''}</b>${meta(u)}</div>
       ${u.question ? `<div class="iqq"><span class="lab">문제</span><p>${esc(u.question)}</p></div>` : ''}
-      ${u.groups.length ? u.groups.map(g => `<div class="iqg">${g.head ? `<h5>${u.question ? '' : '<span class="lab">문제</span>'}${esc(g.head)}</h5>` : ''}
-        ${g.points.length ? `<ol>${g.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}</div>`).join('') : ''}
-      ${!u.groups.some(g => g.points.length) ? `<div class="iqfl"><p><span class="lab">첫 문장</span>${esc(u.first)}</p>${u.last !== u.first ? `<p><span class="lab">끝 문장</span>${esc(u.last)}</p>` : ''}</div>` : ''}
-    </article>`).join('')}</div>`;
+      ${u.groups.map(g => g.fl ? `<div class="iqfl">${g.points.map((p, k) => `<p><span class="lab">${k ? '끝 문장' : '첫 문장'}</span>${esc(p)}</p>`).join('')}</div>`
+        : `<div class="iqg">${g.head ? `<h5>${u.question ? '' : '<span class="lab">문제</span>'}${esc(g.head)}</h5>` : ''}${g.points.length ? `<ol>${g.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}</div>`).join('')}
+    </article>`;
+  const edit = (u, i) => `<article class="iq ed" data-u="${i}">
+      <div class="iqh"><b>답변 ${i + 1}</b><input class="iqin iqlabel" data-f="label" value="${esc(u.label)}" placeholder="예: 구상형 1번" aria-label="답변 ${i + 1} 이름">${meta(u)}<span class="sp"></span><button class="btn small ghost danger" data-a="iqDelU">이 답변 지우기</button></div>
+      <label class="iqlab" for="iqQ${i}">문제 <small>면접관이 읽은 질문 · 없으면 비워 두세요</small></label>
+      <textarea class="iqin" id="iqQ${i}" data-f="question" rows="2">${esc(u.question)}</textarea>
+      ${u.groups.map((g, gi) => `<div class="iqg ed" data-g="${gi}">
+        <div class="iqgh"><input class="iqin" data-f="head" value="${esc(g.head)}" placeholder="문제를 다시 말한 부분 (예: 학교 차원의 지원 방안 두 가지)" aria-label="답변 ${i + 1}의 ${gi + 1}번째 묶음 제목"><button class="iconbtn" data-a="iqDelG" title="이 묶음 지우기" aria-label="이 묶음 지우기">✕</button></div>
+        <textarea class="iqin" data-f="points" rows="${Math.max(2, g.points.length + 1)}" placeholder="방안을 한 줄에 하나씩 써 주세요" aria-label="답변 ${i + 1}의 ${gi + 1}번째 묶음 방안">${esc(g.points.join('\n'))}</textarea></div>`).join('')}
+      <button class="btn small" data-a="iqAddG">＋ 묶음 추가</button>
+    </article>`;
+  return `<div class="iqs${editing ? ' editing' : ''}"><div class="iqtop"><h4>문제와 답변 나눠 보기</h4><span>${edited ? '내가 고친 내용' : '받아쓴 글에서 규칙으로 뽑았어요'} · 답변 ${qa.length}개</span><span class="sp"></span>
+      ${editing ? '<button class="btn small primary" data-a="iqDone">✓ 다 고쳤어요</button>' : `${edited ? '<button class="btn small ghost" data-a="iqAuto">↺ 받아쓴 글로 다시 나누기</button>' : ''}<button class="btn small" data-a="iqEdit">✏️ 고치기</button>`}</div>
+    ${qa.map(editing ? edit : view).join('')}
+    ${editing ? '<button class="btn small" data-a="iqAddU">＋ 답변 추가</button>' : ''}</div>`;
 }
 
 /* ---------- 녹화 ---------- */
@@ -2158,11 +2210,14 @@ async function openEditor(kind, rec, file) {
   let D0 = r.dur || 0;
   // 받아쓴 글도 저장을 눌러야 기록에 들어감
   let script = r.script || '', scrEditing = !script;
+  // 나눠 보기: 고친 적 없으면 받아쓴 글에서 매번 새로 뽑고, 고치면 그 내용(qa)을 기록에 저장
+  let qa = r.qa ? JSON.parse(JSON.stringify(r.qa)) : null, qaEditing = false;
   const drawSum = () => {
     const sum = $('#scrSum', ov); if (!sum) return;
-    if (!script.trim()) { sum.innerHTML = ''; return; }
-    try { sum.innerHTML = intvSumHtml(parseScript(script)); } catch (e) { sum.innerHTML = ''; console.warn(e); }
+    if (!qa && !script.trim()) { sum.innerHTML = ''; return; }
+    try { sum.innerHTML = qaHtml(qa || qaAuto(parseScript(script)), qaEditing, !!qa); } catch (e) { sum.innerHTML = ''; console.warn(e); }
   };
+  const qaFocus = sel => { const f = $(sel, ov); if (f) { f.focus(); f.scrollIntoView({block: 'center'}); } };
   const scrBtn = () => { const b = $('#scrEditBtn', ov); b.textContent = scrEditing ? '✓ 다 넣었어요' : '✏️ 고치기'; b.classList.toggle('hidden', scrEditing && !script.trim()); };
   // 글에 길이가 적혀 있으면 걸린 시간 칸을 채워 줌 (글만 있는 기록)
   const fillDur = () => { const d = $('#eDur', ov); if (d && !d.value.trim()) { const t = parseScript(script).dur; if (t) d.value = fmt(t); } };
@@ -2211,8 +2266,14 @@ async function openEditor(kind, rec, file) {
     dirty = true;
     const mm = e.target.closest('.ckmemo');
     if (mm) { if (mm.value.trim()) cmemo[mm.dataset.m] = mm.value; else delete cmemo[mm.dataset.m]; }
+    const qi = e.target.closest('.iqin');
+    if (qi && qa) {
+      const u = qa[+qi.closest('[data-u]').dataset.u], f = qi.dataset.f;
+      if (f === 'head' || f === 'points') { const g = u.groups[+qi.closest('[data-g]').dataset.g]; g.fl = false; if (f === 'head') g.head = qi.value; else g.points = qi.value.split('\n'); }
+      else u[f] = qi.value;
+      return;
+    }
     if (e.target.id === 'scrTa') { script = e.target.value; fillDur(); scrBtn(); drawSum(); }
-    if (e.target.id === 'eDur') drawSum();
   });
 
   const paint = () => {
@@ -2231,7 +2292,6 @@ async function openEditor(kind, rec, file) {
     // 화면이 없는 파일은 녹음: 재생 막대만 보이게
     r.audio = !v.videoWidth; $('.vbox', ov).classList.toggle('aud', r.audio);
     if ($('#dlW', ov)) $('#dlW', ov).textContent = mw();
-    drawSum();
   }, {once: true});
   // 자른 구간 안에서만 재생
   v.addEventListener('timeupdate', () => { if (v.currentTime >= r.out - 0.05 && !v.paused) { v.pause(); v.currentTime = r.out; } paint(); });
@@ -2249,7 +2309,7 @@ async function openEditor(kind, rec, file) {
       if (h === 'in') r.in = Math.min(t, r.out - 1); else r.out = Math.max(t, r.in + 1);
       v.currentTime = h === 'in' ? r.in : r.out; paint();
     };
-    const up = () => { track.removeEventListener('pointermove', mv); track.removeEventListener('pointerup', up); drawSum(); };
+    const up = () => { track.removeEventListener('pointermove', mv); track.removeEventListener('pointerup', up); };
     track.addEventListener('pointermove', mv); track.addEventListener('pointerup', up);
   });
 
@@ -2275,8 +2335,20 @@ async function openEditor(kind, rec, file) {
     if (a === 'zoomClose') { $('.piczoom', ov).classList.add('hidden'); return; }
     if (a === 'mark') { const b = e.target.closest('[data-v]'), id = b.dataset.id; if (marks[id] === b.dataset.v) delete marks[id]; else marks[id] = b.dataset.v; dirty = true; return drawMarks(); }
     if (a === 'clrMarks') { if (!Object.keys(marks).length || !confirm('○ △ ✕ 표시를 모두 지울까요?\n(비고는 그대로 남아요)')) return; marks = {}; dirty = true; return drawMarks(); }
-    if (a === 'setIn') { r.in = Math.min(v.currentTime, r.out - 1); paint(); drawSum(); }
-    if (a === 'setOut') { r.out = Math.max(v.currentTime, r.in + 1); paint(); drawSum(); }
+    if (a === 'setIn') { r.in = Math.min(v.currentTime, r.out - 1); paint(); }
+    if (a === 'setOut') { r.out = Math.max(v.currentTime, r.in + 1); paint(); }
+    // 문제와 답변 나눠 보기 고치기
+    if (a === 'iqEdit') { if (!qa) qa = qaAuto(parseScript(script)); qaEditing = true; drawSum(); return qaFocus('#scrSum .iqin'); }
+    if (a === 'iqDone') { qa = qaTidy(qa); qaEditing = false; dirty = true; return drawSum(); }
+    if (a === 'iqAuto') { if (!confirm('고친 내용을 지우고 받아쓴 글에서 다시 나눌까요?')) return; qa = null; qaEditing = false; dirty = true; return drawSum(); }
+    if (a === 'iqAddU') { qa.push({label: '', question: '', dur: 0, think: 0, groups: [{head: '', points: []}]}); dirty = true; drawSum(); return qaFocus(`#scrSum [data-u="${qa.length - 1}"] .iqin`); }
+    if (a === 'iqDelU') {
+      const i = +e.target.closest('[data-u]').dataset.u;
+      if (!confirm(`답변 ${i + 1}을 지울까요?`)) return;
+      qa.splice(i, 1); dirty = true; return drawSum();
+    }
+    if (a === 'iqAddG') { const i = +e.target.closest('[data-u]').dataset.u; qa[i].groups.push({head: '', points: []}); dirty = true; drawSum(); return qaFocus(`#scrSum [data-u="${i}"] [data-g="${qa[i].groups.length - 1}"] .iqin`); }
+    if (a === 'iqDelG') { const i = +e.target.closest('[data-u]').dataset.u, g = +e.target.closest('[data-g]').dataset.g; qa[i].groups.splice(g, 1); dirty = true; return drawSum(); }
     if (a === 'seek') { v.currentTime = +e.target.closest('[data-t]').dataset.t; v.play(); return; }
     if (a === 'scrFile') {
       const f = await pickFile('.txt,.srt,.vtt,text/plain'); if (!f) return;
@@ -2302,7 +2374,7 @@ async function openEditor(kind, rec, file) {
     if (a === 'save') {
       r.title = $('#eTitle', ov).value.trim(); if ($('#eUnit', ov)) r.unit = $('#eUnit', ov).value.trim(); r.good = $('#eGood', ov).value.trim(); r.fix = $('#eFix', ov).value.trim();
       r.photos = pics; r.checks = marks; r.checkMemo = cmemo;
-      if ($('#scrBox', ov)) { if (scrEditing && $('#scrTa', ov)) script = $('#scrTa', ov).value; r.script = script.trim(); }
+      if ($('#scrBox', ov)) { if (scrEditing && $('#scrTa', ov)) script = $('#scrTa', ov).value; r.script = script.trim(); r.qa = qa ? qaTidy(qa) : undefined; }
       if (noMedia) {
         if (!r.script) return toast('받아쓴 글을 넣어 주세요');
         r.dur = r.out = parseDur($('#eDur', ov).value); r.in = 0;
