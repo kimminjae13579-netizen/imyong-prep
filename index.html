@@ -302,6 +302,7 @@ button.segt:hover{background:var(--accent);color:#fff}
 .iqg.ed{margin-top:10px;background:#F6F8F7;border-radius:8px;padding:8px}
 .iqgh{display:flex;gap:6px;align-items:center;margin-bottom:6px}
 .iqgh .iqin{font-weight:700}
+.iqgh .iqin::placeholder{color:#C3CCC8;font-weight:400}
 .iq.ed > .btn{margin-top:8px}
 .iqs.editing > .btn{margin-top:2px}
 
@@ -2102,7 +2103,7 @@ function qaHtml(qa, editing, edited) {
   const edit = (u, i) => `<article class="iq ed" data-u="${i}">
       <div class="iqh"><b>답변 ${i + 1}</b><input class="iqin iqlabel" data-f="label" value="${esc(u.label)}" placeholder="예: 구상형 1번" aria-label="답변 ${i + 1} 이름">${meta(u)}<span class="sp"></span><button class="btn small ghost danger" data-a="iqDelU">이 답변 지우기</button></div>
       ${u.groups.map((g, gi) => `<div class="iqg ed" data-g="${gi}">
-        <div class="iqgh"><input class="iqin" data-f="head" value="${esc(g.head)}" placeholder="문제를 다시 말한 부분 (예: 학교 차원의 지원 방안 두 가지)" aria-label="답변 ${i + 1}의 ${gi + 1}번째 묶음 제목"><button class="iconbtn" data-a="iqDelG" title="이 묶음 지우기" aria-label="이 묶음 지우기">✕</button></div>
+        <div class="iqgh"><input class="iqin" data-f="head" value="${esc(g.head)}" placeholder="문제" aria-label="답변 ${i + 1}의 ${gi + 1}번째 문제"><button class="iconbtn" data-a="iqDelG" title="이 묶음 지우기" aria-label="이 묶음 지우기">✕</button></div>
         <textarea class="iqin" data-f="points" rows="${Math.max(2, g.points.length + 1)}" placeholder="방안을 한 줄에 하나씩 써 주세요" aria-label="답변 ${i + 1}의 ${gi + 1}번째 묶음 방안">${esc(g.points.join('\n'))}</textarea></div>`).join('')}
       <button class="btn small" data-a="iqAddG">＋ 묶음 추가</button>
     </article>`;
