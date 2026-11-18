@@ -297,10 +297,8 @@ button.segt:hover{background:var(--accent);color:#fff}
 .iq.ed .iqh .sp{flex:1;background:none;padding:0}
 .iqin{width:100%;border:1px solid #C4D0CA;border-radius:7px;padding:7px 10px;background:#fff;font-size:15px;line-height:1.6}
 .iqin:focus{outline:3px solid var(--accent-soft);border-color:var(--accent)}
-.scr textarea.iqin{resize:vertical;display:block;min-height:0;padding:7px 10px;line-height:1.6}
+.scr textarea.iqin{resize:none;overflow:hidden;display:block;min-height:0;padding:7px 10px;line-height:1.6}
 .iqh .iqlabel{width:auto;flex:0 1 14em;padding:4px 9px;font-size:14px}
-.iqlab{display:block;margin:10px 0 4px;font-size:13.5px;font-weight:700;color:#33433D}
-.iqlab small{font-weight:400;color:var(--sub);margin-left:4px}
 .iqg.ed{margin-top:10px;background:#F6F8F7;border-radius:8px;padding:8px}
 .iqgh{display:flex;gap:6px;align-items:center;margin-bottom:6px}
 .iqgh .iqin{font-weight:700}
@@ -2103,8 +2101,6 @@ function qaHtml(qa, editing, edited) {
     </article>`;
   const edit = (u, i) => `<article class="iq ed" data-u="${i}">
       <div class="iqh"><b>답변 ${i + 1}</b><input class="iqin iqlabel" data-f="label" value="${esc(u.label)}" placeholder="예: 구상형 1번" aria-label="답변 ${i + 1} 이름">${meta(u)}<span class="sp"></span><button class="btn small ghost danger" data-a="iqDelU">이 답변 지우기</button></div>
-      <label class="iqlab" for="iqQ${i}">문제 <small>면접관이 읽은 질문 · 없으면 비워 두세요</small></label>
-      <textarea class="iqin" id="iqQ${i}" data-f="question" rows="2">${esc(u.question)}</textarea>
       ${u.groups.map((g, gi) => `<div class="iqg ed" data-g="${gi}">
         <div class="iqgh"><input class="iqin" data-f="head" value="${esc(g.head)}" placeholder="문제를 다시 말한 부분 (예: 학교 차원의 지원 방안 두 가지)" aria-label="답변 ${i + 1}의 ${gi + 1}번째 묶음 제목"><button class="iconbtn" data-a="iqDelG" title="이 묶음 지우기" aria-label="이 묶음 지우기">✕</button></div>
         <textarea class="iqin" data-f="points" rows="${Math.max(2, g.points.length + 1)}" placeholder="방안을 한 줄에 하나씩 써 주세요" aria-label="답변 ${i + 1}의 ${gi + 1}번째 묶음 방안">${esc(g.points.join('\n'))}</textarea></div>`).join('')}
@@ -2216,7 +2212,10 @@ async function openEditor(kind, rec, file) {
     const sum = $('#scrSum', ov); if (!sum) return;
     if (!qa && !script.trim()) { sum.innerHTML = ''; return; }
     try { sum.innerHTML = qaHtml(qa || qaAuto(parseScript(script)), qaEditing, !!qa); } catch (e) { sum.innerHTML = ''; console.warn(e); }
+    $$('textarea.iqin', sum).forEach(qaFit);
   };
+  // 방안 칸은 글 길이만큼 늘어나서 스크롤 없이 다 보이게
+  const qaFit = ta => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; };
   const qaFocus = sel => { const f = $(sel, ov); if (f) { f.focus(); f.scrollIntoView({block: 'center'}); } };
   const scrBtn = () => { const b = $('#scrEditBtn', ov); b.textContent = scrEditing ? '✓ 다 넣었어요' : '✏️ 고치기'; b.classList.toggle('hidden', scrEditing && !script.trim()); };
   // 글에 길이가 적혀 있으면 걸린 시간 칸을 채워 줌 (글만 있는 기록)
@@ -2271,6 +2270,7 @@ async function openEditor(kind, rec, file) {
       const u = qa[+qi.closest('[data-u]').dataset.u], f = qi.dataset.f;
       if (f === 'head' || f === 'points') { const g = u.groups[+qi.closest('[data-g]').dataset.g]; g.fl = false; if (f === 'head') g.head = qi.value; else g.points = qi.value.split('\n'); }
       else u[f] = qi.value;
+      if (qi.tagName === 'TEXTAREA') qaFit(qi);
       return;
     }
     if (e.target.id === 'scrTa') { script = e.target.value; fillDur(); scrBtn(); drawSum(); }
