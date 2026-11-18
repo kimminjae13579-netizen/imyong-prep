@@ -122,11 +122,6 @@ body[data-sec=intv] .rec .th{background:var(--navy)}
 .rec .ln{font-size:13.5px;display:flex;gap:6px;line-height:1.45}
 .rec .ln b{flex:none}
 .rec .ln span{overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
-.stats{display:flex;gap:0;margin:0 0 22px;flex-wrap:wrap;border:1px solid var(--line);border-radius:6px;background:var(--card);width:max-content;max-width:100%}
-.stat{padding:12px 22px;min-width:120px;border-right:1px solid var(--line)}
-.stat:last-child{border-right:none}
-.stat b{display:block;font-family:var(--serif);font-size:24px;font-variant-numeric:tabular-nums}
-.stat span{font-size:13px;color:var(--sub)}
 
 /* 만능틀 / 유형 목록 */
 .row{display:flex;align-items:center;gap:14px;padding:18px 20px;cursor:pointer;border-left:5px solid var(--accent)}
@@ -1903,12 +1898,10 @@ function openType(t) {
    ========================================================= */
 function renderPractice(kind) {
   const K = KIND[kind], recs = D.recs(kind).slice().sort((a, b) => b.at - a.at);
-  const demo = kind === 'demo';   // 수업실연 연습: 통계·썸네일 없이 기록만
-  const total = recs.reduce((s, r) => s + recDur(r), 0), timed = recs.filter(r => recDur(r) > 0).length || 1;
+  const demo = kind === 'demo';   // 수업실연 연습: 썸네일 없이 기록만
   app().innerHTML = `<div class="lhead"><h1 class="h1">${K.name} 연습</h1>
       ${kind === 'intv' ? '<button class="btn" id="newTxt">📝 받아쓴 글</button>' : ''}<button class="btn" id="upVid">📁 영상·녹음 올리기</button><button class="btn primary" id="newRec">● 녹화</button></div>
-    ${recs.length ? `${demo ? '' : `<div class="stats"><div class="stat"><b>${recs.length}회</b><span>연습</span></div><div class="stat"><b>${fmtK(total / timed)}</b><span>평균 시간</span></div><div class="stat"><b>${fmtK(total)}</b><span>총 시간</span></div></div>`}
-    <div class="grid">${recs.map(r => `<div class="card rec" data-id="${r.id}">
+    ${recs.length ? `<div class="grid">${recs.map(r => `<div class="card rec" data-id="${r.id}">
       <div class="bd"><div class="ti ${r.title || r.unit ? '' : 'no'}">${r.title || r.unit ? esc(r.title || r.unit) : '제목을 아직 안 썼어요'}</div>
         <div class="mt">${dstr(r.at)}${recDur(r) ? ' · ' + fmtK(recDur(r)) : ''}</div>
         ${markSummary(r.checks) ? `<div class="ln"><span>${markSummary(r.checks)}</span></div>` : ''}</div></div>`).join('')}</div>`
