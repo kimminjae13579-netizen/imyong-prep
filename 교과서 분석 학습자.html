@@ -3174,7 +3174,7 @@ function openSettings() {
   modal('⚙️ AI 채점 설정', `
     <label class="f">Anthropic API 키</label>
     <input type="password" id="cfgKey" value="${esc(cfg.key)}" placeholder="sk-ant-...">
-    <p class="note">console.anthropic.com 에서 발급받은 키를 넣어 주세요. 키는 <b>이 브라우저에만</b> 저장되고, 채점할 때 Anthropic 서버로만 전송됩니다.<br>
+    <p class="note">console.anthropic.com에서 발급받은 키를 넣어 주세요. 키는 <b>이 브라우저에만</b> 저장되고, 채점할 때 Anthropic 서버로만 전송됩니다.<br>
     ⚠️ 이 파일은 키를 브라우저에 저장하므로 <b>학생들에게 그대로 배포하면 안 됩니다.</b> (학생용 앱에는 서버를 거쳐 채점하도록 바꿔야 해요)</p>
     <label class="f">채점 모델</label>
     <select id="cfgModel">${MODELS.map(m => `<option value="${m.id}" ${m.id === cfg.model ? 'selected' : ''}>${m.name}</option>`).join('')}</select>`,
