@@ -57,6 +57,16 @@ input,textarea,select{font:inherit;color:inherit}
 .syncbar b{color:var(--ink)}
 .syncbar .ok{color:#1a7f37;font-weight:600}
 .syncbar .warn{color:#b35900;font-weight:600}
+/* 드라이브에서 받는 중 로딩바 */
+.dlbar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:300;width:min(440px,calc(100% - 32px));background:var(--ink);color:#fff;border-radius:14px;padding:14px 18px 12px;box-shadow:0 14px 36px rgba(0,0,0,.3);border-left:6px solid var(--star)}
+.dlbar .dlt{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dlbar .dlt b{font-size:15.5px}
+.dlbar .dlt span{font-size:14px;color:rgba(255,255,255,.75)}
+.dlbar .dltrack{margin-top:10px;height:10px;border-radius:999px;background:rgba(255,255,255,.18);overflow:hidden}
+.dlbar .dltrack i{display:block;height:100%;width:0;border-radius:999px;background:var(--star);transition:width .2s}
+.dlbar .dlnum{display:flex;justify-content:space-between;margin-top:6px;font-size:13.5px;font-variant-numeric:tabular-nums}
+.dlbar .dlnum .pc{font-weight:700;color:var(--star)}
+.dlbar p{margin:4px 0 0;font-size:12.5px;color:rgba(255,255,255,.6)}
 /* 구글 드라이브 (임용 준비와 같은 연결) */
 .gdlib{margin:0 0 16px;background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:10px 16px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:14px;line-height:1.6}
 .gdlib .gdst{display:inline-flex;align-items:center;gap:7px;font-weight:700;color:var(--sub)}
@@ -973,20 +983,32 @@ async function gdUpload(fileId, meta, blob) {
 const gdTrash = id => gapi(`${DAPI}/${id}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({trashed: true})}).catch(e => { if (e.status !== 404) throw e; });
 const gdPack = v => v instanceof Blob ? {kind: 'b', blob: v} : {kind: 'j', blob: new Blob([JSON.stringify(v)], {type: 'application/json'})};
 const gdUnpack = async (meta, b) => meta.kind === 'j' ? JSON.parse(await b.text()) : (b.type || !meta.type ? b : new Blob([b], {type: meta.type}));
-// 드라이브에서 받기 — 큰 PDF는 받은 만큼 퍼센트로 보여 줌
+// 받는 중 로딩바 (화면 아래 가운데): 무엇을 받는지 · 막대 · 퍼센트 · 받은 양
+function dlBar(label) {
+  const el = document.createElement('div'); el.className = 'dlbar'; el.setAttribute('role', 'progressbar'); el.setAttribute('aria-valuemin', 0); el.setAttribute('aria-valuemax', 100);
+  el.innerHTML = `<div class="dlt"><b>드라이브에서 받는 중</b><span>${esc(label)}</span></div><div class="dltrack"><i></i></div><div class="dlnum"><span class="pc">0%</span><span class="mb"></span></div><p>이 기기에서 처음 한 번만 받아요</p>`;
+  document.body.appendChild(el);
+  const MB = n => n >= 1048576 ? (n / 1048576).toFixed(n >= 1e8 ? 0 : 1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB';
+  return {
+    set(got, total) {
+      const p = total ? Math.min(100, Math.floor(got / total * 100)) : 0;
+      el.querySelector('i').style.width = p + '%'; el.setAttribute('aria-valuenow', p);
+      el.querySelector('.pc').textContent = p + '%'; el.querySelector('.mb').textContent = total ? `${MB(got)} / ${MB(total)}` : MB(got);
+    },
+    done() { el.querySelector('i').style.width = '100%'; setTimeout(() => el.remove(), 250); }
+  };
+}
+// 드라이브에서 받기 — 받은 만큼 로딩바로 보여 줌 (label 없으면 조용히: 동기화 중 그림·메모장)
 async function gdDownload(meta, label) {
   const r = await gapi(`${DAPI}/${meta.id}?alt=media`);
-  if (!label || !r.body || !meta.size) return r.blob();
-  const bar = document.createElement('div'); bar.className = 'toast'; document.body.appendChild(bar);
+  if (!label || !r.body) return r.blob();
+  const total = meta.size || +r.headers.get('Content-Length') || 0, bar = dlBar(label);
   try {
     const rd = r.body.getReader(), parts = []; let got = 0;
-    for (;;) {
-      const {done, value} = await rd.read(); if (done) break;
-      parts.push(value); got += value.length;
-      bar.textContent = `${label} 드라이브에서 받는 중… ${Math.min(99, Math.round(got / meta.size * 100))}% (이 컴퓨터에서 처음 한 번만)`;
-    }
+    bar.set(0, total);
+    for (;;) { const {done, value} = await rd.read(); if (done) break; parts.push(value); got += value.length; bar.set(got, total); }
     return new Blob(parts, {type: meta.type || r.headers.get('Content-Type') || ''});
-  } finally { bar.remove(); }
+  } finally { bar.done(); }
 }
 function gdFetch(id) {
   id = String(id); if (!gdBlobOk(id)) return Promise.resolve(undefined);
@@ -995,7 +1017,8 @@ function gdFetch(id) {
     const meta = (await gdBase())?.blobs?.[id]; if (!meta) return undefined;
     if (!gdReady()) { toast('구글 드라이브에 있는 파일이에요. 서재 위쪽 ☁️ 다시 연결을 누른 뒤 다시 열어 주세요.'); return undefined; }
     try {
-      const v = await gdUnpack(meta, await gdDownload(meta, meta.size > 5e6 ? '교과서 PDF를' : ''));
+      const b = S.books.find(x => x.id === id);
+      const v = await gdUnpack(meta, await gdDownload(meta, b ? `교과서 PDF · ${b.analysis}` : id.startsWith('pad:') ? '메모장' : id.startsWith('img:') ? '그림' : '파일'));
       await rawPut(id, v); return v;
     } catch (e) { toast(e.message); return undefined; }
   })().finally(() => GD.fetching.delete(id));
