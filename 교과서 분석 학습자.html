@@ -2009,8 +2009,9 @@ padEl('padText').addEventListener('input', e => { P.text = e.target.value; padSi
 padEl('padUndo').onclick = () => { if (!P.hist.length) return toast('되돌릴 펜 글씨가 없어요.'); P.strokes = P.hist.pop(); padSize(); padSaveSoon(); };
 padEl('padClear').onclick = () => {
   if (!P.strokes.length) return;
-  if (!confirm('펜으로 쓴 글씨를 모두 지울까요?\n(키보드로 쓴 글은 그대로 남아요)')) return;
+  // 묻지 않고 바로 지움 (↶ 되돌리기로 되살릴 수 있음)
   P.hist.push(P.strokes); P.strokes = []; padSize(); padSaveSoon();
+  toast('펜 글씨를 지웠어요. ↶ 되돌리기로 되살릴 수 있어요.');
 };
 // 펜·지우개: 손가락은 펜을 한 번이라도 쓴 뒤에는 화면 넘기기로 씀
 padEl('padInk').addEventListener('pointerdown', e => {

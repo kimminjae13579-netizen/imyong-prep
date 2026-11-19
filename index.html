@@ -436,7 +436,8 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .bnote.lft{right:auto;left:2.5%}
 .bdcheck{position:absolute;right:2.5%;top:3%;bottom:3%;z-index:3;width:min(780px,95%);background:var(--card);color:var(--ink);border-radius:10px;border-top:5px solid var(--hl);box-shadow:0 12px 32px rgba(0,0,0,.4);display:flex;flex-direction:column}
 .bdcheck .bnh{padding:10px 12px 8px 16px;border-bottom:1px solid var(--line)}
-.bdcheck .ckcnt{font-size:14px;font-weight:700;color:var(--sub);font-variant-numeric:tabular-nums}
+.bdcheck .bnh b{flex:1}
+.bdcheck .cktable thead th:last-child{text-align:left}
 .cklist{flex:1;overflow:auto;padding:12px 14px}
 .cktable{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.5}
 .cktable th,.cktable td{border:1px solid #D3DAD6;padding:7px 9px;text-align:left;vertical-align:middle}
@@ -464,8 +465,6 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .ckmemo:focus{outline:3px solid var(--accent-soft);border-color:var(--accent);background:#fff}
 .ckmemo::placeholder{color:#B5C1BC}
 .cktable tbody tr:hover td{background:#F6F8F7}
-.ckfoot{padding:8px 16px 12px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;align-items:center}
-.ckfoot .sp{flex:1}
 @media (max-width:900px){.bdcheck{width:auto;left:3%;right:3%}}
 /* 아래 분필을 가리키는 빨간 분필 화살표 */
 .chalkarrow{position:absolute;left:42px;bottom:4px;width:130px;height:42px;overflow:visible;pointer-events:none;z-index:1;fill:none;stroke:#EF6A5E;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 1px rgba(239,106,94,.5))}
@@ -1190,7 +1189,8 @@ function makePad(root, key, onClose) {
     if (w) { P.w = +w.dataset.w; $$('.pw', root).forEach(x => x.classList.toggle('on', x === w)); if (P.mode !== 'pen') mode('pen'); }
     if (a === 'close') { flush(); onClose?.(); }
     if (a === 'undo') { if (!P.hist.length) return toast('되돌릴 펜 글씨가 없어요.'); P.strokes = P.hist.pop(); size(); saveSoon(); }
-    if (a === 'clear' && P.strokes.length && confirm('펜으로 쓴 글씨를 모두 지울까요?\n(키보드로 쓴 글은 그대로 남아요)')) { P.hist.push(P.strokes); P.strokes = []; size(); saveSoon(); }
+    // 묻지 않고 바로 지움 (↶ 되돌리기로 되살릴 수 있음)
+    if (a === 'clear' && P.strokes.length) { P.hist.push(P.strokes); P.strokes = []; size(); saveSoon(); toast('펜 글씨를 지웠어요. ↶ 되돌리기로 되살릴 수 있어요.'); }
   });
   ta.addEventListener('input', () => { P.text = ta.value; size(); saveSoon(); });
   // 펜·지우개: 손가락은 펜을 한 번이라도 쓴 뒤에는 화면 넘기기로 씀
@@ -1623,8 +1623,8 @@ function openBoard(t) {
       <div class="bdboard">${t.boardModel ? `<div class="mblayer">${t.boardModel}</div>
         <div class="bnote hidden"><div class="bnh"><b></b><button class="iconbtn" data-a="nclose" title="닫기" aria-label="닫기">✕</button></div>
           <div class="btip"></div></div>` : ''}
-        ${t.boardChecklist ? `<div class="bdcheck hidden"><div class="bnh"><b>실연 체크리스트</b><span class="ckcnt"></span><button class="iconbtn" data-a="cclose" title="닫기" aria-label="닫기">✕</button></div>
-          <div class="cklist"></div><div class="ckfoot"></div></div>` : ''}</div>
+        ${t.boardChecklist ? `<div class="bdcheck hidden"><div class="bnh"><b>실연 체크리스트</b><button class="iconbtn" data-a="cclose" title="닫기" aria-label="닫기">✕</button></div>
+          <div class="cklist"></div></div>` : ''}</div>
       <div class="bdtray">${CHALKS.map((k, i) => `<button class="chalk spot" data-n="${k.id}" title="${k.n}" aria-label="${k.n}" style="--k:${k.c}">${i ? '' : '<svg class="chalkring" viewBox="0 0 120 56" aria-hidden="true"><path d="M62 4 C 100 3, 117 14, 116 28 C 115 44, 88 53, 56 52 C 22 51, 4 42, 5 27 C 6 13, 30 5, 70 7" /></svg>'}</button>`).join('')}<span class="eraser" aria-hidden="true"></span><span class="sp"></span>${t.boardChecklist ? '<button class="trayb" data-a="check">✓ 체크리스트</button>' : ''}</div>
     </div></section>`;
   $('#ovRoot').appendChild(ov);
@@ -1634,23 +1634,8 @@ function openBoard(t) {
   // 안내가 없는 자리는 눌러도 볼 게 없으니 빨간 밑줄을 빼고 그냥 판서로 둠
   $$(SPOTS, ov).forEach(h => { if (!tips[h.dataset.n]) h.classList.remove('hot', 'spot'); });
   const closeSpot = () => { note?.classList.add('hidden'); $$(SPOTS, ov).forEach(h => h.classList.remove('on')); };
-  // 체크리스트: 수업실연 연습(영상)의 실연 체크리스트와 같은 목록 (칠판에서는 고칠 수 없음)
-  const ckKey = 'boardCheck:' + t.id;   // 예전 체크 표시
+  // 체크리스트: 수업실연 연습(영상)의 실연 체크리스트와 같은 목록을 보기만 함 (칠판에서는 표시·수정 없음)
   const ckList = practiceChecklist();
-  // 확인 표시 ○ △ ✕ — imy:boardMark:<틀> = {항목id: 'o'|'t'|'x'} (예전 체크 표시는 ○로 이어받음)
-  const markKey = 'boardMark:' + t.id;
-  const MARKS = [['o', '○', '잘했어요'], ['t', '△', '보통이에요'], ['x', '✕', '못했어요']];
-  const getMarks = () => { const m = lsGet(markKey, null); if (m) return m; const o = {}; lsGet(ckKey, []).forEach(id => o[id] = 'o'); return o; };
-  const drawCheck = () => {
-    const box = $('.bdcheck', ov); if (!box) return;
-    const m = getMarks(), ids = ckList.flatMap(g => g.items.map(x => x.id)), c = {o: 0, t: 0, x: 0};
-    $$('tr[data-id]', box).forEach(tr => {
-      const v = m[tr.dataset.id] || ''; tr.dataset.mark = v;
-      $$('.mk', tr).forEach(b => { const on = b.dataset.v === v; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-    });
-    ids.forEach(id => { if (c[m[id]] != null) c[m[id]]++; });
-    $('.ckcnt', box).textContent = `○ ${c.o} · △ ${c.t} · ✕ ${c.x}  (${c.o + c.t + c.x}/${ids.length})`;
-  };
   const renderCheck = () => {
     const box = $('.bdcheck', ov); if (!box) return;
     let no = 0;
@@ -1659,13 +1644,10 @@ function openBoard(t) {
       return g.items.map((x, ii) => {
         no++;
         const st = ii ? '' : `<th class="stage" rowspan="${g.items.length}">${esc(stage)}${cond ? `<small>${esc(cond)}</small>` : ''}</th>`;
-        const ok = `<span class="mks">${MARKS.map(([v, sym, nm]) => `<button class="mk mk-${v}" data-a="cmark" data-v="${v}" data-id="${x.id}" title="${nm}" aria-label="${no}번 ${nm}">${sym}</button>`).join('')}</span>`;
-        return `<tr data-id="${x.id}"><td class="no">${no}</td>${st}<td class="it"><span>${esc(x.text)}</span></td><td class="ok">${ok}</td></tr>`;
+        return `<tr><td class="no">${no}</td>${st}<td class="it"><span>${esc(x.text)}</span></td></tr>`;
       }).join('');
     }).join('');
-    $('.cklist', box).innerHTML = `<table class="cktable"><thead><tr><th>번호</th><th>단계</th><th>점검 항목</th><th>확인</th></tr></thead><tbody>${rows}</tbody></table>`;
-    $('.ckfoot', box).innerHTML = '<button class="btn small" data-a="creset">표시 모두 지우기</button>';
-    drawCheck();
+    $('.cklist', box).innerHTML = `<table class="cktable"><thead><tr><th>번호</th><th>단계</th><th>점검 항목</th></tr></thead><tbody>${rows}</tbody></table>`;
   };
   // 안내 카드: head 굵은 글씨(없어도 됨), body 설명, sub 굵은 줄, items 목록(ordered면 번호)
   const tipHtml = tip => `${tip.head ? `<b>${esc(tip.head)}</b>` : ''}${tip.body ? `<p>${esc(tip.body)}</p>` : ''}${tip.sub ? `<p class="sub">${esc(tip.sub)}</p>` : ''}${tip.items ? `<${tip.ordered ? 'ol' : 'ul'}>${tip.items.map(x => `<li>${esc(x)}</li>`).join('')}</${tip.ordered ? 'ol' : 'ul'}>` : ''}`;
@@ -1689,13 +1671,7 @@ function openBoard(t) {
     if (a === 'close') { ov.remove(); return; }
     if (a === 'nclose') return closeSpot();
     if (a === 'check') { closeSpot(); const c = $('.bdcheck', ov); c.classList.toggle('hidden'); renderCheck(); return; }
-    if (a === 'cmark') {
-      const b = e.target.closest('[data-v]'), m = getMarks(), id = b.dataset.id;
-      if (m[id] === b.dataset.v) delete m[id]; else m[id] = b.dataset.v;
-      lsSet(markKey, m); drawCheck(); return;
-    }
     if (a === 'cclose') { $('.bdcheck', ov).classList.add('hidden'); return; }
-    if (a === 'creset') { if (!confirm('○ △ ✕ 표시를 모두 지울까요?')) return; lsSet(markKey, {}); lsSet(ckKey, []); drawCheck(); return; }
   });
 }
 const ptsHtml = pts => pts.length ? `<ol class="pts">${pts.map((p, i) => `<li><span class="n">${i + 1}</span><span>${esc(p)}</span></li>`).join('')}</ol>` : '<div class="note" style="color:var(--sub)">아직 없어요.</div>';
