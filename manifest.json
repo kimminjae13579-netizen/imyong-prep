@@ -1,0 +1,14 @@
+{
+  "name": "임용 준비",
+  "short_name": "임용 준비",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#23433A",
+  "theme_color": "#23433A",
+  "icons": [
+    {"src": "imyong-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "imyong-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

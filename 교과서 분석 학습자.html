@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>교과서 분석</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#23433A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="imyong-icon-192.png">
 <script src="교과서분석_데이터.js"></script>
 <script src="교과서PDF/목록.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3915,6 +3920,16 @@ document.addEventListener('keydown', e => {
 /* =========================================================
    시작
    ========================================================= */
+// 전체화면: 임용 준비와 같이, 들어와서 처음 누를 때 전체화면으로 (홈 화면 앱으로 열었으면 이미 전체화면)
+(() => {
+  const d = document.documentElement, req = d.requestFullscreen || d.webkitRequestFullscreen;
+  const app = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+  if (!req || app) return;
+  addEventListener('pointerdown', function first() {
+    removeEventListener('pointerdown', first, true);
+    if (!(document.fullscreenElement || document.webkitFullscreenElement)) { try { req.call(d)?.catch?.(() => {}); } catch {} }
+  }, true);
+})();
 (async function init() {
   navigator.storage?.persist?.();   // 큰 PDF가 브라우저 정리 때 지워지지 않게
   // file:// 로 열어도 동작하도록 worker를 blob으로 불러옴
