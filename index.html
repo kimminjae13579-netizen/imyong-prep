@@ -49,7 +49,8 @@ body[data-sec=intv]{--accent:var(--intv);--accent-soft:var(--intv-soft)}
 /* 상단 바: 칠판 */
 .top{position:sticky;top:0;z-index:20;background:var(--accent);color:var(--chalk);border-bottom:4px solid rgba(0,0,0,.18)}
 .top .in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:8px 20px;min-height:60px}
-.top .crumb{display:flex;align-items:center;gap:4px;flex:1;min-width:0;font-family:var(--serif);font-weight:700;font-size:20px}
+.top .crumb{display:flex;align-items:center;gap:4px;flex:1;min-width:0;overflow:hidden;font-family:var(--serif);font-weight:700;font-size:20px}
+@media (max-width:420px){.top .crumb a[href="#intv"], .top .crumb a[href="#intv"] + .sep, .top .crumb a[href="#demo"], .top .crumb a[href="#demo"] + .sep{display:none}}
 .top .crumb a{color:rgba(244,247,242,.72);text-decoration:none;font-weight:500;font-size:16px;padding:4px 8px;border-radius:6px}
 .top .crumb a:hover{background:rgba(255,255,255,.1);color:#fff}
 .top .crumb .sep{color:rgba(244,247,242,.4);font-weight:400}
@@ -605,6 +606,7 @@ body.editing .edonly{display:inline-flex!important}
 
 <header class="top"><div class="in">
   <div class="crumb" id="crumb"></div>
+  <button class="btn small hidden" id="upBtn" title="자료실에 PDF 올리기">📄 PDF 올리기</button>
   <button class="btn small hidden" id="editBtn" title="자료 편집">✏️ 편집</button>
   <button class="iconbtn gdbtn" id="gdBtn" title="구글 드라이브">☁️<i></i></button>
   <button class="iconbtn" id="setBtn" title="백업">⚙️</button>
@@ -974,7 +976,7 @@ const ROUTES = {
   'demo/tpl': {title: '만능틀', sec: 'demo', parent: 'demo', render: renderTemplates, edit: true},
   'demo/practice': {title: '수업실연 연습', sec: 'demo', parent: 'demo', render: () => renderPractice('demo')},
   'intv': {title: '면접', sec: 'intv', render: renderIntv},
-  'intv/lib': {title: '자료실', sec: 'intv', parent: 'intv', render: renderLib, edit: true},
+  'intv/lib': {title: '자료실', sec: 'intv', parent: 'intv', render: renderLib, upload: true},
   'intv/practice': {title: '면접 연습', sec: 'intv', parent: 'intv', render: () => renderPractice('intv')},
   'intv/types': {title: '유형정리', sec: 'intv', parent: 'intv', render: renderTypes, edit: true}
 };
@@ -988,6 +990,7 @@ function route() {
   else crumbs.push(`<span class="cur">임용 준비</span>`);
   $('#crumb').innerHTML = crumbs.join('');
   $('#editBtn').classList.toggle('hidden', !r.edit);
+  $('#upBtn').classList.toggle('hidden', !r.upload);
   document.body.classList.toggle('editing', !!r.edit && editing);
   $('#editBtn').classList.toggle('on', editing);
   document.title = key ? r.title + ' · 임용 준비' : '임용 준비';
@@ -1152,26 +1155,27 @@ async function pdfPages(blob) {
 /* =========================================================
    자료실 (면접)
    ========================================================= */
+// 위쪽 「📄 PDF 올리기」 (자료실에서만 보임)
+$('#upBtn').onclick = async () => {
+  const f = await pickFile('application/pdf'); if (!f) return;
+  toast('PDF를 읽는 중…');
+  try {
+    const pages = await pdfPages(f), id = uid();
+    await blobPut('file:' + id, f);
+    D.docs = [{id, title: f.name.replace(/\.pdf$/i, ''), pages, added: Date.now()}, ...D.docs];
+    renderLib();
+  } catch (e) { toast('PDF를 열 수 없어요.'); }
+};
 function renderLib() {
   const docs = D.docs;
-  app().innerHTML = `<div class="lhead"><h1 class="h1">자료실</h1><button class="btn primary edonly" id="addDoc">＋ PDF 올리기</button></div>
+  app().innerHTML = `<div class="lhead"><h1 class="h1">자료실</h1></div>
     ${docs.length ? `<div class="grid">${docs.map(d => {
       const a = D.ann(d.id);
       return `<div class="card doc" data-id="${d.id}"><div class="nm">📄 ${esc(d.title)}</div>
         <div class="mt">${d.pages}쪽${a.memos.length ? ` · 📝 ${a.memos.length}` : ''}${a.bms.length ? ` · 🔖 ${a.bms.length}` : ''}</div>
-        <button class="iconbtn del edonly" title="삭제">🗑</button></div>`;
+        <button class="iconbtn del" title="삭제">🗑</button></div>`;
     }).join('')}</div>`
-    : `<div class="empty"><span class="ic">📚</span>${editing ? '＋ PDF 올리기로 자료를 추가하세요.' : '아직 자료가 없어요.'}</div>`}`;
-  $('#addDoc').onclick = async () => {
-    const f = await pickFile('application/pdf'); if (!f) return;
-    toast('PDF를 읽는 중…');
-    try {
-      const pages = await pdfPages(f), id = uid();
-      await blobPut('file:' + id, f);
-      D.docs = [{id, title: f.name.replace(/\.pdf$/i, ''), pages, added: Date.now()}, ...D.docs];
-      renderLib();
-    } catch (e) { toast('PDF를 열 수 없어요.'); }
-  };
+    : `<div class="empty"><span class="ic">📚</span>위쪽 <b>📄 PDF 올리기</b>로 자료를 추가하세요.</div>`}`;
   $$('.doc').forEach(c => c.onclick = async e => {
     const d = D.docs.find(x => x.id === c.dataset.id);
     if (e.target.closest('.del')) {
