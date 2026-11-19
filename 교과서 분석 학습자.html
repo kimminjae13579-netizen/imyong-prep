@@ -68,7 +68,6 @@ input,textarea,select{font:inherit;color:inherit}
 .gdlib .gdhint{color:var(--sub);flex:1;min-width:220px}
 .gdlib .btn{margin-left:auto}
 @keyframes gdp{to{opacity:.3}}
-.libio small{color:var(--sub);font-weight:400;margin-left:6px}
 /* 폴더 끌어다 놓기 */
 .dropin{margin:0 0 16px;border:2px dashed #9db4e0;background:#f6f9ff;border-radius:12px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 .dropin .dt{flex:1;min-width:240px;display:grid;gap:3px;line-height:1.6}
@@ -762,14 +761,10 @@ body.docking .pad{display:none}
   <input type="file" id="pdfInput" accept="application/pdf" class="hidden">
   <div class="drop hidden" id="drop"></div>
   <div class="syncbar hidden" id="syncBar"></div>
-  <div class="libio">
+  <div class="libio" id="libBackup">
     <span class="grow">내 메모·오개념·책갈피·답안</span>
     <button class="btn" id="libExport">⬇ 백업</button><button class="btn" id="libImport">⬆ 복원</button>
     <button class="btn" id="teachImport" title="교과서분석_모음.json">⬆ 분석 파일 업데이트</button>
-  </div>
-  <div class="libio">
-    <span class="grow">전부 옮기기 <small>교과서 PDF · 분석 · 내 노트를 파일 하나로 (다른 주소·브라우저로 옮길 때)</small></span>
-    <button class="btn" id="allExport">⬇ 내보내기</button><button class="btn" id="allImport">⬆ 불러오기</button>
   </div>
 </section>
 
@@ -1134,47 +1129,6 @@ document.addEventListener('click', e => {
 setInterval(() => { if (GD.on && document.visibilityState === 'visible' && !GD.busy) gdReady() ? gdSync() : (GD.state = 'need', gdShow()); }, 120000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && GD.on && gdReady()) gdSync(); });
 
-/* ---------- 전부 옮기기 (.imy): 파일로 연 앱 → 인터넷 주소로 옮길 때 ----------
-   'TBAALL1' + 머리말 길이(12자리) + 머리말 JSON + PDF·그림·메모장을 이어 붙임 */
-async function packAll() {
-  if (S.key && S.data) lsSet(mineKey(S.key), collectMine());
-  const keys = (await idbDo('readonly', st => st.getAllKeys())).map(String).filter(gdBlobOk);
-  const head = {format: 'textbook-all', version: 1, at: new Date().toISOString(), kv: gdLocalKV(), blobs: []}, parts = [];
-  let off = 0;
-  for (const k of keys) {
-    const v = await rawGet(k); if (v === undefined) continue;
-    const {kind, blob} = gdPack(v);
-    head.blobs.push({k, kind, type: blob.type || '', off, size: blob.size}); parts.push(blob); off += blob.size;
-  }
-  const h = new TextEncoder().encode(JSON.stringify(head));
-  return new Blob(['TBAALL1', String(h.length).padStart(12, '0'), h, ...parts], {type: 'application/octet-stream'});
-}
-async function exportAll() {
-  toast('교과서 PDF와 내 노트를 묶는 중… (PDF가 커서 시간이 걸려요)');
-  const file = await packAll(), d = new Date(), a = document.createElement('a');
-  a.href = URL.createObjectURL(file); a.download = `교과서분석_전체_${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.imy`;
-  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 120000);
-  toast(`내보냈어요 (${(file.size / 1048576).toFixed(0)}MB)`);
-}
-async function importAll(f) {
-  let head, at;
-  try {
-    if (await f.slice(0, 7).text() !== 'TBAALL1') throw 0;
-    const hl = parseInt(await f.slice(7, 19).text(), 10); head = JSON.parse(await f.slice(19, 19 + hl).text()); at = 19 + hl;
-  } catch { return toast('교과서 분석 전부 옮기기 파일이 아니에요.'); }
-  if (!confirm(`${new Date(head.at).toLocaleDateString('ko-KR')}에 내보낸 파일이에요.\n교과서 PDF·분석·내 노트를 이 브라우저에 넣을까요?\n같은 항목은 파일 내용으로 바뀌어요.`)) return;
-  toast('불러오는 중… (PDF가 커서 시간이 걸려요)');
-  try {
-    for (const b of head.blobs) {
-      const part = f.slice(at + b.off, at + b.off + b.size);
-      const v = b.kind === 'j' ? JSON.parse(await part.text()) : new Blob([part], {type: b.type});
-      if (b.k.startsWith('img:')) await imgPut(v); else await pdfPut(b.k, v);
-    }
-    for (const [k, v] of Object.entries(head.kv || {})) localStorage.setItem(k, v);
-  } catch (e) { return toast('불러오다 멈췄어요: ' + e.message); }
-  S.books = lsGet('tbl:books', []); imgsLoaded = null; await loadImgs();
-  gdSoon(); gdShow(); toast('불러왔어요' + (GD.on ? ' · 구글 드라이브에 올리는 중이에요' : '')); renderLibrary();
-}
 
 /* =========================================================
    상태
@@ -3951,13 +3905,13 @@ document.addEventListener('keydown', e => {
   // 인터넷 주소(임용 준비와 같은 곳)에서 열면: 수업실연으로 돌아가는 길은 그 주소의 첫 화면, 구글 드라이브와 맞춤
   if (!GD_ONFILE) {
     document.querySelector('.homelink').href = './#demo';
+    // 내 노트는 구글 드라이브에 저장되고, 분석은 폴더를 다시 끌어다 놓으면 새로워지니 백업·복원 줄은 숨김 (파일로 열 때만 보임)
+    $('#libBackup').classList.add('hidden');
     if (GD.clientId) gsiLoad().catch(() => {});
     if (GD.on) gdReady() ? gdSync() : (GD.state = 'need');
   }
   gdShow();
 })();
-$('#allExport').onclick = exportAll;
-$('#allImport').onclick = () => { const i = document.createElement('input'); i.type = 'file'; i.accept = '.imy'; i.onchange = () => i.files[0] && importAll(i.files[0]); i.click(); };
 </script>
 </body>
 </html>
