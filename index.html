@@ -88,20 +88,14 @@ main{max-width:1080px;margin:0 auto;padding:36px 20px 80px}
 .board.intv:hover{background:var(--navy-2)}
 .board:hover .bn{text-decoration:underline;text-decoration-color:var(--hl);text-decoration-thickness:4px;text-underline-offset:10px}
 
-/* 수업실연·면접: 지도서 차례처럼 */
-.contents{list-style:none;margin:8px 0 0;padding:0;border-top:2px solid var(--ink)}
-.contents a{display:grid;grid-template-columns:auto minmax(24px,1fr) auto;align-items:end;column-gap:14px;row-gap:2px;padding:20px 6px 18px;border-bottom:1px solid var(--line);text-decoration:none;background:color-mix(in srgb,var(--card) 70%,transparent)}
-.contents .tn{font-family:var(--serif);font-size:28px;font-weight:700;line-height:1.2;letter-spacing:-.5px;padding:0 2px}
-.contents .tl{border-bottom:2px dotted #9DB0A8;margin-bottom:9px}
-.contents .tc{font-size:16px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;padding-bottom:3px}
-.contents .tc.no{color:var(--sub);font-weight:500}
-.contents .td{grid-column:1/-1;color:var(--sub);font-size:15px;padding-left:2px}
-.contents a:hover .tn{background:linear-gradient(transparent 58%,var(--hl) 58%)}
-.contents a:hover{background:var(--card)}
-
-/* (예전 카드 – 다른 곳에서 쓸 때 대비) */
-.hub{display:grid;gap:16px}
-.tile{display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:24px;text-decoration:none}
+/* 수업실연·면접 안의 세 칸: 첫 화면 칠판 버튼을 작게 */
+.boards.hubs{grid-template-columns:repeat(3,1fr);gap:18px;margin-top:14px}
+.board.hub{min-height:250px;padding:30px 22px 34px;gap:12px}
+.board.hub .bn{font-size:clamp(30px,3.6vw,42px);letter-spacing:-1px;word-break:keep-all}
+.board.hub .bl{font-size:15px;line-height:1.55;max-width:15em;word-break:keep-all}
+.board.hub .bc{top:16px;right:16px;font-size:13px;padding:2px 11px}
+.board.hub:hover .bn{text-underline-offset:8px;text-decoration-thickness:3px}
+@media (max-width:900px){.boards.hubs{grid-template-columns:1fr;gap:14px}.board.hub{min-height:150px;padding:26px 22px 30px}}
 
 /* 목록 머리 */
 .lhead{display:flex;align-items:center;gap:8px;margin:0 0 20px;flex-wrap:wrap;padding-bottom:12px;border-bottom:2px solid var(--ink)}
@@ -1140,15 +1134,16 @@ $('#gdBtn').onclick = () => {
   if (location.hash.replace(/^#\/?/, '') && location.hash !== '#home') location.hash = '#home';
   setTimeout(() => $('#gdPanel')?.scrollIntoView({behavior: 'smooth', block: 'start'}), 60);
 };
-const contentsHtml = rows => `<nav class="contents">${rows.map(r => `<a href="${r.href}"><span class="tn">${r.name}</span><span class="tl"></span><span class="tc ${r.cnt ? '' : 'no'}">${r.cnt || '열기'}</span><span class="td">${r.ds}</span></a>`).join('')}</nav>`;
+// 수업실연·면접 안의 세 칸: 첫 화면의 칠판 버튼과 같은 모양 (수업실연은 초록 칠판, 면접은 남색 칠판)
+const hubHtml = (rows, sec) => `<nav class="boards hubs">${rows.map(r => `<a class="board hub ${sec}" href="${r.href}">${r.cnt ? `<span class="bc">${r.cnt}</span>` : ''}<span class="bn">${r.name}</span><span class="bl">${r.ds}</span></a>`).join('')}</nav>`;
 function renderDemo() {
   const nt = D.templates.length, nr = D.recs('demo').length;
   app().innerHTML = `<h1 class="h1">수업실연</h1>
-    ${contentsHtml([
+    ${hubHtml([
       {href: '#demo/tpl', name: '만능틀', ds: '기출 양식과 실연할 때 신경 쓸 점', cnt: nt ? `${nt}개` : ''},
       {href: '교과서 분석 학습자.html', name: '교과서 분석', ds: '지도서 위에 중요도, 오개념, 메모, 책갈피', cnt: ''},
       {href: '#demo/practice', name: '수업실연 연습', ds: '녹화하고 좋은 점과 고칠 점 남기기', cnt: nr ? `${nr}회` : ''}
-    ])}`;
+    ], 'demo')}`;
   // 만능틀: 내가 만든 틀이 없으면 바로 기출 문제지로
   $('a[href="#demo/tpl"]').onclick = e => { if (!D.templates.length && SHEET_TPLS.length) { e.preventDefault(); openSheets(SHEET_TPLS[0]); } };
   // 인터넷 주소에는 교과서 분석을 올리지 않음 (교과서 PDF 저작권) — 없으면 안내
@@ -1162,11 +1157,11 @@ function renderDemo() {
 function renderIntv() {
   const nd = D.docs.length, nr = D.recs('intv').length, nt = D.types.length;
   app().innerHTML = `<h1 class="h1">면접</h1>
-    ${contentsHtml([
+    ${hubHtml([
       {href: '#intv/lib', name: '자료실', ds: 'PDF 자료에 메모와 책갈피 달기', cnt: nd ? `${nd}개` : ''},
       {href: '#intv/practice', name: '면접 연습', ds: '녹화하고 좋은 점과 고칠 점 남기기', cnt: nr ? `${nr}회` : ''},
       {href: '#intv/types', name: '유형정리', ds: '유형별 예상 질문에 답변 써 보기', cnt: nt ? `${nt}개 유형` : ''}
-    ])}`;
+    ], 'intv')}`;
 }
 
 /* =========================================================
