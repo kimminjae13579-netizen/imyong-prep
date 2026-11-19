@@ -1234,7 +1234,8 @@ function renderLibrary() {
       <div class="meta"><span>${T[n].pages || '?'}쪽 · 소단원 ${T[n].subunits.length}</span><span class="go">PDF 연결 ›</span></div></div>`).join('');
   box.innerHTML = (packed ? `<div class="libsec" style="grid-column:1/-1">내 교과서</div>${packed}` : '')
     + (need ? `<div class="libsec" style="grid-column:1/-1">PDF를 연결하면 열 수 있어요</div>${need}` : '')
-    + (!names.length ? `<div class="empty" style="grid-column:1/-1">분석 자료가 없어요. 아래 <b>분석 파일 업데이트</b>로 교과서분석_모음.json을 불러오세요.</div>` : '');
+    + (!names.length ? `<div class="empty" style="grid-column:1/-1">${GD_ONFILE ? '분석 자료가 없어요. 아래 <b>분석 파일 업데이트</b>로 교과서분석_모음.json을 불러오세요.'
+      : '교과서가 아직 없어요. 구글 드라이브에 연결하면 저장해 둔 교과서가 나와요. 처음이라면 내 컴퓨터의 교과서 분석에서 <b>전부 옮기기 → 내보내기</b>한 파일을 아래 <b>⬆ 불러오기</b>로 넣어 주세요.'}</div>` : '');
 }
 let needName = null;
 $('#books').addEventListener('click', async e => {
