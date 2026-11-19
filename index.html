@@ -90,11 +90,12 @@ main{max-width:1080px;margin:0 auto;padding:36px 20px 80px}
 
 /* 수업실연·면접 안의 세 칸: 첫 화면 칠판 버튼을 작게 */
 .boards.hubs{grid-template-columns:repeat(3,1fr);gap:18px;margin-top:14px}
-.board.hub{min-height:250px;padding:30px 22px 34px;gap:12px}
+.board.hub{min-height:250px;padding:30px 22px 34px;gap:12px;background:var(--demo-soft);color:var(--board);box-shadow:inset 0 0 0 1px rgba(35,67,58,.14),inset 0 -12px 0 rgba(35,67,58,.1)}
+.board.hub.intv{background:var(--intv-soft);color:var(--navy);box-shadow:inset 0 0 0 1px rgba(43,65,112,.14),inset 0 -12px 0 rgba(43,65,112,.1)}
+.board.hub:hover{background:#D3E3DB}
+.board.hub.intv:hover{background:#D6DEEE}
 .board.hub .bn{font-size:clamp(30px,3.6vw,42px);letter-spacing:-1px;word-break:keep-all}
-.board.hub .bl{font-size:15px;line-height:1.55;max-width:15em;word-break:keep-all}
-.board.hub .bc{top:16px;right:16px;font-size:13px;padding:2px 11px}
-.board.hub:hover .bn{text-underline-offset:8px;text-decoration-thickness:3px}
+.board.hub:hover .bn{text-underline-offset:8px;text-decoration-thickness:3px;text-decoration-color:#D9B92E}
 @media (max-width:900px){.boards.hubs{grid-template-columns:1fr;gap:14px}.board.hub{min-height:150px;padding:26px 22px 30px}}
 
 /* 목록 머리 */
@@ -1134,15 +1135,14 @@ $('#gdBtn').onclick = () => {
   if (location.hash.replace(/^#\/?/, '') && location.hash !== '#home') location.hash = '#home';
   setTimeout(() => $('#gdPanel')?.scrollIntoView({behavior: 'smooth', block: 'start'}), 60);
 };
-// 수업실연·면접 안의 세 칸: 첫 화면의 칠판 버튼과 같은 모양 (수업실연은 초록 칠판, 면접은 남색 칠판)
-const hubHtml = (rows, sec) => `<nav class="boards hubs">${rows.map(r => `<a class="board hub ${sec}" href="${r.href}">${r.cnt ? `<span class="bc">${r.cnt}</span>` : ''}<span class="bn">${r.name}</span><span class="bl">${r.ds}</span></a>`).join('')}</nav>`;
+// 수업실연·면접 안의 세 칸: 첫 화면 버튼 모양을 연한 색으로 (수업실연은 연한 초록, 면접은 연한 남색). 이름만 보임
+const hubHtml = (rows, sec) => `<nav class="boards hubs">${rows.map(r => `<a class="board hub ${sec}" href="${r.href}"><span class="bn">${r.name}</span></a>`).join('')}</nav>`;
 function renderDemo() {
-  const nt = D.templates.length, nr = D.recs('demo').length;
   app().innerHTML = `<h1 class="h1">수업실연</h1>
     ${hubHtml([
-      {href: '#demo/tpl', name: '만능틀', ds: '기출 양식과 실연할 때 신경 쓸 점', cnt: nt ? `${nt}개` : ''},
-      {href: '교과서 분석 학습자.html', name: '교과서 분석', ds: '지도서 위에 중요도, 오개념, 메모, 책갈피', cnt: ''},
-      {href: '#demo/practice', name: '수업실연 연습', ds: '녹화하고 좋은 점과 고칠 점 남기기', cnt: nr ? `${nr}회` : ''}
+      {href: '#demo/tpl', name: '만능틀'},
+      {href: '교과서 분석 학습자.html', name: '교과서 분석'},
+      {href: '#demo/practice', name: '수업실연 연습'}
     ], 'demo')}`;
   // 만능틀: 내가 만든 틀이 없으면 바로 기출 문제지로
   $('a[href="#demo/tpl"]').onclick = e => { if (!D.templates.length && SHEET_TPLS.length) { e.preventDefault(); openSheets(SHEET_TPLS[0]); } };
@@ -1155,12 +1155,11 @@ function renderDemo() {
   };
 }
 function renderIntv() {
-  const nd = D.docs.length, nr = D.recs('intv').length, nt = D.types.length;
   app().innerHTML = `<h1 class="h1">면접</h1>
     ${hubHtml([
-      {href: '#intv/lib', name: '자료실', ds: 'PDF 자료에 메모와 책갈피 달기', cnt: nd ? `${nd}개` : ''},
-      {href: '#intv/practice', name: '면접 연습', ds: '녹화하고 좋은 점과 고칠 점 남기기', cnt: nr ? `${nr}회` : ''},
-      {href: '#intv/types', name: '유형정리', ds: '유형별 예상 질문에 답변 써 보기', cnt: nt ? `${nt}개 유형` : ''}
+      {href: '#intv/lib', name: '자료실'},
+      {href: '#intv/practice', name: '면접 연습'},
+      {href: '#intv/types', name: '유형정리'}
     ], 'intv')}`;
 }
 
