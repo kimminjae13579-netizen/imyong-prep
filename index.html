@@ -722,6 +722,13 @@ async function gdFolder() {
   if (!id) id = (await (await gapi(`${DAPI}?fields=id`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: GD.folderName, mimeType: 'application/vnd.google-apps.folder'})})).json()).id;
   localStorage.setItem('imysync:folder', id); return id;
 }
+// 「임용 준비 앱」 안의 하위 폴더 (수업실연 · 면접) — 앱이 만든 폴더만 보이므로 없으면 만듦
+async function gdSubFolder(parent, name) {
+  const q = encodeURIComponent(`name='${name}' and '${parent}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const id = (await (await gapi(`${DAPI}?q=${q}&fields=files(id)&orderBy=createdTime`)).json()).files?.[0]?.id;
+  if (id) return id;
+  return (await (await gapi(`${DAPI}?fields=id`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, parents: [parent], mimeType: 'application/vnd.google-apps.folder'})})).json()).id;
+}
 // 올리기: 이어 올리기(resumable) 주소를 받아 한 번에 보냄. 주소를 못 받으면 multipart로
 async function gdUpload(fileId, meta, blob) {
   const type = blob.type || 'application/octet-stream';
@@ -815,17 +822,35 @@ async function gdSync({manual = false} = {}) {
       return gdUpload(GD.dataId || dataId, GD.dataId || dataId ? {} : {name: 'data.json', parents: [folder]}, body);
     };
     GD.dataId = null;
+    // 연습 영상은 「임용 준비 앱/수업실연」, 「임용 준비 앱/면접」 폴더에 기록 제목 그대로의 이름으로
+    const vids = {};
+    for (const kd of Object.keys(KIND)) for (const r of gdParse(kv['imy:rec:' + kd]) || []) if (r?.id) vids['vid:' + r.id] = {kd, name: (r.title || '').trim() || `제목 없음 ${dstr(r.at)}`};
+    const subs = {};
+    const sub = async kd => subs[kd] ||= await gdSubFolder(folder, KIND[kd].name);
     let n = 0;
     for (const k of ups) {
       n++; const v = await rawGet(k);
       if (v === undefined) { done.push([k, pend[k]?.t]); continue; }
       const {kind, blob} = gdPack(v);
       GD.msg = `올리는 중 ${n}/${ups.length}${blob.size > 5e6 ? ` (${(blob.size / 1048576).toFixed(0)}MB)` : ''}`; gdShow();
-      const old = blobs[k]?.id;
-      const id = await gdUpload(old, old ? {} : {name: k, parents: [folder], appProperties: {k}}, blob);
-      blobs[k] = {id, kind, type: blob.type || '', size: blob.size, at: Date.now()};
+      const old = blobs[k]?.id, vd = vids[k];
+      const meta = old ? {} : vd ? {name: vd.name, parents: [await sub(vd.kd)], appProperties: {k}} : {name: k, parents: [folder], appProperties: {k}};
+      const id = await gdUpload(old, meta, blob);
+      blobs[k] = {...(old ? blobs[k] : {}), id, kind, type: blob.type || '', size: blob.size, at: Date.now(), ...(!old && vd ? {dir: meta.parents[0], name: vd.name} : {})};
       done.push([k, pend[k]?.t]);
       if (blob.size > 1e6) GD.dataId = await saveData();   // 큰 파일 하나 올릴 때마다 목록도 저장 (도중에 끊겨도 다시 안 올림)
+    }
+    // 이미 올라간 영상: 알맞은 폴더로 옮기고, 앱에서 제목을 바꿨으면 드라이브 파일 이름도 바꿈
+    for (const [k, vd] of Object.entries(vids)) {
+      const m = blobs[k]; if (!m || (m.dir && m.name === vd.name)) continue;   // 이미 제자리
+      try {
+        const dir = await sub(vd.kd);
+        if (m.dir === dir && m.name === vd.name) continue;
+        let q = '';
+        if (m.dir !== dir) { const from = m.dir || (await (await gapi(`${DAPI}/${m.id}?fields=parents`)).json()).parents?.join(','); q = `?addParents=${dir}${from ? '&removeParents=' + from : ''}`; }
+        await gapi(`${DAPI}/${m.id}${q}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: vd.name})});
+        blobs[k] = {...m, dir, name: vd.name};
+      } catch (e) { if (e.auth) throw e; console.warn('영상 폴더 정리', k, e); }
     }
     // 3) 목록 저장 (바뀐 것이 있을 때만)
     const same = (a, b, f = x => x) => Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(k => k in b && f(a[k]) === f(b[k]));
