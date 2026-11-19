@@ -69,6 +69,13 @@ input,textarea,select{font:inherit;color:inherit}
 .gdlib .btn{margin-left:auto}
 @keyframes gdp{to{opacity:.3}}
 .libio small{color:var(--sub);font-weight:400;margin-left:6px}
+/* 폴더 끌어다 놓기 */
+.dropin{margin:0 0 16px;border:2px dashed #9db4e0;background:#f6f9ff;border-radius:12px;padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.dropin .dt{flex:1;min-width:240px;display:grid;gap:3px;line-height:1.6}
+.dropin .dt b{font-size:15.5px;color:var(--ink)}
+.dropin .dt span{font-size:13.5px;color:var(--sub)}
+#library{position:relative}
+#library.dragging::after{content:"여기에 놓으세요";position:fixed;inset:12px;border:3px dashed var(--accent);border-radius:16px;background:rgba(232,237,255,.85);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--accent);z-index:50;pointer-events:none}
 #syncBtn.ok{color:#1a7f37}
 #syncBtn.warn{color:#b35900}
 
@@ -745,6 +752,12 @@ body.docking .pad{display:none}
     <a class="homelink" href="임용 준비.html#demo">← 수업실연</a>
   </div>
   <div class="gdlib hidden" id="gdLib"></div>
+  <div class="dropin hidden" id="dropIn">
+    <div class="dt"><b>📁 처음 한 번만: 내 컴퓨터의 「임용 준비」 폴더를 이 화면에 끌어다 놓으세요</b>
+      <span>폴더 안에서 교과서 PDF와 분석 자료만 골라 담아요. 구글 드라이브에 연결돼 있으면 드라이브에도 올려 둬서, 그다음부터는 어느 컴퓨터에서든 교과서를 누르면 바로 열려요.</span></div>
+    <button class="btn" id="folderPick">폴더 고르기</button>
+    <input type="file" id="folderInput" webkitdirectory multiple class="hidden">
+  </div>
   <div class="books" id="books"></div>
   <input type="file" id="pdfInput" accept="application/pdf" class="hidden">
   <div class="drop hidden" id="drop"></div>
@@ -1232,10 +1245,12 @@ function renderLibrary() {
   const need = rest.filter(n => !PL[n]).map(n => `<div class="book need" data-need="${esc(n)}">
       <div class="nm">📄 ${esc(n)}</div>
       <div class="meta"><span>${T[n].pages || '?'}쪽 · 소단원 ${T[n].subunits.length}</span><span class="go">PDF 연결 ›</span></div></div>`).join('');
+  // 인터넷 주소에서 교과서 PDF가 빠져 있으면 폴더 넣기 안내
+  $('#dropIn').classList.toggle('hidden', GD_ONFILE || (names.length > 0 && !rest.length));
   box.innerHTML = (packed ? `<div class="libsec" style="grid-column:1/-1">내 교과서</div>${packed}` : '')
     + (need ? `<div class="libsec" style="grid-column:1/-1">PDF를 연결하면 열 수 있어요</div>${need}` : '')
     + (!names.length ? `<div class="empty" style="grid-column:1/-1">${GD_ONFILE ? '분석 자료가 없어요. 아래 <b>분석 파일 업데이트</b>로 교과서분석_모음.json을 불러오세요.'
-      : '교과서가 아직 없어요. 구글 드라이브에 연결하면 저장해 둔 교과서가 나와요. 처음이라면 내 컴퓨터의 교과서 분석에서 <b>전부 옮기기 → 내보내기</b>한 파일을 아래 <b>⬆ 불러오기</b>로 넣어 주세요.'}</div>` : '');
+      : '교과서가 아직 없어요. 구글 드라이브에 연결돼 있으면 저장해 둔 교과서가 곧 나와요. 처음이라면 위의 안내대로 「임용 준비」 폴더를 이 화면에 끌어다 놓아 주세요.'}</div>` : '');
 }
 let needName = null;
 $('#books').addEventListener('click', async e => {
@@ -1287,6 +1302,83 @@ async function openPacked(name) {
   finally { bar.remove(); packing = false; }
 }
 $('#pdfInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) addPdf(f, needName); needName = null; };
+
+/* ---------- 내 컴퓨터 폴더 넣기 (인터넷 주소에서 처음 한 번) ----------
+   「임용 준비」 폴더를 서재에 끌어다 놓거나 골라 주면, 그 안에서 분석 자료(교과서분석_데이터.js)와
+   교과서 PDF(교과서PDF 폴더 조각, 또는 분석 이름과 같은 .pdf)만 골라 읽어 이 브라우저에 담음.
+   구글 드라이브에 연결돼 있으면 드라이브에도 올라감 (교과서 PDF는 공개 주소에 두지 않음) */
+const FOLDER_WANT = p => /(^|\/)교과서분석_데이터\.js$/.test(p) || /(^|\/)교과서PDF\/[^/]+\.js$/.test(p) || /\.pdf$/i.test(p);
+async function walkEntry(entry, path, out, depth) {
+  if (entry.isFile) { if (FOLDER_WANT(path)) out.push({path, file: await new Promise((res, rej) => entry.file(res, rej))}); return; }
+  if (depth > 5 || /^(\.|node_modules$)/.test(entry.name)) return;
+  const rd = entry.createReader();
+  for (;;) {
+    const batch = await new Promise((res, rej) => rd.readEntries(res, rej)); if (!batch.length) break;
+    for (const e of batch) await walkEntry(e, path + '/' + e.name, out, depth + 1);
+  }
+}
+const jsObject = t => JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));   // "window.X = {...};" 에서 {...}만
+let folderBusy = false;
+async function importFolder(files) {
+  if (folderBusy) return; folderBusy = true;
+  const bar = document.createElement('div'); bar.className = 'toast'; document.body.appendChild(bar);
+  const say = t => bar.textContent = t;
+  let added = 0, teach = false;
+  try {
+    const dataF = files.find(x => /(^|\/)교과서분석_데이터\.js$/.test(x.path));
+    const listF = files.find(x => /(^|\/)교과서PDF\/목록\.js$/.test(x.path));
+    const pdfs = files.filter(x => /\.pdf$/i.test(x.path));
+    if (!dataF && !listF && !pdfs.length) { toast('교과서 자료를 찾지 못했어요. 「임용 준비」 폴더를 통째로 넣어 주세요.'); return; }
+    if (dataF) { say('분석 자료를 읽는 중…'); await loadImgs(); teach = await loadTeach(jsObject(await dataF.file.text()), true); }
+    const T = getTeach().books, have = n => S.books.some(b => b.analysis === n);
+    const keep = async (name, blob) => {
+      const id = uid(); await pdfPut(id, blob);
+      S.books.push({id, name, analysis: name, pages: T[name]?.pages || 0, added: Date.now()}); saveBooks(); added++;
+    };
+    if (listF) {
+      const L = jsObject(await listF.file.text()), dir = listF.path.replace(/목록\.js$/, ''), names = Object.keys(L).filter(n => !have(n));
+      for (const [k, name] of names.entries()) {
+        const info = L[name], parts = [];
+        for (let i = 1; i <= info.parts; i++) {
+          say(`교과서 PDF를 담는 중 (${k + 1}/${names.length}) ${name} · ${Math.round((i - 1) / info.parts * 100)}%`);
+          const f = files.find(x => x.path === `${dir}${info.file}_${String(i).padStart(2, '0')}.js`);
+          if (!f) throw new Error(`'${name}'의 조각 파일 ${i}을 찾지 못했어요.`);
+          const s = await f.file.text();
+          parts.push(await (await fetch('data:application/octet-stream;base64,' + s.slice(s.indexOf('="') + 2, s.lastIndexOf('"')))).blob());
+        }
+        await keep(name, new Blob(parts, {type: 'application/pdf'}));
+      }
+    }
+    // 분석 이름과 같은 이름의 PDF 파일도 담음 (조각이 없는 교과서)
+    for (const p of pdfs) {
+      const name = p.file.name.replace(/\.pdf$/i, '').trim();
+      if (T[name] && !have(name)) { say(`교과서 PDF를 담는 중 · ${name}`); await keep(name, new Blob([p.file], {type: 'application/pdf'})); }
+    }
+    renderLibrary();
+    toast(added || teach ? `${teach ? '분석 자료' : ''}${teach && added ? '와 ' : ''}${added ? `교과서 ${added}권` : ''}을 담았어요` + (GD.on ? ' · 구글 드라이브에 올리는 중이에요 (다 올라갈 때까지 창을 열어 두세요)' : '') : '이미 다 담겨 있어요.');
+  } catch (e) { console.error(e); toast('폴더를 읽다 멈췄어요: ' + e.message); }
+  finally { bar.remove(); folderBusy = false; gdShow(); }
+}
+// 서재 어디에든 끌어다 놓기
+const libEl = $('#library');
+libEl.addEventListener('dragover', e => { if ([...e.dataTransfer.types].includes('Files')) { e.preventDefault(); libEl.classList.add('dragging'); } });
+libEl.addEventListener('dragleave', e => { if (!libEl.contains(e.relatedTarget)) libEl.classList.remove('dragging'); });
+libEl.addEventListener('drop', async e => {
+  if (![...e.dataTransfer.types].includes('Files')) return;
+  e.preventDefault(); libEl.classList.remove('dragging');
+  const entries = [...e.dataTransfer.items].map(it => it.webkitGetAsEntry?.()).filter(Boolean);   // 놓는 순간에 받아 둬야 함
+  if (!entries.length) return;
+  toast('폴더를 살펴보는 중…');
+  const out = [];
+  try { for (const en of entries) await walkEntry(en, en.name, out, 0); } catch (err) { return toast('폴더를 읽지 못했어요: ' + err.message); }
+  importFolder(out);
+});
+// 끌어다 놓기가 어려우면 폴더 고르기
+$('#folderPick').onclick = () => $('#folderInput').click();
+$('#folderInput').onchange = e => {
+  const files = [...e.target.files].map(f => ({path: f.webkitRelativePath || f.name, file: f})).filter(x => FOLDER_WANT(x.path));
+  e.target.value = ''; importFolder(files);
+};
 
 async function addPdf(file, analysis) {
   if (!/pdf$/i.test(file.type) && !/\.pdf$/i.test(file.name)) return toast('PDF 파일만 올릴 수 있어요.');
