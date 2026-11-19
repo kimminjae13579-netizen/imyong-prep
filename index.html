@@ -75,23 +75,18 @@ main{max-width:1080px;margin:0 auto;padding:36px 20px 80px}
 .h1{font-family:var(--serif);font-size:34px;font-weight:700;margin:0 0 6px;letter-spacing:-.5px;line-height:1.25}
 .lead{color:var(--sub);margin:0 0 22px}
 
-/* 첫 화면: 칸반 보드 — 유사색 배색
-   열의 바탕색(--h)은 초록(수업실연 150°) → 청록(면접 190°)으로 이웃한 색,
-   카드 왼쪽 띠는 열의 색에서 10°씩 옮겨 가며 같은 계열 안에서 조금씩 달라짐 */
-.kanban{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;margin-top:4px}
-@media (max-width:700px){.kanban{grid-template-columns:1fr;gap:16px}}
-.kcol{--h:150;background:hsl(var(--h) 26% 93%);border:1px solid hsl(var(--h) 20% 84%);border-radius:12px;padding:16px 16px 20px}
-.kcol.intv{--h:190}
-.kh{display:flex;align-items:center;gap:9px;margin:4px 4px 16px;font-family:var(--serif);font-size:22px;font-weight:700;line-height:1.3;color:hsl(var(--h) 40% 22%)}
-.kh::before{content:"";width:10px;height:10px;border-radius:50%;background:hsl(var(--h) 42% 40%);flex:none}
-.kcards{display:grid;gap:14px}
-/* 카드 높이는 화면 높이에 맞춰 늘어남 (작은 화면에서도 너무 작아지지 않게) */
-.card.kcard{--d:0;--c:hsl(calc(var(--h) + var(--d)) 42% 38%);display:flex;align-items:center;justify-content:center;text-align:center;min-height:clamp(96px,15vh,150px);padding:18px 18px 20px 13px;border:1px solid hsl(var(--h) 18% 85%);border-left:5px solid var(--c);text-decoration:none;color:var(--ink);transition:transform .12s,box-shadow .12s}
-.card.kcard:nth-child(1){--d:-12} .card.kcard:nth-child(3){--d:12}
-.kcard .ti{font-family:var(--serif);font-weight:700;font-size:clamp(22px,2.4vw,28px);line-height:1.3;letter-spacing:-.3px;word-break:keep-all}
-.card.kcard:hover{border-color:hsl(var(--h) 20% 76%);border-left-color:var(--c);box-shadow:0 4px 14px hsl(var(--h) 35% 25% / .14);transform:translateY(-1px)}
-.card.kcard:focus-visible{outline:3px solid var(--c);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.card.kcard:hover{transform:none}}
+/* 첫 화면: 아이콘 타일 (태블릿 홈 화면처럼) — 윗줄 수업실연은 연한 초록, 아랫줄 면접은 연한 파랑 */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:4px}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:clamp(140px,22vh,210px);padding:20px 10px;border-radius:16px;text-decoration:none;text-align:center;background:#E1F5EE;color:#085041;border:1px solid #BFE6D6;transition:transform .12s,border-color .12s,background .12s}
+.tile.intv{background:#E6F1FB;color:#0C447C;border-color:#C6DDF3}
+.tile .tic{display:flex;width:clamp(44px,5.5vw,60px);height:clamp(44px,5.5vw,60px)}
+.tile .tic svg{width:100%;height:100%}
+.tile .tnm{font-family:var(--serif);font-weight:700;font-size:clamp(17px,2.2vw,24px);line-height:1.3;word-break:keep-all}
+.tile:hover{transform:translateY(-2px);border-color:#5DCAA5;background:#D3EFE4}
+.tile.intv:hover{border-color:#85B7EB;background:#D9E9F8}
+.tile:focus-visible{outline:3px solid currentColor;outline-offset:3px}
+@media (max-width:520px){.tiles{gap:10px}.tile{min-height:118px;gap:10px;padding:16px 6px;border-radius:14px}}
+@media (prefers-reduced-motion:reduce){.tile:hover{transform:none}}
 
 /* 목록 머리 */
 .lhead{display:flex;align-items:center;gap:8px;margin:0 0 20px;flex-wrap:wrap;padding-bottom:12px;border-bottom:2px solid var(--ink)}
@@ -1023,17 +1018,19 @@ $('#editBtn').onclick = () => { editing = !editing; lsSet('editing', editing); r
 const app = () => $('#app');
 
 /* ---------- 홈 / 허브 ---------- */
-// 첫 화면: 칸반 보드 — 수업실연 열과 면접 열에 카드 3장씩
-const BOARD_COLS = [
-  {sec: 'demo', name: '수업실연', cards: [{href: '#demo/tpl', name: '만능틀'}, {href: '교과서 분석 학습자.html', name: '교과서 분석'}, {href: '#demo/practice', name: '수업실연 연습'}]},
-  {sec: 'intv', name: '면접', cards: [{href: '#intv/lib', name: '자료실'}, {href: '#intv/practice', name: '면접 연습'}, {href: '#intv/types', name: '유형정리'}]}
+// 첫 화면: 아이콘 타일 — 윗줄 수업실연(연한 초록), 아랫줄 면접(연한 파랑)
+const TI = p => `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const TILES = [
+  {sec: 'demo', href: '#demo/tpl', name: '만능틀', icon: TI('<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M7 21h10M12 17v4M7 9h5M7 12h8"/>')},
+  {sec: 'demo', href: '교과서 분석 학습자.html', name: '교과서 분석', icon: TI('<path d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z"/><path d="M12 6v13.5"/>')},
+  {sec: 'demo', href: '#demo/practice', name: '수업실연 연습', icon: TI('<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10.5l5-3v9l-5-3"/>')},
+  {sec: 'intv', href: '#intv/lib', name: '자료실', icon: TI('<path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13h6"/>')},
+  {sec: 'intv', href: '#intv/practice', name: '면접 연습', icon: TI('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>')},
+  {sec: 'intv', href: '#intv/types', name: '유형정리', icon: TI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>')}
 ];
 function renderHome() {
   app().innerHTML = `
-    <div class="kanban">${BOARD_COLS.map(c => `<section class="kcol ${c.sec}" aria-label="${c.name}">
-      <h2 class="kh">${c.name}</h2>
-      <div class="kcards">${c.cards.map(k => `<a class="card kcard" href="${k.href}"><span class="ti">${k.name}</span></a>`).join('')}</div>
-    </section>`).join('')}</div>
+    <nav class="tiles" aria-label="임용 준비 메뉴">${TILES.map(t => `<a class="tile ${t.sec}" href="${t.href}"><span class="tic">${t.icon}</span><span class="tnm">${t.name}</span></a>`).join('')}</nav>
     ${gdHomeHtml()}`;
   hubHooks();
   gdShow();
