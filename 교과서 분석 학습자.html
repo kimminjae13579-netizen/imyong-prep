@@ -939,7 +939,7 @@ const pdfDel = id => rawDel(id).then(r => { gdMark(id, 'del'); return r; });
    · 이 컴퓨터에만 두는 것: API 키(tbl:ai), 확대 비율(tbl:scale), 예전 폴더 동기화 표시(tbl:synced/dirty), meta:*
    · 합치기는 임용 준비와 같음: 지난번 맞춘 상태(IndexedDB 'sync:base')와 비교, id 있는 목록은 항목끼리
    ========================================================= */
-const GOOGLE_CLIENT_ID = '379559393104-nsj44mhabqogcpv43rnrlkqor4c43jln.apps.googleusercontent.com';   // 임용 준비와 같은 값
+const GOOGLE_CLIENT_ID = '';   // 임용 준비와 같은 값
 const GD_ONFILE = location.protocol === 'file:';
 const GD_TARGET_KEY = 'tblsync:target';   // 마지막으로 맞춘 저장 장소 (own 또는 공용 폴더 id)
 const GD = {
@@ -1465,7 +1465,7 @@ $('#folderInput').onchange = e => {
    각자 자기 구글 계정으로 연결하기만 해도 그 폴더를 읽어 교과서가 목록에 저절로 나옴 (drive.readonly · 읽기만).
    폴더 안 목록은 이 기기에만 'tblsh:list' [{id, name, size, pages}], PDF는 처음 열 때 받아 이 기기에만 'meta:pdf:<id>' (내 드라이브엔 안 올림).
    분석 자료는 바뀌었을 때만 다시 읽음 ('tblsh:teach' = 마지막으로 읽은 파일의 수정 시각) */
-const SHARED_FOLDER_ID = '1EWEyMH9FD5w9t2WCHoGa9rdRH9fFRe51';   // 공용 폴더 주소의 folders/ 뒤 글자 (비어 있으면 임용 준비 ☁️ 안내 8번에서 넣은 값)
+const SHARED_FOLDER_ID = '';   // 공용 폴더 주소의 folders/ 뒤 글자 (비어 있으면 임용 준비 ☁️ 안내 8번에서 넣은 값)
 const sharedFolderId = () => SHARED_FOLDER_ID || localStorage.getItem('imysync:sharedfolder') || '';
 const sharedList = () => { try { return JSON.parse(localStorage.getItem('tblsh:list')) || []; } catch { return []; } };
 const shNorm = s => String(s).replace(/\.pdf$/i, '').replace(/[\s_()\[\]·.\-]/g, '').toLowerCase();

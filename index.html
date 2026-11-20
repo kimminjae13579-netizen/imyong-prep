@@ -732,6 +732,13 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .modal .box.gdbox{width:min(760px,100%)}
 .modal .gdhome{margin:0;border:none;padding:0;background:none;border-radius:0}
 .modal .gdhome .gdhead h2{display:none}
+/* 연결 정보 칸 (클라이언트 ID · 공용 폴더 주소) */
+.gdsetup{display:grid;gap:8px;background:#F3F7F5;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0 12px}
+.gdsetup .gdst-s{font-size:13px;color:var(--sub)}
+.gdsetup label{display:grid;gap:4px;font-size:13.5px;font-weight:700}
+.gdsetup label small{font-weight:400;color:var(--sub)}
+.gdsetup input{border:1px solid #C4D0CA;border-radius:7px;padding:9px 11px;font-size:15px;background:#fff;font-weight:400}
+.gdsetbtns{display:flex;gap:8px;flex-wrap:wrap}
 @keyframes gdp{to{opacity:.3}}
 .gdhome{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px 16px}
 .gdhead{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap}
@@ -757,6 +764,7 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .gdsteps p.gdbad{color:var(--warn);font-size:14.5px}
 .gdsteps code{background:#EEF2F0;border:1px solid var(--line);border-radius:5px;padding:1px 7px;font-size:14px;word-break:break-all}
 .gdsteps a{color:var(--accent);font-weight:700}
+.gdsteps.one{counter-reset:s 0}.gdpart{font-family:var(--serif);font-size:17px;margin:16px 0 4px;color:var(--ink)}.gdpart small{font-family:var(--sans);font-size:13px;font-weight:400;color:var(--sub)}
 .gdkey{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;max-width:44em}
 .gdkey input{flex:1;min-width:14em;border:1px solid #C4D0CA;border-radius:7px;padding:9px 12px;background:#fff;font-size:15px}
 .gdkey input:focus{outline:3px solid var(--accent-soft);border-color:var(--accent)}
@@ -909,8 +917,8 @@ navigator.storage?.persist?.();
    · 큰 파일은 다른 컴퓨터에서 처음 열 때 받아 옴
    · 이 앱 전용 값은 'imysync:*' (드라이브로 안 올라감)
    ========================================================= */
-const GOOGLE_CLIENT_ID = '379559393104-nsj44mhabqogcpv43rnrlkqor4c43jln.apps.googleusercontent.com';   // 여기에 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (공개돼도 괜찮은 값)
-const SHARED_FOLDER_ID = '1EWEyMH9FD5w9t2WCHoGa9rdRH9fFRe51';   // 공용 폴더 (주소의 folders/ 뒤 글자) — 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (교과서 분석과 같은 값)
+const GOOGLE_CLIENT_ID = '';   // 여기에 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (공개돼도 괜찮은 값)
+const SHARED_FOLDER_ID = '';   // 공용 폴더 (주소의 folders/ 뒤 글자) — 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (교과서 분석과 같은 값)
 const sharedFolderId = () => SHARED_FOLDER_ID || localStorage.getItem('imysync:sharedfolder') || '';
 const GD_TARGET_KEY = 'imysync:target';   // 마지막으로 맞춘 저장 장소 (own 또는 공용 폴더 id)
 const GD = {
@@ -1242,6 +1250,14 @@ const ROUTES = {
   'qna': {title: 'Q&A', render: renderQna}
 };
 function route() {
+  // 초대 링크(#join=클라이언트ID~공용폴더ID)로 열면: 연결 정보를 저장하고 첫 화면에서 연결 안내 창을 엶
+  const jm = location.hash.match(/^#join=([\w.-]+\.apps\.googleusercontent\.com)(?:~([\w-]{10,}))?/);
+  if (jm) {
+    localStorage.setItem('imysync:client', jm[1]);
+    jm[2] ? localStorage.setItem('imysync:sharedfolder', jm[2]) : localStorage.removeItem('imysync:sharedfolder');
+    history.replaceState(null, '', location.pathname + location.search + '#home');
+    setTimeout(() => { openGdGuide(); toast('초대 링크로 연결 정보를 넣었어요. 「구글 드라이브 연결」을 눌러 주세요.'); gsiLoad().catch(() => {}); }, 300);
+  }
   const key = location.hash.replace(/^#\/?/, '').replace(/^home$/, '');
   let r = ROUTES[key];
   // 연습 폴더: #demo/practice/<폴더id>, #intv/practice/<폴더id>
@@ -1313,44 +1329,49 @@ function gdHomeHtml() {
     <div class="gdhead"><h2>☁️ 구글 드라이브에 저장하기</h2><span class="gdst" id="gdStat"></span></div>
     <p class="gdlead">연결하면 연습 기록, 답변, 메모, 올린 PDF와 녹화 영상이 <b>내 구글 드라이브</b>에 저장돼요. 다른 컴퓨터에서도 같은 구글 계정으로 연결하면 그대로 이어서 볼 수 있어요.</p>
     ${GD_ONFILE ? `<div class="gdwarn"><b>지금은 파일을 직접 연 상태라 연결할 수 없어요.</b> 구글 로그인은 인터넷 주소(https://…)로 연 앱에서만 돼요. 아래 사용법 0번부터 해 주세요.</div>` : ''}
+    ${GD_ONFILE ? '' : `<div class="gdsetup"><b class="gdst-t">연결 정보</b> <span class="gdst-s">대표가 보낸 초대 링크로 열면 저절로 채워져요. 아니면 받은 두 값을 넣고 저장한 뒤 「구글 드라이브 연결」을 눌러요.</span>
+      <label>클라이언트 ID<input type="text" id="gdClient" value="${esc(localStorage.getItem('imysync:client') || '')}" placeholder="0000-xxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false"></label>
+      <label>공용 폴더 주소 <small>(없으면 비워 두면 내 드라이브에 따로 저장)</small><input type="text" id="gdShared" value="${esc(localStorage.getItem('imysync:sharedfolder') || '')}" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off" spellcheck="false"></label>
+      <div class="gdsetbtns"><button class="btn" data-gd="savesetup">저장</button><button class="btn" data-gd="invite" title="클라이언트 ID와 공용 폴더가 담긴 앱 주소를 복사해요. 스터디원은 이 링크로 열기만 하면 돼요">🔗 초대 링크 복사</button></div></div>`}
     <div class="gdact" id="gdAct"></div>
-    <details class="gdhow" id="gdHow" ${GD.on ? '' : 'open'}><summary>연결 사용법 (처음 한 번만)</summary>
-      <ol class="gdsteps">
-        <li><b class="t">앱을 인터넷 주소로 열기</b>
-          <p>GitHub Pages 같은 곳에 <b>임용 준비.html</b>, <b>교과서 분석 학습자.html</b>, 문제지 그림 2장(문제지 (지도안).png, 문제지(자료).png)을 올리고, 그 주소로 앱을 열어요.</p>
-          <p class="gdbad">⚠️ 교과서 PDF, 교과서PDF 폴더, 분석 json·교과서분석_데이터.js, 최종합격자료 폴더는 올리지 마세요. 공개 주소라 누구나 받을 수 있어요. (앱 파일은 공개돼도 교과서와 내 기록은 내 드라이브에만 저장돼요.)</p></li>
-        <li><b class="t">구글 클라우드에서 프로젝트 만들기</b>
-          <p><a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a>에 내 구글 계정으로 들어가 <b>새 프로젝트</b>를 만들어요. 이름은 「임용 준비」처럼 아무거나 괜찮아요. 무료이고 카드 등록도 필요 없어요.</p></li>
+    <details class="gdhow" id="gdHow" ${GD.on ? '' : 'open'}><summary>연결 방법 (처음 한 번만)</summary>
+      <h3 class="gdpart">👑 스터디 대표가 할 일 <small>(한 사람만, 처음 한 번)</small></h3>
+      <ol class="gdsteps one">
+        <li><b class="t">구글 클라우드 프로젝트 만들기</b>
+          <p><a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a>에 내 구글 계정으로 들어가기 → 「새 프로젝트」 → 이름(예: 임용 준비) 쓰고 만들기. 무료이고 카드 등록 필요 없음.</p></li>
         <li><b class="t">Google Drive API 켜기</b>
-          <p>왼쪽 메뉴 <b>API 및 서비스 → 라이브러리</b>에서 「Google Drive API」를 찾아 <b>사용</b>을 눌러요.</p></li>
+          <p>위쪽에서 방금 만든 프로젝트가 골라져 있는지 확인하기 → 왼쪽 메뉴 「API 및 서비스 → 라이브러리」 → 「Google Drive API」 검색 → 「사용」 누르기.</p></li>
         <li><b class="t">동의 화면 만들기</b>
-          <p><b>API 및 서비스 → OAuth 동의 화면</b>(Google 인증 플랫폼)에서 <b>시작하기</b>를 눌러요. 앱 이름은 「임용 준비」, 이메일은 내 이메일, 대상은 <b>외부</b>로 하고 만들어요.</p>
-          <p>그다음 <b>대상</b> 메뉴의 <b>테스트 사용자</b>에 내 구글 계정(지메일 주소)을 추가해요. 여기에 넣은 계정만 연결할 수 있어요.</p></li>
+          <p>「API 및 서비스 → OAuth 동의 화면」(Google 인증 플랫폼) → 「시작하기」 → 앱 이름(임용 준비)·내 이메일 넣기 → 대상은 「외부」 고르기 → 만들기.</p></li>
+        <li><b class="t">스터디원을 테스트 사용자로 넣기</b>
+          <p>「대상」 메뉴 → 「테스트 사용자 → 사용자 추가」 → 나와 스터디원 모두의 지메일 주소 넣고 저장하기. 여기 없는 계정은 연결할 수 없음 (최대 100명).</p></li>
         <li><b class="t">클라이언트 ID 만들기</b>
-          <p><b>클라이언트</b>(사용자 인증 정보) 메뉴에서 <b>클라이언트 만들기 → OAuth 클라이언트 ID</b>를 눌러요. 유형은 <b>웹 애플리케이션</b>이에요.</p>
-          <p><b>승인된 자바스크립트 원본</b>에 이 앱 주소를 넣어요: <code id="gdOrigin">${esc(origin)}</code>${GD_ONFILE ? '' : ' <button class="btn small" data-gd="copy">복사</button>'}</p>
-          <p>만들면 나오는 <b>클라이언트 ID</b>(…apps.googleusercontent.com으로 끝나요)를 복사해요.</p></li>
-        <li><b class="t">앱에 붙여 넣고 연결하기</b>
-          ${GOOGLE_CLIENT_ID ? '<p>클라이언트 ID는 앱에 이미 들어 있어요.</p>' : `<div class="gdkey"><input type="text" id="gdClient" value="${esc(localStorage.getItem('imysync:client') || '')}" placeholder="0000-xxxx.apps.googleusercontent.com" aria-label="클라이언트 ID" autocomplete="off" spellcheck="false"><button class="btn" data-gd="saveid">저장</button></div>`}
-          <p>위의 <b>구글 드라이브 연결</b>을 누르고 내 계정을 골라요. 「Google에서 확인하지 않은 앱」이 나오면 <b>계속</b>을 누르고, 드라이브 사용을 <b>허용</b>해요.</p></li>
-        <li><b class="t">다른 컴퓨터에서</b>
-          <p>같은 주소로 앱을 열고 5번처럼 클라이언트 ID를 넣은 뒤, <b>같은 구글 계정</b>으로 연결해요. PDF와 영상은 처음 열 때 드라이브에서 받아 와요.</p></li>
-        <li><b class="t">공용 폴더로 함께 쓰기 (여럿이 같이 편집할 때)</b>
-          <p>① 드라이브에 폴더 하나(또는 공유 드라이브)를 만들고, 교과서 PDF들과 내 컴퓨터 「임용 준비」 폴더의 <b>교과서분석_데이터.js</b>를 넣어요.</p>
-          <p>② 그 폴더를 함께 쓸 사람에게 <b>편집자</b>로 공유해요. 함께 쓸 사람의 구글 계정은 모두 4번의 <b>테스트 사용자</b>에 넣어야 해요.</p>
-          <p>③ 폴더를 열었을 때 주소창의 주소를 아래에 붙여 넣어요. (주소 전체를 넣어도 돼요.)</p>
-          ${SHARED_FOLDER_ID ? '<p>공용 폴더는 앱에 이미 정해져 있어요.</p>' : `<div class="gdkey"><input type="text" id="gdShared" value="${esc(localStorage.getItem('imysync:sharedfolder') || '')}" placeholder="https://drive.google.com/drive/folders/…" aria-label="공용 폴더 주소" autocomplete="off" spellcheck="false"><button class="btn" data-gd="savefolder">저장</button></div>`}
-          <p>④ 각자 자기 구글 계정으로 연결하고 「Google Drive 파일 보기·수정·삭제」를 허용해요. 그러면 <b>일정, Q&amp;A, 연습 폴더·영상·평가, 자료실, 교과서 메모·형광펜·메모장이 모두 공용 폴더에 함께 저장</b>돼서, 한 사람이 쓰거나 고치면 모두에게 보여요. 공용 폴더의 교과서는 교과서 분석에 저절로 나와요.</p>
-          <p>⑤ 처음 공용 폴더로 바꿀 때 이 기기에 있던 기록은 지워지지 않고 공용 폴더에 더해져요.</p>
-          <p class="gdbad">⚠️ 교과서 PDF는 저작권이 있어요. 공용 폴더는 함께 공부하는 사람에게만 공유하고 「링크가 있는 모든 사용자」로는 열지 마세요. 공용 폴더에 쓴 것은 함께 쓰는 사람 모두가 보고 지울 수 있어요.</p></li>
+          <p>「클라이언트」(사용자 인증 정보) 메뉴 → 「클라이언트 만들기 → OAuth 클라이언트 ID」 → 유형은 「웹 애플리케이션」 고르기.</p>
+          <p>「승인된 자바스크립트 원본」에 이 앱 주소 넣기: <code>${esc(origin)}</code>${GD_ONFILE ? '' : ' <button class="btn small" data-gd="copy">복사</button>'} → 만들기.</p>
+          <p>나오는 <b>클라이언트 ID</b>(…apps.googleusercontent.com으로 끝남) 복사해 두기. 「보안 비밀번호」는 필요 없으니 남에게 보내지 않기.</p></li>
+        <li><b class="t">공용 폴더 만들기</b>
+          <p><a href="https://drive.google.com" target="_blank" rel="noopener">drive.google.com</a> → 「+ 새로 만들기 → 새 폴더」(예: 임용 스터디) → 폴더 안에 교과서 PDF들과 내 컴퓨터 「임용 준비」 폴더의 <b>교과서분석_데이터.js</b> 올리기.</p></li>
+        <li><b class="t">공용 폴더 공유하기</b>
+          <p>폴더 오른쪽 클릭 → 「공유」 → 스터디원 지메일 넣기 → 권한을 <b>「편집자」</b>로 고르기 → 보내기. 「일반 액세스」는 「제한됨」 그대로 두기.</p>
+          <p class="gdbad">⚠️ 「링크가 있는 모든 사용자」로 열지 않기 (교과서 저작권 · 모두의 기록이 들어 있음).</p></li>
+        <li><b class="t">초대 링크 보내기</b>
+          <p>이 창 맨 위 「연결 정보」에 클라이언트 ID와 공용 폴더 주소(폴더를 열었을 때 주소창의 주소) 넣고 저장하기 → 「🔗 초대 링크 복사」 → 카톡 등으로 스터디원에게 보내기. 대표도 아래 「스터디원이 할 일」 2번부터 똑같이 하기.</p></li>
+      </ol>
+      <h3 class="gdpart">🙋 스터디원이 할 일 <small>(기기마다 처음 한 번)</small></h3>
+      <ol class="gdsteps one">
+        <li><b class="t">초대 링크 열기</b>
+          <p>대표가 보낸 초대 링크를 크롬에서 열기 → 연결 정보가 저절로 채워지고 이 창이 열림. (링크가 없으면 맨 위 「연결 정보」에 받은 값을 직접 넣고 저장하기)</p></li>
+        <li><b class="t">구글 드라이브 연결하기</b>
+          <p>「구글 드라이브 연결」 → 내 구글 계정 고르기 → 「Google에서 확인하지 않은 앱」이 나오면 「고급 → 계속」 → 드라이브 권한 <b>모두 허용</b>하기.</p></li>
+        <li><b class="t">확인하기</b>
+          <p>위쪽 상태가 「연결됨」이 되면 끝. 일정·Q&amp;A·연습 기록이 모두와 함께 보이고, 교과서 분석에 공용 폴더의 교과서가 나옴.</p></li>
       </ol>
       <div class="gdnote"><b>알아 두기</b><ul>
-        <li><b>지금까지 파일로 열어 쓰던 기록 옮기기:</b> 파일로 연 앱에서 ⚙️ → <b>전부 옮기기 → 내보내기</b>(영상 포함)를 누르고, 새 주소에서 ⚙️ → <b>불러오기</b>로 그 파일을 넣은 뒤 연결해요.</li>
-        <li><b>교과서 분석 (처음 한 번):</b> 새 주소의 교과서 분석을 열고, 내 컴퓨터의 <b>「임용 준비」 폴더를 그 화면에 끌어다 놓아요.</b> 교과서 PDF와 분석 자료만 골라 담아 드라이브에 올려요. 다 올라갈 때까지 창을 닫지 마세요. 그다음부터는 어느 컴퓨터에서든 교과서를 누르면 바로 열려요.</li>
-        <li>연결은 한 시간쯤 지나면 끊겨요. 위쪽 ☁️에 <b>다시 연결</b>이 보이면 눌러 주세요. 그동안 쓴 기록은 이 컴퓨터에 있다가 다시 연결하면 올라가요.</li>
-        <li>공용 폴더를 정하지 않으면 기록은 내 드라이브의 「${GD.folderName}」 폴더에 저장돼요. 공용 폴더를 정하면 모든 기록이 그 공용 폴더에 함께 저장돼요. (연결할 때 「파일 보기·수정·삭제」를 묻는 건 공용 폴더에 함께 저장하고 고치기 위해서예요.)</li>
-        <li>지운 기록의 영상·파일은 드라이브 휴지통으로 가요 (30일 동안 되살릴 수 있어요).</li>
-        <li>교과서 분석도 이 연결을 같이 써요. 여기서 연결하면 교과서 분석도 따로 연결할 필요 없어요. (API 키는 컴퓨터마다 따로 넣어요.)</li>
+        <li>공용 폴더에 저장된 건 스터디원 모두가 보고 고치고 지울 수 있음. 실수로 지운 영상·파일은 드라이브 휴지통에서 30일 안에 되살리기.</li>
+        <li>연결은 1시간쯤 지나면 끊김 → 위쪽 ☁️에 「다시 연결」이 보이면 누르기. 그동안 쓴 기록은 기기에 있다가 다시 연결하면 올라감.</li>
+        <li>처음 연결할 때 이 기기에 있던 기록은 지워지지 않고 공용 폴더에 더해짐.</li>
+        <li>영상은 공용 폴더를 만든 대표의 드라이브 용량을 씀 → 영상이 많으면 대표 계정 용량 확인하기.</li>
+        <li>공용 폴더 주소를 비워 두면 공유 없이 내 드라이브의 「${GD.folderName}」 폴더에 나만 저장됨.</li>
       </ul></div>
     </details>
   </section>`;
@@ -1370,13 +1391,13 @@ function gdShow() {
   const st = $('#gdStat'); if (st) { st.className = 'gdst ' + s.c; st.textContent = s.t; }
   const act = $('#gdAct'); if (!act) return;
   act.innerHTML = GD_ONFILE ? ''
-    : !GD.on ? `<button class="btn primary" data-gd="connect" ${GD.clientId ? '' : 'disabled'}>☁️ 구글 드라이브 연결</button>${GD.clientId ? '' : '<span class="gdhint">사용법 5번에서 클라이언트 ID를 먼저 넣어 주세요.</span>'}`
+    : !GD.on ? `<button class="btn primary" data-gd="connect" ${GD.clientId ? '' : 'disabled'}>☁️ 구글 드라이브 연결</button>${GD.clientId ? '' : '<span class="gdhint">위 「연결 정보」에 클라이언트 ID를 먼저 넣고 저장해 주세요.</span>'}`
     : s.c === 'need' ? `<button class="btn primary" data-gd="connect">☁️ 다시 연결</button><span class="gdhint">그동안 쓴 기록은 이 컴퓨터에 저장돼 있어요.</span>`
     : `<button class="btn" data-gd="sync" ${GD.busy ? 'disabled' : ''}>지금 저장</button><button class="btn ghost" data-gd="off">연결 끊기</button>${s.c === 'err' ? `<span class="gdhint bad">${esc(GD.msg)}</span>` : ''}`;
 }
 async function gdConnect() {
   if (GD_ONFILE) return toast('파일로 연 앱에서는 연결할 수 없어요. 인터넷 주소(https://…)로 열어 주세요.');
-  if (!GD.clientId) return toast('연결 사용법 5번에서 클라이언트 ID를 먼저 넣어 주세요.');
+  if (!GD.clientId) return toast('연결 위 「연결 정보」에 클라이언트 ID를 먼저 넣고 저장해 주세요.');
   const firstTime = !GD.on;
   try { await gdLogin(); } catch (e) { toast(e.message); return; }
   localStorage.setItem('imysync:on', '1'); GD.state = 'ok';
@@ -1396,6 +1417,23 @@ document.addEventListener('click', e => {
   if (a === 'sync') return gdSync({manual: true});
   if (a === 'off') return gdDisconnect();
   if (a === 'copy') { navigator.clipboard?.writeText(location.origin).then(() => toast('주소를 복사했어요'), () => toast('복사하지 못했어요. 직접 골라 복사해 주세요.')); return; }
+  if (a === 'invite') {   // 초대 링크: 이 앱 주소 + #join=클라이언트ID~공용폴더ID (앱 파일에는 넣지 않음)
+    const c = localStorage.getItem('imysync:client') || '', fo = localStorage.getItem('imysync:sharedfolder') || '';
+    if (!c) return toast('먼저 클라이언트 ID(와 공용 폴더 주소)를 넣고 저장해 주세요.');
+    const link = `${location.origin}${location.pathname}#join=${c}${fo ? '~' + fo : ''}`;
+    navigator.clipboard?.writeText(link).then(() => toast('초대 링크를 복사했어요. 카톡 등으로 스터디원에게 보내 주세요.'), () => prompt('아래 초대 링크를 복사해 주세요.', link));
+    return;
+  }
+  if (a === 'savesetup') {   // 연결 정보: 클라이언트 ID와 공용 폴더를 한 번에 저장
+    const c = $('#gdClient').value.trim(), raw = $('#gdShared').value.trim();
+    const fo = (raw.match(/folders\/([\w-]{10,})/) || raw.match(/[?&]id=([\w-]{10,})/) || [, raw])[1];
+    if (c && !/\.apps\.googleusercontent\.com$/.test(c)) return toast('클라이언트 ID는 .apps.googleusercontent.com으로 끝나요. 다시 확인해 주세요.');
+    if (fo && !/^[\w-]{10,}$/.test(fo)) return toast('공용 폴더 주소를 다시 확인해 주세요. 드라이브에서 폴더를 열었을 때 주소창의 주소예요.');
+    c ? localStorage.setItem('imysync:client', c) : localStorage.removeItem('imysync:client');
+    fo ? localStorage.setItem('imysync:sharedfolder', fo) : localStorage.removeItem('imysync:sharedfolder');
+    $('#gdShared').value = fo || ''; gdShow(); if (c) gsiLoad().catch(() => {});
+    return toast(c ? '저장했어요. 이제 「구글 드라이브 연결」을 눌러 주세요.' : '연결 정보를 지웠어요.');
+  }
   if (a === 'savefolder') {   // 공용 교과서 폴더 — 주소 전체를 넣어도 folders/ 뒤 글자만 씀 (교과서 분석이 같이 씀)
     const raw = $('#gdShared').value.trim(), v = (raw.match(/folders\/([\w-]{10,})/) || raw.match(/[?&]id=([\w-]{10,})/) || [, raw])[1];
     if (v && !/^[\w-]{10,}$/.test(v)) return toast('폴더 주소를 다시 확인해 주세요. 드라이브에서 폴더를 열었을 때 주소창의 주소예요.');
