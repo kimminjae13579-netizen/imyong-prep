@@ -909,8 +909,8 @@ navigator.storage?.persist?.();
    · 큰 파일은 다른 컴퓨터에서 처음 열 때 받아 옴
    · 이 앱 전용 값은 'imysync:*' (드라이브로 안 올라감)
    ========================================================= */
-const GOOGLE_CLIENT_ID = '';   // 여기에 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (공개돼도 괜찮은 값)
-const SHARED_FOLDER_ID = '';   // 공용 폴더 (주소의 folders/ 뒤 글자) — 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (교과서 분석과 같은 값)
+const GOOGLE_CLIENT_ID = '379559393104-nsj44mhabqogcpv43rnrlkqor4c43jln.apps.googleusercontent.com';   // 여기에 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (공개돼도 괜찮은 값)
+const SHARED_FOLDER_ID = '1EWEyMH9FD5w9t2WCHoGa9rdRH9fFRe51';   // 공용 폴더 (주소의 folders/ 뒤 글자) — 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (교과서 분석과 같은 값)
 const sharedFolderId = () => SHARED_FOLDER_ID || localStorage.getItem('imysync:sharedfolder') || '';
 const GD_TARGET_KEY = 'imysync:target';   // 마지막으로 맞춘 저장 장소 (own 또는 공용 폴더 id)
 const GD = {
