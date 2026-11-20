@@ -366,9 +366,9 @@ button.segt:hover{background:var(--accent);color:#fff}
 .ed.uni .picsec .pic{width:100%;height:auto;aspect-ratio:4/3;background:#F3F6F4}
 .ed.uni .picsec .pic img{object-fit:contain}
 
-/* 문제 사진 전체화면 */
-.piczoom:fullscreen{background:#0E1612}
-.piczoom:fullscreen img{max-width:96vw;max-height:90vh}
+/* 문제 사진 크게 보기: 화면 가득 (브라우저 전체화면은 ⛶ 단추로만) */
+.piczoom{background:rgba(14,22,18,.94)}
+.piczoom img{max-width:96vw;max-height:88vh}
 .pznav{position:absolute;top:50%;transform:translateY(-50%);width:56px;height:56px;border-radius:50%;border:none;background:rgba(255,255,255,.18);color:#fff;font-size:34px;line-height:1;cursor:pointer}
 .pznav:hover{background:rgba(255,255,255,.32)}
 .pznav.prev{left:16px}
@@ -3044,7 +3044,7 @@ async function openEditor(kind, rec, file) {
   const close = saved => {
     if (!saved && dirty && !confirm('저장하지 않은 내용이 있어요. 저장하지 않고 닫을까요?')) return;
     if (!saved) added.forEach(id => blobDel('img:' + id));
-    document.removeEventListener('fullscreenchange', onFs); picRO?.disconnect(); v.pause(); URL.revokeObjectURL(url); Object.values(picUrls).forEach(u => URL.revokeObjectURL(u));
+    document.removeEventListener('keydown', onFs, true); picRO?.disconnect(); v.pause(); URL.revokeObjectURL(url); Object.values(picUrls).forEach(u => URL.revokeObjectURL(u));
     ov.remove(); document.body.style.overflow = ''; route();   // 폴더 화면 다시 그리기
   };
   const renderPics = async () => {
@@ -3092,9 +3092,9 @@ async function openEditor(kind, rec, file) {
     drawCk();
   };
   renderPics(); renderScript();
-  // Esc 등으로 전체화면이 끝나면 크게 본 사진도 닫음
-  const onFs = () => { const z = $('.piczoom', ov); if (z && !z.classList.contains('hidden') && document.fullscreenElement !== z && !document.fullscreenElement) z.classList.add('hidden'); };
-  document.addEventListener('fullscreenchange', onFs);
+  // 크게 본 사진은 Esc로도 닫음
+  const onFs = e => { const z = $('.piczoom', ov); if (e.key === 'Escape' && z && !z.classList.contains('hidden')) { e.stopPropagation(); z.classList.add('hidden'); } };
+  document.addEventListener('keydown', onFs, true);
   // 면접: 문제 사진 칸을 영상 칸과 같은 높이로 (영상을 올리거나 바꾸면 다시 맞춤). 받아쓴 글 칸은 두 칸을 합친 높이로 늘어남
   const picFit = () => { if (!uni) return; const vs = $('.vidsec', ov), ps = $('.picsec', ov); if (vs && ps) ps.style.height = vs.offsetHeight + 'px'; };
   const picRO = uni ? new ResizeObserver(picFit) : null;
@@ -3188,10 +3188,10 @@ async function openEditor(kind, rec, file) {
       z.innerHTML = `<img src="${picUrls[pics[i]]}" alt="문제 사진 ${i + 1} 크게 보기">
         ${n > 1 ? `<button class="pznav prev" data-a="picPrev" aria-label="앞 사진">‹</button><button class="pznav next" data-a="picNext" aria-label="다음 사진">›</button>` : ''}
         <p>${n > 1 ? `${i + 1} / ${n} · ` : ''}아무 곳이나 누르면 닫혀요.</p>`;
-      if (a === 'zoom') { z.classList.remove('hidden'); try { await z.requestFullscreen?.(); } catch {} }
+      if (a === 'zoom') z.classList.remove('hidden');   // 화면 가득 크게 (브라우저 전체화면은 ⛶ 단추로만)
       return;
     }
-    if (a === 'zoomClose') { $('.piczoom', ov).classList.add('hidden'); if (document.fullscreenElement === $('.piczoom', ov)) document.exitFullscreen?.().catch(() => {}); return; }
+    if (a === 'zoomClose') { $('.piczoom', ov).classList.add('hidden'); return; }
     // 영상 전체화면 (아이패드는 영상 자체의 전체화면)
     if (a === 'vidFs') { try { v.requestFullscreen ? await v.requestFullscreen() : v.webkitEnterFullscreen?.(); } catch { toast('전체화면을 열 수 없어요.'); } return; }
     // 체크리스트: 버튼 → 폴더 제목 목록(아래로 스크롤) → 고른 체크리스트에 3·2·1
