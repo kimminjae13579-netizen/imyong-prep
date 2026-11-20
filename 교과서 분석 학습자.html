@@ -614,6 +614,8 @@ body:has(#library:not(.hidden)){background-image:linear-gradient(var(--grid) 1px
 .libtop{flex-wrap:wrap}
 .ownadd{min-height:44px;white-space:nowrap}
 .book.own::before{background:#2B4170}
+.book.shared::before{background:#3B6FB0}.shtag{display:inline-block;font-size:11.5px;font-weight:700;color:#1864AB;background:#E7F5FF;border-radius:999px;padding:0 8px;margin-right:6px}
+.shnote{background:#E7F5FF;border:1px solid #A5D0F5;border-radius:10px;padding:12px 16px;font-size:14.5px;line-height:1.6;color:#1E3A5F}
 .libsec{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--ink)}
 .books{gap:18px}
 .book{position:relative;min-height:132px;display:flex;flex-direction:column;justify-content:space-between;padding:18px 16px 14px 28px;border:1px solid var(--line);border-radius:3px 8px 8px 3px;background:var(--panel);box-shadow:var(--shadow)}
@@ -789,6 +791,7 @@ body.docking .pad{display:none}
 <section id="library">
   <div class="libtop">
     <h1>📘 교과서 분석</h1>
+    <button class="btn ownadd hidden" id="sharedPick" title="공용 폴더의 교과서를 다시 읽어 와요">↻ 공용 폴더</button>
     <button class="btn primary ownadd" id="ownAdd" title="내 컴퓨터의 PDF를 올려서 교과서처럼 메모·형광펜·메모장을 써요">＋ 내 PDF 올리기</button>
     <a class="homelink" href="임용 준비.html#demo">← 수업실연</a>
     <button class="btn fsbtn hidden" title="전체화면" aria-label="전체화면">⛶</button>
@@ -938,13 +941,15 @@ const pdfDel = id => rawDel(id).then(r => { gdMark(id, 'del'); return r; });
    ========================================================= */
 const GOOGLE_CLIENT_ID = '';   // 임용 준비와 같은 값
 const GD_ONFILE = location.protocol === 'file:';
+const GD_TARGET_KEY = 'tblsync:target';   // 마지막으로 맞춘 저장 장소 (own 또는 공용 폴더 id)
 const GD = {
-  scope: 'https://www.googleapis.com/auth/drive.file', folderName: '임용 준비 앱', dataName: 'textbook.json',
+  // drive: 공용 폴더에 함께 저장하고 다른 사람이 만든 파일도 고칠 수 있게 (두 앱이 같은 로그인을 쓰니 같은 값이어야 함)
+  scope: 'https://www.googleapis.com/auth/drive', folderName: '임용 준비 앱', dataName: 'textbook.json',
   get clientId() { return GOOGLE_CLIENT_ID || localStorage.getItem('imysync:client') || ''; },
   get on() { return !GD_ONFILE && localStorage.getItem('imysync:on') === '1'; },
   token: '', exp: 0, state: 'off', msg: '', base: undefined, busy: false, again: false, timer: 0, gsi: null, fetching: new Map()
 };
-const gdLoadTok = () => { try { const t = JSON.parse(localStorage.getItem('imysync:tok')); if (t && t.exp > Date.now()) { GD.token = t.t; GD.exp = t.exp; } } catch {} };
+const gdLoadTok = () => { try { const t = JSON.parse(localStorage.getItem('imysync:tok')); if (t && t.exp > Date.now() && t.s === GD.scope) { GD.token = t.t; GD.exp = t.exp; } /* 권한이 바뀌기 전 로그인은 다시 연결 */ } catch {} };
 gdLoadTok();
 const DAPI = 'https://www.googleapis.com/drive/v3/files', UAPI = 'https://www.googleapis.com/upload/drive/v3/files';
 const gdReady = () => { if (!GD.token || Date.now() >= GD.exp) gdLoadTok(); return !!GD.token && Date.now() < GD.exp; };   // 임용 준비에서 다시 연결했을 수도 있음
@@ -971,15 +976,17 @@ function gdLogin() {
     const tc = google.accounts.oauth2.initTokenClient({client_id: GD.clientId, scope: GD.scope,
       callback: r => {
         if (r.error) return rej(new Error(r.error === 'access_denied' ? '구글 드라이브 사용을 허용하지 않았어요.' : (r.error_description || r.error)));
-        if (!google.accounts.oauth2.hasGrantedAllScopes(r, GD.scope)) return rej(new Error('드라이브 사용 허용에 체크해야 저장할 수 있어요. 다시 연결해 주세요.'));
+        if (!google.accounts.oauth2.hasGrantedAllScopes(r, ...GD.scope.split(' '))) return rej(new Error('드라이브 사용 허용에 모두 체크해야 저장하고 공용 교과서를 볼 수 있어요. 다시 연결해 주세요.'));
         GD.token = r.access_token; GD.exp = Date.now() + (Number(r.expires_in) - 120) * 1000;
-        localStorage.setItem('imysync:tok', JSON.stringify({t: GD.token, exp: GD.exp})); res();
+        localStorage.setItem('imysync:tok', JSON.stringify({t: GD.token, exp: GD.exp, s: GD.scope})); res();
       },
       error_callback: e => rej(new Error(e.type === 'popup_failed_to_open' ? '로그인 창이 막혔어요. 주소창 오른쪽의 팝업 차단을 풀고 다시 눌러 주세요.' : e.type === 'popup_closed' ? '로그인 창이 닫혔어요.' : '로그인하지 못했어요.'))});
     tc.requestAccessToken({prompt: ''});
   }, rej));
 }
 async function gapi(url, opt = {}) {
+  // 공유 드라이브의 파일도 다룰 수 있게 (보통 폴더에는 영향 없음)
+  if (/googleapis\.com\/(upload\/)?drive\/v3\/files/.test(url) && !/supportsAllDrives/.test(url)) url += (url.includes('?') ? '&' : '?') + 'supportsAllDrives=true' + (/[?&]q=/.test(url) ? '&includeItemsFromAllDrives=true' : '');
   if (!gdReady()) throw Object.assign(new Error('구글 드라이브 연결 시간이 끝났어요. ☁️ 다시 연결을 눌러 주세요.'), {auth: true});
   let r;
   try { r = await fetch(url, {...opt, headers: {Authorization: 'Bearer ' + GD.token, ...(opt.headers || {})}}); }
@@ -994,6 +1001,12 @@ async function gapi(url, opt = {}) {
   return r;
 }
 async function gdFolder() {
+  // 공용 폴더가 정해져 있으면 모두 그 폴더에 함께 저장 (일정·Q&A·연습·메모 전부 같이 보고 고침)
+  // 저장 장소가 바뀌면 지난번 맞춘 상태를 버리고 처음 맞추듯 합침 — 이 기기의 기록은 지우지 않고 새 장소에 더해서 올림
+  const target = sharedFolderId() || 'own', was = localStorage.getItem(GD_TARGET_KEY);
+  if (!was) localStorage.setItem(GD_TARGET_KEY, 'own');   // 처음엔 지금까지처럼 내 폴더에 저장해 왔던 걸로
+  if ((was || 'own') !== target) { localStorage.setItem(GD_TARGET_KEY, target); GD.base = null; await rawDel('sync:base').catch(() => {}); }
+  if (target !== 'own') return target;
   const cached = localStorage.getItem('imysync:folder');
   if (cached) {
     const f = await (await gapi(`${DAPI}/${cached}?fields=id,trashed`).catch(e => { if (e.status === 404) return null; throw e; }))?.json();
@@ -1017,7 +1030,8 @@ async function gdUpload(fileId, meta, blob) {
   const bd = 'tbl' + uid(), body = new Blob([`--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${bd}\r\nContent-Type: ${type}\r\n\r\n`, blob, `\r\n--${bd}--`]);
   return (await (await gapi(`${fileId ? UAPI + '/' + fileId : UAPI}?uploadType=multipart&fields=id`, {method: fileId ? 'PATCH' : 'POST', headers: {'Content-Type': 'multipart/related; boundary=' + bd}, body})).json()).id;
 }
-const gdTrash = id => gapi(`${DAPI}/${id}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({trashed: true})}).catch(e => { if (e.status !== 404) throw e; });
+// 공용 폴더에서는 남이 만든 파일을 휴지통에 못 넣을 수 있음(403) — 그때는 목록에서만 빼고 넘어감
+const gdTrash = id => gapi(`${DAPI}/${id}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({trashed: true})}).catch(e => { if (e.status !== 404 && e.status !== 403) throw e; });
 const gdPack = v => v instanceof Blob ? {kind: 'b', blob: v} : {kind: 'j', blob: new Blob([JSON.stringify(v)], {type: 'application/json'})};
 const gdUnpack = async (meta, b) => meta.kind === 'j' ? JSON.parse(await b.text()) : (b.type || !meta.type ? b : new Blob([b], {type: meta.type}));
 // 받는 중 로딩바 (화면 아래 가운데): 무엇을 받는지 · 막대 · 퍼센트 · 받은 양
@@ -1037,7 +1051,7 @@ function dlBar(label) {
 }
 // 드라이브에서 받기 — 받은 만큼 로딩바로 보여 줌 (label 없으면 조용히: 동기화 중 그림·메모장)
 async function gdDownload(meta, label) {
-  const r = await gapi(`${DAPI}/${meta.id}?alt=media`);
+  const r = await gapi(`${DAPI}/${meta.id}?alt=media&supportsAllDrives=true`);   // 공유 드라이브의 공용 교과서도 받을 수 있게
   if (!label || !r.body) return r.blob();
   const total = meta.size || +r.headers.get('Content-Length') || 0, bar = dlBar(label);
   try {
@@ -1142,6 +1156,7 @@ async function gdSync({manual = false} = {}) {
     localStorage.setItem('tblsync:pend', JSON.stringify(p2));
     localStorage.setItem('tblsync:last', String(Date.now()));
     GD.state = 'ok'; GD.msg = '';
+    sharedRefresh();   // 연결·저장이 끝나면 공용 폴더도 다시 읽음 (1분에 한 번까지)
   } catch (e) {
     GD.state = e.auth ? 'need' : 'err'; GD.msg = e.message;
     if (manual || !e.auth) toast(e.message);
@@ -1248,7 +1263,17 @@ function renderLibrary() {
   // 순서: 중1 → 중2 → 중3 → 공통수학1 → 공통수학2
   const rank = n => { let m = n.match(/공통\s*수학\s*([12])/); if (m) return 3 + +m[1]; m = n.match(/수학\s*([123])/); return m ? +m[1] : 9; };
   const byRank = (a, b) => rank(a) - rank(b) || a.localeCompare(b, 'ko');
-  const rest = names.filter(n => !linked.has(n)).sort(byRank);
+  // 공용 폴더에서 고른 교과서: 이 기기에 같은 교과서 PDF가 없을 때만 (있으면 이 기기 것을 씀)
+  const shared = sharedList().map(s => ({...s, an: shMatch(s.name)})).filter(s => !linked.has(s.an));
+  const shHas = new Set(shared.map(s => s.an));
+  const shCard = s => {
+    const t = T[s.an], mine = lsGet(mineKey(s.an), []).length, bm = lsGet(bmKey(s.an), []).length;
+    return `<div class="book shared" data-id="sh:${s.id}">
+      <div class="nm">📗 ${esc(s.an)}</div>
+      <div class="meta"><span><span class="shtag">공용</span>${s.pages ? `${s.pages}쪽 · ` : ''}${t ? `소단원 ${t.subunits.length}` : '분석 없음'}${mine ? ` · 내 노트 ${mine}` : ''}${bm ? ` · 🔖${bm}` : ''}</span>
+      </div></div>`;
+  };
+  const rest = names.filter(n => !linked.has(n) && !shHas.has(n)).sort(byRank);
   // 내가 올린 PDF: 선생님 분석 없이 메모·형광펜·메모장만 씀
   const own = S.books.filter(b => b.own).sort((a, b) => b.added - a.added);
   const ownHtml = own.map(b => {
@@ -1259,6 +1284,7 @@ function renderLibrary() {
   }).join('');
   const mineCards = [
     ...S.books.filter(b => !b.own).map(b => ({n: b.analysis, h: card(b)})),
+    ...shared.map(s => ({n: s.an, h: shCard(s)})),
     ...rest.filter(n => PL[n]).map(n => ({n, h: `<div class="book" data-pack="${esc(n)}">
       <div class="nm">📗 ${esc(n)}</div>
       <div class="meta"><span>${T[n].pages || '?'}쪽 · 소단원 ${T[n].subunits.length}</span><span class="go">처음 열 때 한 번 담아요 ›</span></div></div>`}))
@@ -1269,10 +1295,14 @@ function renderLibrary() {
       <div class="meta"><span>${T[n].pages || '?'}쪽 · 소단원 ${T[n].subunits.length}</span><span class="go">PDF 연결 ›</span></div></div>`).join('');
   // 인터넷 주소에서 교과서 PDF가 빠져 있으면 폴더 넣기 안내
   $('#dropIn').classList.toggle('hidden', GD_ONFILE || (names.length > 0 && !rest.length));
-  box.innerHTML = (packed ? `<div class="libsec" style="grid-column:1/-1">내 교과서</div>${packed}` : '')
+  $('#sharedPick').classList.toggle('hidden', GD_ONFILE || !sharedFolderId());
+  // 공용 폴더가 정해져 있는데 아직 연결 전이면 안내
+  const shNote = sharedFolderId() && !GD_ONFILE && !gdReady() && !sharedList().length
+    ? `<div class="shnote" style="grid-column:1/-1">☁️ <b>공용 교과서</b>를 보려면 구글 드라이브에 연결해 주세요. 연결하면 공용 폴더의 교과서가 여기에 저절로 나와요.</div>` : '';
+  box.innerHTML = shNote + (packed ? `<div class="libsec" style="grid-column:1/-1">내 교과서</div>${packed}` : '')
     + (ownHtml ? `<div class="libsec" style="grid-column:1/-1">내가 올린 PDF</div>${ownHtml}` : '')
     + (need ? `<div class="libsec" style="grid-column:1/-1">PDF를 연결하면 열 수 있어요</div>${need}` : '')
-    + (!names.length && !own.length ?`<div class="empty" style="grid-column:1/-1">${GD_ONFILE ? '분석 자료가 없어요. 아래 <b>분석 파일 업데이트</b>로 교과서분석_모음.json을 불러오세요.'
+    + (!names.length && !own.length && !shared.length ?`<div class="empty" style="grid-column:1/-1">${GD_ONFILE ? '분석 자료가 없어요. 아래 <b>분석 파일 업데이트</b>로 교과서분석_모음.json을 불러오세요.'
       : '교과서가 아직 없어요. 구글 드라이브에 연결돼 있으면 저장해 둔 교과서가 곧 나와요. 처음이라면 위의 안내대로 「임용 준비」 폴더를 이 화면에 끌어다 놓아 주세요.'}</div>` : '');
 }
 let needName = null;
@@ -1430,6 +1460,81 @@ $('#folderInput').onchange = e => {
   e.target.value = ''; importFolder(files);
 };
 
+/* ---------- 공용 폴더 (여럿이 함께 쓰는 교과서) ----------
+   교과서 PDF와 분석 자료(교과서분석_데이터.js)를 모아 둔 공유 폴더·공유 드라이브를 앱에 정해 두면(SHARED_FOLDER_ID),
+   각자 자기 구글 계정으로 연결하기만 해도 그 폴더를 읽어 교과서가 목록에 저절로 나옴 (drive.readonly · 읽기만).
+   폴더 안 목록은 이 기기에만 'tblsh:list' [{id, name, size, pages}], PDF는 처음 열 때 받아 이 기기에만 'meta:pdf:<id>' (내 드라이브엔 안 올림).
+   분석 자료는 바뀌었을 때만 다시 읽음 ('tblsh:teach' = 마지막으로 읽은 파일의 수정 시각) */
+const SHARED_FOLDER_ID = '';   // 공용 폴더 주소의 folders/ 뒤 글자 (비어 있으면 임용 준비 ☁️ 안내 8번에서 넣은 값)
+const sharedFolderId = () => SHARED_FOLDER_ID || localStorage.getItem('imysync:sharedfolder') || '';
+const sharedList = () => { try { return JSON.parse(localStorage.getItem('tblsh:list')) || []; } catch { return []; } };
+const shNorm = s => String(s).replace(/\.pdf$/i, '').replace(/[\s_()\[\]·.\-]/g, '').toLowerCase();
+// 파일 이름 → 분석 이름 (같으면 그대로, 아니면 한쪽이 다른 쪽을 품는 가장 긴 이름). 맞는 분석이 없으면 파일 이름 그대로 (메모·형광펜만)
+function shMatch(name) {
+  const T = Object.keys(getTeach().books), n = shNorm(name);
+  return T.find(k => shNorm(k) === n) || T.filter(k => { const m = shNorm(k); return m && (n.includes(m) || m.includes(n)); }).sort((a, b) => b.length - a.length)[0] || name.replace(/\.pdf$/i, '').trim();
+}
+// 공용 폴더 읽기: 폴더 안(한 단계 아래 폴더까지)의 PDF 목록과 분석 자료
+let shBusy = false, shAt = 0;
+async function sharedRefresh({manual = false} = {}) {
+  const root = sharedFolderId();
+  if (!root || GD_ONFILE || shBusy) return;
+  if (!gdReady()) { if (manual) toast('공용 교과서를 보려면 구글 드라이브에 연결해 주세요. (위쪽 ☁️ 연결)'); return; }
+  if (!manual && Date.now() - shAt < 60000) return;   // 너무 자주 읽지 않게 (1분)
+  shBusy = true; shAt = Date.now();
+  try {
+    const ls = async parent => {
+      const out = []; let page = '';
+      do {
+        const q = encodeURIComponent(`'${parent}' in parents and trashed=false`);
+        const j = await (await gapi(`${DAPI}?q=${q}&fields=nextPageToken,files(id,name,mimeType,size,modifiedTime,appProperties)&pageSize=200&supportsAllDrives=true&includeItemsFromAllDrives=true${page ? '&pageToken=' + page : ''}`)).json();
+        out.push(...(j.files || [])); page = j.nextPageToken || '';
+      } while (page);
+      return out;
+    };
+    let files = await ls(root);
+    for (const d of files.filter(x => x.mimeType === 'application/vnd.google-apps.folder')) files = files.concat(await ls(d.id));
+    // 분석 자료: 이름에 「교과서분석」이 들어간 .js/.json — 바뀌었을 때만 다시 읽음
+    const tf = files.filter(x => /교과서\s*분석.*\.(js|json)$/i.test(x.name)).sort((a, b) => b.modifiedTime.localeCompare(a.modifiedTime))[0];
+    if (tf && localStorage.getItem('tblsh:teach') !== tf.modifiedTime) {
+      const txt = await (await gapi(`${DAPI}/${tf.id}?alt=media&supportsAllDrives=true`)).text();
+      await loadImgs();
+      if (await loadTeach(/\.js$/i.test(tf.name) ? jsObject(txt) : JSON.parse(txt), true)) localStorage.setItem('tblsh:teach', tf.modifiedTime);
+    }
+    const old = sharedList();
+    // 앱이 저장한 파일(자료실 PDF·내가 올린 PDF 등, appProperties.k 있음)은 교과서 목록에서 뺌
+    const list = files.filter(x => !x.appProperties?.k && (x.mimeType === 'application/pdf' || /\.pdf$/i.test(x.name)))
+      .map(x => ({id: x.id, name: x.name, size: +x.size || 0, pages: old.find(o => o.id === x.id)?.pages || 0}));
+    // 폴더에서 빠진 교과서는 이 기기에 받아 둔 것도 지움
+    for (const o of old) if (!list.some(x => x.id === o.id)) await rawDel('meta:pdf:' + o.id).catch(() => {});
+    localStorage.setItem('tblsh:list', JSON.stringify(list));
+    if (!$('#library').classList.contains('hidden')) renderLibrary();
+    if (manual) toast(`공용 폴더에서 교과서 ${list.length}권을 찾았어요.`);
+  } catch (e) {
+    if (e.status === 404) toast('공용 폴더를 찾을 수 없어요. 폴더가 나와 공유됐는지, 폴더 주소가 맞는지 확인해 주세요.');
+    else if (e.status === 403) toast('공용 폴더를 읽을 권한이 없어요. ☁️ 다시 연결해서 드라이브 보기를 허용해 주세요.');
+    else if (manual) toast(e.message);
+  } finally { shBusy = false; }
+}
+// 공용 교과서 열기: 이 기기에 받아 둔 게 있으면 그걸, 없으면 드라이브에서 받기
+async function sharedOpen(fid) {
+  const s = sharedList().find(x => x.id === fid); if (!s) return null;
+  const key = 'meta:pdf:' + fid; let blob = await rawGet(key).catch(() => undefined);
+  if (!blob) {
+    if (!gdReady()) {
+      if (!GD.clientId || GD_ONFILE) { toast('공용 교과서는 구글 드라이브에 연결해야 열 수 있어요.'); return null; }
+      try { await gdLogin(); } catch (e) { toast(e.message); return null; }
+    }
+    try { blob = await gdDownload({id: fid, size: s.size, type: 'application/pdf'}, `공용 교과서 · ${shMatch(s.name)}`); }
+    catch (e) { toast(e.status === 404 ? '공용 폴더에서 이 파일을 찾을 수 없어요. 지워졌거나 공유가 풀렸어요.' : e.message); return null; }
+    await rawPut(key, blob);
+  }
+  return {b: {id: 'sh:' + fid, name: s.name, analysis: shMatch(s.name), pages: s.pages || 0, shared: true}, blob};
+}
+// 서재 위쪽 「↻ 공용 폴더」: 공용 폴더를 다시 읽기 (폴더가 정해져 있고 인터넷 주소로 열었을 때만 보임)
+$('#sharedPick').onclick = () => sharedRefresh({manual: true});
+$('#sharedPick').classList.toggle('hidden', GD_ONFILE || !sharedFolderId());
+
 async function addPdf(file, analysis) {
   if (!/pdf$/i.test(file.type) && !/\.pdf$/i.test(file.name)) return toast('PDF 파일만 올릴 수 있어요.');
   toast('PDF를 읽는 중…');
@@ -1465,8 +1570,11 @@ function buildData(key) {
   return data;
 }
 async function openBook(id) {
-  const b = S.books.find(x => x.id === id); if (!b) return;
-  const blob = await pdfGet(id);
+  let b = S.books.find(x => x.id === id), blob;
+  if (!b && String(id).startsWith('sh:')) {   // 공용 폴더의 교과서
+    const r = await sharedOpen(String(id).slice(3)); if (!r) return;
+    ({b, blob} = r);
+  } else { if (!b) return; blob = await pdfGet(id); }
   if (!blob) return toast('저장된 PDF를 찾을 수 없어요.');
   S.book = b; S.key = b.analysis;
   await loadImgs();
@@ -1479,6 +1587,9 @@ async function openBook(id) {
   if (S.pdf) { S.pdf.destroy(); S.pdf = null; }
   S.pdf = await pdfjsLib.getDocument({data: new Uint8Array(await blob.arrayBuffer())}).promise;
   $('#pageTotal').textContent = S.pdf.numPages;
+  if (b.shared && !b.pages) {   // 공용 교과서: 쪽수를 목록에 적어 둠
+    const L = sharedList(), x = L.find(y => 'sh:' + y.id === b.id); if (x) { x.pages = S.pdf.numPages; localStorage.setItem('tblsh:list', JSON.stringify(L)); }
+  }
   const p1 = await S.pdf.getPage(1);
   S.baseVp = p1.getViewport({scale: 1});
   setView('pdf');
@@ -1501,7 +1612,7 @@ $('#backBtn').onclick = () => {
   $('#pages').innerHTML = ''; S.pageEls = [];
   if (S.pdf) { S.pdf.destroy(); S.pdf = null; }
   $('#work').classList.add('hidden'); $('#library').classList.remove('hidden');
-  renderLibrary();
+  renderLibrary(); sharedRefresh();
 };
 addEventListener('pagehide', () => { padFlush(); if (S.key && S.data) { lsSet(lastKey(S.key), S.cur); lsSet(mineKey(S.key), collectMine()); } });
 
@@ -4089,6 +4200,7 @@ document.addEventListener('keydown', e => {
     $('#libBackup').classList.add('hidden');
     if (GD.clientId) gsiLoad().catch(() => {});
     if (GD.on) gdReady() ? gdSync() : (GD.state = 'need');
+    sharedRefresh();   // 공용 폴더의 교과서 목록 (연결돼 있을 때)
   }
   gdShow();
 })();

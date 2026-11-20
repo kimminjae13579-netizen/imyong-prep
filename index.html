@@ -910,13 +910,17 @@ navigator.storage?.persist?.();
    · 이 앱 전용 값은 'imysync:*' (드라이브로 안 올라감)
    ========================================================= */
 const GOOGLE_CLIENT_ID = '';   // 여기에 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (공개돼도 괜찮은 값)
+const SHARED_FOLDER_ID = '';   // 공용 폴더 (주소의 folders/ 뒤 글자) — 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (교과서 분석과 같은 값)
+const sharedFolderId = () => SHARED_FOLDER_ID || localStorage.getItem('imysync:sharedfolder') || '';
+const GD_TARGET_KEY = 'imysync:target';   // 마지막으로 맞춘 저장 장소 (own 또는 공용 폴더 id)
 const GD = {
-  scope: 'https://www.googleapis.com/auth/drive.file', folderName: '임용 준비 앱',
+  // drive: 공용 폴더에 함께 저장하고 다른 사람이 만든 파일도 고칠 수 있게 (두 앱이 같은 로그인을 쓰니 같은 값이어야 함)
+  scope: 'https://www.googleapis.com/auth/drive', folderName: '임용 준비 앱',
   get clientId() { return GOOGLE_CLIENT_ID || localStorage.getItem('imysync:client') || ''; },
   get on() { return localStorage.getItem('imysync:on') === '1'; },
   token: '', exp: 0, state: 'off', msg: '', base: undefined, busy: false, again: false, timer: 0, gsi: null, fetching: new Map()
 };
-try { const t = JSON.parse(localStorage.getItem('imysync:tok')); if (t && t.exp > Date.now()) { GD.token = t.t; GD.exp = t.exp; } } catch {}
+try { const t = JSON.parse(localStorage.getItem('imysync:tok')); if (t && t.exp > Date.now() && t.s === GD.scope) { GD.token = t.t; GD.exp = t.exp; } /* 권한이 바뀌기 전 로그인은 다시 연결 */ } catch {}
 const DAPI = 'https://www.googleapis.com/drive/v3/files', UAPI = 'https://www.googleapis.com/upload/drive/v3/files';
 const gdReady = () => !!GD.token && Date.now() < GD.exp;
 const gdLast = () => +localStorage.getItem('imysync:last') || 0;
@@ -943,15 +947,17 @@ function gdLogin() {
     const tc = google.accounts.oauth2.initTokenClient({client_id: GD.clientId, scope: GD.scope,
       callback: r => {
         if (r.error) return rej(new Error(r.error === 'access_denied' ? '구글 드라이브 사용을 허용하지 않았어요.' : (r.error_description || r.error)));
-        if (!google.accounts.oauth2.hasGrantedAllScopes(r, GD.scope)) return rej(new Error('드라이브 사용 허용에 체크해야 저장할 수 있어요. 다시 연결해 주세요.'));
+        if (!google.accounts.oauth2.hasGrantedAllScopes(r, ...GD.scope.split(' '))) return rej(new Error('드라이브 사용 허용에 모두 체크해야 저장하고 공용 교과서를 볼 수 있어요. 다시 연결해 주세요.'));
         GD.token = r.access_token; GD.exp = Date.now() + (Number(r.expires_in) - 120) * 1000;
-        localStorage.setItem('imysync:tok', JSON.stringify({t: GD.token, exp: GD.exp})); res();
+        localStorage.setItem('imysync:tok', JSON.stringify({t: GD.token, exp: GD.exp, s: GD.scope})); res();
       },
       error_callback: e => rej(new Error(e.type === 'popup_failed_to_open' ? '로그인 창이 막혔어요. 주소창 오른쪽의 팝업 차단을 풀고 다시 눌러 주세요.' : e.type === 'popup_closed' ? '로그인 창이 닫혔어요.' : '로그인하지 못했어요.'))});
     tc.requestAccessToken({prompt: ''});
   }, rej));
 }
 async function gapi(url, opt = {}) {
+  // 공유 드라이브의 파일도 다룰 수 있게 (보통 폴더에는 영향 없음)
+  if (/googleapis\.com\/(upload\/)?drive\/v3\/files/.test(url) && !/supportsAllDrives/.test(url)) url += (url.includes('?') ? '&' : '?') + 'supportsAllDrives=true' + (/[?&]q=/.test(url) ? '&includeItemsFromAllDrives=true' : '');
   if (!gdReady()) throw Object.assign(new Error('구글 드라이브 연결 시간이 끝났어요. ☁️ 다시 연결을 눌러 주세요.'), {auth: true});
   let r;
   try { r = await fetch(url, {...opt, headers: {Authorization: 'Bearer ' + GD.token, ...(opt.headers || {})}}); }
@@ -966,6 +972,12 @@ async function gapi(url, opt = {}) {
   return r;
 }
 async function gdFolder() {
+  // 공용 폴더가 정해져 있으면 모두 그 폴더에 함께 저장 (일정·Q&A·연습·메모 전부 같이 보고 고침)
+  // 저장 장소가 바뀌면 지난번 맞춘 상태를 버리고 처음 맞추듯 합침 — 이 기기의 기록은 지우지 않고 새 장소에 더해서 올림
+  const target = sharedFolderId() || 'own', was = localStorage.getItem(GD_TARGET_KEY);
+  if (!was) localStorage.setItem(GD_TARGET_KEY, 'own');   // 처음엔 지금까지처럼 내 폴더에 저장해 왔던 걸로
+  if ((was || 'own') !== target) { localStorage.setItem(GD_TARGET_KEY, target); GD.base = null; await rawDel('sync:base').catch(() => {}); }
+  if (target !== 'own') return target;
   const cached = localStorage.getItem('imysync:folder');
   if (cached) {
     const f = await (await gapi(`${DAPI}/${cached}?fields=id,trashed`).catch(e => { if (e.status === 404) return null; throw e; }))?.json();
@@ -999,7 +1011,8 @@ async function gdUpload(fileId, meta, blob) {
   const bd = 'imy' + uid(), body = new Blob([`--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${bd}\r\nContent-Type: ${type}\r\n\r\n`, blob, `\r\n--${bd}--`]);
   return (await (await gapi(`${fileId ? UAPI + '/' + fileId : UAPI}?uploadType=multipart&fields=id`, {method: fileId ? 'PATCH' : 'POST', headers: {'Content-Type': 'multipart/related; boundary=' + bd}, body})).json()).id;
 }
-const gdTrash = id => gapi(`${DAPI}/${id}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({trashed: true})}).catch(e => { if (e.status !== 404) throw e; });
+// 공용 폴더에서는 남이 만든 파일을 휴지통에 못 넣을 수 있음(403) — 그때는 목록에서만 빼고 넘어감
+const gdTrash = id => gapi(`${DAPI}/${id}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({trashed: true})}).catch(e => { if (e.status !== 404 && e.status !== 403) throw e; });
 // 큰 파일 ↔ 드라이브 파일: Blob은 그대로, 나머지(메모장 등)는 JSON으로
 const gdPack = v => v instanceof Blob ? {kind: 'b', blob: v} : {kind: 'j', blob: new Blob([JSON.stringify(v)], {type: 'application/json'})};
 const gdUnpack = async (meta, b) => meta.kind === 'j' ? JSON.parse(await b.text()) : (b.type || !meta.type ? b : new Blob([b], {type: meta.type}));
@@ -1322,12 +1335,20 @@ function gdHomeHtml() {
           <p>위의 <b>구글 드라이브 연결</b>을 누르고 내 계정을 골라요. 「Google에서 확인하지 않은 앱」이 나오면 <b>계속</b>을 누르고, 드라이브 사용을 <b>허용</b>해요.</p></li>
         <li><b class="t">다른 컴퓨터에서</b>
           <p>같은 주소로 앱을 열고 5번처럼 클라이언트 ID를 넣은 뒤, <b>같은 구글 계정</b>으로 연결해요. PDF와 영상은 처음 열 때 드라이브에서 받아 와요.</p></li>
+        <li><b class="t">공용 폴더로 함께 쓰기 (여럿이 같이 편집할 때)</b>
+          <p>① 드라이브에 폴더 하나(또는 공유 드라이브)를 만들고, 교과서 PDF들과 내 컴퓨터 「임용 준비」 폴더의 <b>교과서분석_데이터.js</b>를 넣어요.</p>
+          <p>② 그 폴더를 함께 쓸 사람에게 <b>편집자</b>로 공유해요. 함께 쓸 사람의 구글 계정은 모두 4번의 <b>테스트 사용자</b>에 넣어야 해요.</p>
+          <p>③ 폴더를 열었을 때 주소창의 주소를 아래에 붙여 넣어요. (주소 전체를 넣어도 돼요.)</p>
+          ${SHARED_FOLDER_ID ? '<p>공용 폴더는 앱에 이미 정해져 있어요.</p>' : `<div class="gdkey"><input type="text" id="gdShared" value="${esc(localStorage.getItem('imysync:sharedfolder') || '')}" placeholder="https://drive.google.com/drive/folders/…" aria-label="공용 폴더 주소" autocomplete="off" spellcheck="false"><button class="btn" data-gd="savefolder">저장</button></div>`}
+          <p>④ 각자 자기 구글 계정으로 연결하고 「Google Drive 파일 보기·수정·삭제」를 허용해요. 그러면 <b>일정, Q&amp;A, 연습 폴더·영상·평가, 자료실, 교과서 메모·형광펜·메모장이 모두 공용 폴더에 함께 저장</b>돼서, 한 사람이 쓰거나 고치면 모두에게 보여요. 공용 폴더의 교과서는 교과서 분석에 저절로 나와요.</p>
+          <p>⑤ 처음 공용 폴더로 바꿀 때 이 기기에 있던 기록은 지워지지 않고 공용 폴더에 더해져요.</p>
+          <p class="gdbad">⚠️ 교과서 PDF는 저작권이 있어요. 공용 폴더는 함께 공부하는 사람에게만 공유하고 「링크가 있는 모든 사용자」로는 열지 마세요. 공용 폴더에 쓴 것은 함께 쓰는 사람 모두가 보고 지울 수 있어요.</p></li>
       </ol>
       <div class="gdnote"><b>알아 두기</b><ul>
         <li><b>지금까지 파일로 열어 쓰던 기록 옮기기:</b> 파일로 연 앱에서 ⚙️ → <b>전부 옮기기 → 내보내기</b>(영상 포함)를 누르고, 새 주소에서 ⚙️ → <b>불러오기</b>로 그 파일을 넣은 뒤 연결해요.</li>
         <li><b>교과서 분석 (처음 한 번):</b> 새 주소의 교과서 분석을 열고, 내 컴퓨터의 <b>「임용 준비」 폴더를 그 화면에 끌어다 놓아요.</b> 교과서 PDF와 분석 자료만 골라 담아 드라이브에 올려요. 다 올라갈 때까지 창을 닫지 마세요. 그다음부터는 어느 컴퓨터에서든 교과서를 누르면 바로 열려요.</li>
         <li>연결은 한 시간쯤 지나면 끊겨요. 위쪽 ☁️에 <b>다시 연결</b>이 보이면 눌러 주세요. 그동안 쓴 기록은 이 컴퓨터에 있다가 다시 연결하면 올라가요.</li>
-        <li>드라이브에 「${GD.folderName}」 폴더가 생겨요. 이 앱은 그 폴더 말고 드라이브의 다른 파일은 볼 수 없어요.</li>
+        <li>공용 폴더를 정하지 않으면 기록은 내 드라이브의 「${GD.folderName}」 폴더에 저장돼요. 공용 폴더를 정하면 모든 기록이 그 공용 폴더에 함께 저장돼요. (연결할 때 「파일 보기·수정·삭제」를 묻는 건 공용 폴더에 함께 저장하고 고치기 위해서예요.)</li>
         <li>지운 기록의 영상·파일은 드라이브 휴지통으로 가요 (30일 동안 되살릴 수 있어요).</li>
         <li>교과서 분석도 이 연결을 같이 써요. 여기서 연결하면 교과서 분석도 따로 연결할 필요 없어요. (API 키는 컴퓨터마다 따로 넣어요.)</li>
       </ul></div>
@@ -1375,6 +1396,13 @@ document.addEventListener('click', e => {
   if (a === 'sync') return gdSync({manual: true});
   if (a === 'off') return gdDisconnect();
   if (a === 'copy') { navigator.clipboard?.writeText(location.origin).then(() => toast('주소를 복사했어요'), () => toast('복사하지 못했어요. 직접 골라 복사해 주세요.')); return; }
+  if (a === 'savefolder') {   // 공용 교과서 폴더 — 주소 전체를 넣어도 folders/ 뒤 글자만 씀 (교과서 분석이 같이 씀)
+    const raw = $('#gdShared').value.trim(), v = (raw.match(/folders\/([\w-]{10,})/) || raw.match(/[?&]id=([\w-]{10,})/) || [, raw])[1];
+    if (v && !/^[\w-]{10,}$/.test(v)) return toast('폴더 주소를 다시 확인해 주세요. 드라이브에서 폴더를 열었을 때 주소창의 주소예요.');
+    v ? localStorage.setItem('imysync:sharedfolder', v) : localStorage.removeItem('imysync:sharedfolder');
+    $('#gdShared').value = v || '';
+    return toast(v ? '공용 폴더를 저장했어요. 교과서 분석을 열면 그 폴더의 교과서가 나와요.' : '공용 폴더를 지웠어요.');
+  }
   if (a === 'saveid') {
     const v = $('#gdClient').value.trim();
     if (v && !/\.apps\.googleusercontent\.com$/.test(v)) return toast('클라이언트 ID는 .apps.googleusercontent.com으로 끝나요. 다시 확인해 주세요.');
