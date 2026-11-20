@@ -804,6 +804,43 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .ev[data-c=r],.colr[data-c=r],.upi[data-c=r]{--c:#C9412F;--cs:#FBE4E0}
 .ev[data-c=p],.colr[data-c=p],.upi[data-c=p]{--c:#7A4FB0;--cs:#EEE5F8}
 .calhint{font-size:14px;color:var(--sub);margin:-8px 0 18px}
+/* 일정 위 📌 2차 준비 방법 */
+.prepg{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:26px 0 0;overflow:hidden}
+.prepg summary{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px;padding:14px 18px;cursor:pointer;list-style:none;min-height:52px}
+.prepg summary::-webkit-details-marker{display:none}
+.prepg summary::before{content:'▸';color:var(--sub);transition:transform .15s;display:inline-block}
+.prepg[open] summary::before{transform:rotate(90deg)}
+.prepg .pgt{font-family:var(--serif);font-size:20px;font-weight:700}
+.prepg .pgnow{font-size:14px;color:var(--sub)}
+.prepg .pgnow b{color:var(--ink);background:var(--hl-soft);border-radius:5px;padding:0 6px}
+.pgtabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 18px 14px}
+.pgtab{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:#F5F8F6;border-radius:9px;padding:10px 14px;min-height:52px}
+.pgtab b{font-size:16px}
+.pgtab span{font-size:13.5px;color:var(--sub)}
+.pgtab small{font-variant-numeric:tabular-nums}
+.pgtab i{position:absolute;right:10px;top:9px;font-style:normal;font-size:12px;font-weight:700;background:var(--hl);color:var(--ink);border-radius:999px;padding:1px 9px}
+.pgtab.on{background:var(--card);border-color:var(--ink);box-shadow:inset 0 -3px 0 var(--ink)}
+.pgbody{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:0 18px 6px}
+.pgbody[hidden]{display:none}
+.pgcol{border:1px solid var(--line);border-top:5px solid var(--c);border-radius:9px;padding:12px 16px 6px;background:#fff}
+.pgcol.demo{--c:var(--demo);--cs:var(--demo-soft)}
+.pgcol.intv{--c:var(--intv);--cs:var(--intv-soft)}
+.pgcol h3{margin:0 0 10px;font-size:18px;color:var(--c);display:flex;flex-direction:column;gap:4px}
+.pgcol h3 small{font-size:14px;font-weight:700;color:var(--ink);background:var(--cs);border-radius:6px;padding:4px 9px;align-self:flex-start}
+.pgg{margin-bottom:12px}
+.pgg>b{display:block;font-size:16.5px;color:var(--ink);margin-bottom:4px}
+.pgg ul{margin:0;padding-left:18px;line-height:1.65;font-size:15px}
+.pgg li{margin-bottom:3px}
+.pgg li::marker{color:var(--c)}
+.pgg li b{color:var(--c)}
+.pgg a{color:var(--c);font-weight:700}
+.pgem{font-weight:800;color:var(--warn);background:var(--hl-soft);border-radius:4px;padding:0 4px}
+.pgnote{font-size:13px;color:var(--sub);margin:4px 18px 14px}
+@media (max-width:700px){
+  .prepg summary,.pgtabs,.pgbody{padding-left:12px;padding-right:12px}
+  .pgnote{margin-left:12px;margin-right:12px}
+  .pgbody{grid-template-columns:1fr}
+}
 /* 휴대폰에서 일정: 달력 아래 다가오는 일정 목록 (넓은 화면에서는 숨김) */
 .uplist{display:none}
 @media (max-width:700px){
@@ -2246,12 +2283,90 @@ function upcomingHtml(evs) {
       <span class="ut"><b>${esc(e.title)}</b>${e.time || e.memo ? `<small>${esc([e.time, e.memo].filter(Boolean).join(' · '))}</small>` : ''}</span>
       <span class="dd">${dday(e.date)}</span></button>`).join('') : '<p class="upnone">앞으로 남은 일정이 없어요.</p>'}</section>`;
 }
+/* ---------- 📌 2차 준비 방법 (최종합격자료 「2차 준비 방법」 정리, 장치는 뺌) ----------
+   1단계 = 1차 시험 끝 ~ 1차 발표, 2단계 = 1차 발표 ~ 2차 시험 (작년: 11/23 ~ 12/26 ~ 1/20)
+   나누는 날짜: 일정에 「1차 … 발표」가 있으면 그 날짜, 없으면 PREP_SPLIT_DEFAULT */
+const PREP_SPLIT_DEFAULT = '2026-12-29';   // 2026 1차 발표
+const PREP_END = '2027-01-21';             // 2차: 1/20 수업실연, 1/21 면접
+const PREP_GUIDE = [
+  {name: '1단계', when: '1차 시험 끝 → 1차 발표',
+    demo: {motto: '시간 재지 말고, 하나를 오래 생각하기', groups: [
+      {g: '수업 구상', items: [
+        '첫 한 달은 <b>시간 재지 말고</b> 하고 싶은 것 다 해 보기',
+        '<b>어떤 질문을 할지</b>를 중점으로 — 교사·학생 상호작용으로 학생이 내용을 발견하게',
+        '구상할 때 <b>질문만 쭉 적어서</b> 수업을 짜 보기',
+        '한 수업을 여러 명이 해 봐도 좋음 · 같은 문제를 초수는 2주, 재수는 3~4주']},
+      {g: '교과서·지도서', items: [
+        '지도서 보기 전에 <b>교과서를 한 줄씩</b> 읽으며 의미 해석하기',
+        '교과서를 다 본 뒤 지도서로 오개념 파악하기',
+        '지도서 중요도: <b>증명과정 &gt; 동기유발 &gt; 오개념 &gt; 공학도구</b>',
+        '단원평가 문제 풀어 보기 — 오개념 파악이 잘 됨',
+        '공학도구는 <b>카훗 · 알지오매스 · 통그라미</b>만 익혀도 충분']},
+      {g: '판서', items: [
+        '판서 연습 매우 중요 — 초반에 좋은 습관 들이기, 첫 한 달 많이 해 보기',
+        '<b>말하지 않고 글로만</b> 천천히 써 보기',
+        '글씨체는 그대로 두고 <b>글씨 크기와 줄 간격</b>을 신경 쓰기']}
+    ]},
+    intv: {motto: '정리해 두고 하루 한 번 보기', groups: [
+      {g: '정리', items: [
+        '장르별 답을 최대한 많이 생각해 <b>한 곳에 정리</b> (내 생각 + 시책 + 인강) → <a href="#intv/types">유형정리</a>',
+        '<b>외울 필요 없음</b> — 다 정리하면 하루에 한 번씩 읽기',
+        '<b>나의 교직관 2개</b> 정해 두기']},
+      {g: '연습', items: [
+        '실전 연습은 안 해도 됨 (한 달이면 충분) — <b>그 시간에 실연 연습 더</b>',
+        '중요한 장르는 스터디원끼리 같이 이야기해 보기']}
+    ]}},
+  {name: '2단계', when: '1차 발표 → 2차 시험 (실연 1/20 · 면접 1/21)',
+    demo: {motto: '시간 안에 끝내기가 무조건 1순위', groups: [
+      {g: '실전 연습', items: [
+        '<b>시간 재고</b> 연습하기 — 시간 안에 끝내는 것이 1순위',
+        '분필은 <b>한 가지 색</b>으로만 연습 (여러 색을 쓸 수 있어도 하나면 충분)',
+        '칠판에 <b>어떤 내용을 쓸지</b> 정하기',
+        '연습만이 살 길']}
+    ]},
+    intv: {motto: '외우지 말고 무조건 말로 해 보기', groups: [
+      {g: '시책', items: [
+        '<b>신년 시책 필독</b> — 쓸 수 있는 장치를 정리하고 연습 때 꼭 말해 보기',
+        '시책 내용을 많이 넣을수록 답변 질이 좋아짐']},
+      {g: '말하기 연습', items: [
+        '외운다고 머리에 남지 않음 — <b>무조건 말로</b> 해 보기',
+        '면접레시피 뒤 <b>모의고사 30회</b> 해 보기',
+        '즉답형: <b>구상 시간 + 듣는 시간을 1분 미만</b>으로 줄여야 시간을 지킴']},
+      {g: '답변 구조', items: [
+        '서론 없이 <b>두괄식</b> → 어떻게 하겠다 / 이게 무엇이다 → 기대점·장점',
+        '<b>구체적인 방안</b>으로 (예: 평가 시스템을 쓰겠다 → <b>채움AI</b>를 쓰겠다)',
+        '<span class="pgem">학교에서 반드시 거치는 절차는 꼭 외우기</span> (생명존중위원회, 학폭 발생 시 순서)']}
+    ]}}
+];
+function prepSplit(evs) {
+  const ev = evs.filter(e => /1차/.test(e.title) && /발표/.test(e.title)).sort(evSort)[0];
+  return {date: ev ? ev.date : PREP_SPLIT_DEFAULT, fromEv: !!ev};
+}
+const prepCol = (kind, c) => `<div class="pgcol ${kind}"><h3>${kind === 'demo' ? '수업실연' : '면접'}<small>${c.motto}</small></h3>
+  ${c.groups.map(g => `<div class="pgg"><b>&lt;${g.g}&gt;</b><ul>${g.items.map(x => `<li>${x}</li>`).join('')}</ul></div>`).join('')}</div>`;
+function prepGuideHtml(evs) {
+  const sp = prepSplit(evs), now = todayStr() < sp.date ? 0 : 1;
+  const pick = now;   // 열 때마다 지금 단계부터 보여 줌
+  let open = true; try { open = localStorage.getItem('imyui:prepOpen') !== '0'; } catch {}
+  const range = i => i === 0 ? `~ ${mdStr(sp.date)}` : `${mdStr(sp.date)} ~ ${mdStr(PREP_END)}`;
+  return `<details class="prepg" id="prepG" ${open ? 'open' : ''}><summary><span class="pgt">📌 2차 준비 방법</span><span class="pgnow">지금은 <b>${PREP_GUIDE[now].name}</b> · ${PREP_GUIDE[now].when}</span></summary>
+    <div class="pgtabs" role="tablist">${PREP_GUIDE.map((p, i) => `<button role="tab" class="pgtab ${i === pick ? 'on' : ''}" data-pg="${i}" aria-selected="${i === pick}">
+      <b>${p.name}</b><span>${p.when} <small>${range(i)}</small></span>${i === now ? '<i>지금</i>' : ''}</button>`).join('')}</div>
+    ${PREP_GUIDE.map((p, i) => `<div class="pgbody" data-pgb="${i}" ${i === pick ? '' : 'hidden'}>${prepCol('demo', p.demo)}${prepCol('intv', p.intv)}</div>`).join('')}
+    <p class="pgnote">${sp.fromEv ? `1차 발표 일정(${mdStr(sp.date)})을 기준으로 단계를 나눴어요.` : `달력에 「1차 발표」 일정을 넣으면 그 날짜로 단계를 나눠요. 지금은 ${mdStr(sp.date)} 기준이에요.`}</p></details>`;
+}
 function renderSched() {
   const evs = D.sched;
   app().innerHTML = `<div class="lhead"><h1 class="h1">일정</h1><button class="btn primary" id="addEv">＋ 일정 추가</button></div>
     <p class="calhint">날짜 칸을 누르면 그날에 일정을 넣어요. 일정을 누르면 고치거나 지울 수 있고, 끌어서 다른 날로 옮길 수 있어요.</p>
     <div class="calwrap">${CAL_MONTHS.map(([y, m]) => calMonth(y, m, evs)).join('')}</div>
-    ${upcomingHtml(evs)}`;
+    ${upcomingHtml(evs)}
+    ${prepGuideHtml(evs)}`;
+  $('#prepG').ontoggle = e => { try { localStorage.setItem('imyui:prepOpen', e.target.open ? '1' : '0'); } catch {} };
+  $$('.pgtab').forEach(b => b.onclick = () => {
+    $$('.pgtab').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b); });
+    $$('.pgbody').forEach(x => x.hidden = x.dataset.pgb !== b.dataset.pg);
+  });
   $('#addEv').onclick = () => { const t = todayStr(); editEv(null, t >= CAL_MIN && t <= CAL_MAX ? t : CAL_MIN); };
   $$('.upi').forEach(b => b.onclick = () => { const ev = D.sched.find(x => x.id === b.dataset.id); ev && editEv(ev); });
   $$('.cday[data-d]').forEach(c => c.onclick = e => { if (!e.target.closest('.ev')) editEv(null, c.dataset.d); });
