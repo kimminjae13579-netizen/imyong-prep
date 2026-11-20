@@ -611,6 +611,9 @@ body:has(#library:not(.hidden)){background-image:linear-gradient(var(--grid) 1px
 #library h1{font-family:var(--serif);font-size:40px;font-weight:700;letter-spacing:-1px}
 .homelink{background:var(--panel);border-color:#C4D0CA;color:var(--ink);font-weight:500;min-height:44px;display:inline-flex;align-items:center}
 .homelink:hover{color:var(--accent);border-color:var(--accent)}
+.libtop{flex-wrap:wrap}
+.ownadd{min-height:44px;white-space:nowrap}
+.book.own::before{background:#2B4170}
 .libsec{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--ink)}
 .books{gap:18px}
 .book{position:relative;min-height:132px;display:flex;flex-direction:column;justify-content:space-between;padding:18px 16px 14px 28px;border:1px solid var(--line);border-radius:3px 8px 8px 3px;background:var(--panel);box-shadow:var(--shadow)}
@@ -721,12 +724,35 @@ body.padOn .main{grid-template-columns:270px 1fr 440px}
 /* 내 메모는 초록 */
 .pin.hlt.mine.memo,.mnote.mine.memo,.pin.hlt.memo.hltmp{--c:#2F9E44;--cbg:#EBFBEE;--ct:#2B8A3E;--hl:rgba(64,192,87,.32)}
 .tool[data-type="memo"].on{outline:3px solid #2F9E44;background:#D3F9D8;border-color:#2F9E44}
+/* 내 메모 형광펜 색: 노랑·파랑·초록(기본)·보라 */
+.pin.hlt.mine.memo[data-hc=y],.mnote.mine.memo[data-hc=y],.pin.hlt.memo.hltmp[data-hc=y]{--c:#E0A800;--cbg:#FFF9DB;--ct:#8A5A00;--hl:rgba(250,204,21,.42)}
+.pin.hlt.mine.memo[data-hc=b],.mnote.mine.memo[data-hc=b],.pin.hlt.memo.hltmp[data-hc=b]{--c:#1C7ED6;--cbg:#E7F5FF;--ct:#1864AB;--hl:rgba(77,171,247,.34)}
+.pin.hlt.mine.memo[data-hc=p],.mnote.mine.memo[data-hc=p],.pin.hlt.memo.hltmp[data-hc=p]{--c:#7048E8;--cbg:#F3F0FF;--ct:#5F3DC4;--hl:rgba(132,94,247,.3)}
+.hcd[data-hc=y]{--hb:#E0A800} .hcd[data-hc=b]{--hb:#1C7ED6} .hcd[data-hc=g]{--hb:#2F9E44} .hcd[data-hc=p]{--hb:#7048E8}
+.hcsec{display:flex;flex-direction:column;align-items:center;gap:6px;border-top:1px solid var(--line);padding-top:9px}
+.hcl{font-size:12.5px;font-weight:700;color:var(--sub);text-align:center;line-height:1.3}
+.hcols{display:grid;grid-template-columns:repeat(2,34px);gap:8px;justify-content:center}
+.hcd{width:34px;height:34px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px #B9C6C0;padding:0;background:var(--hb);cursor:pointer}
+.hcd:hover{box-shadow:0 0 0 2px var(--hb)}
+.hcd.on{box-shadow:0 0 0 3px var(--ink)}
+.hcall{border:1px solid #C4D0CA;background:#fff;border-radius:999px;padding:3px 0;font-size:13px;font-weight:700;width:76px;min-height:32px;cursor:pointer}
+.hcall.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.mcolrow{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px;color:var(--sub);font-weight:700}
+.mcolrow .hcd{width:30px;height:30px}
 /* 메모장 */
 .pad{display:none;flex-direction:column;min-height:0;background:var(--card,#fff);border-left:1px solid var(--line)}
 body.padOn .pad{display:flex}
 .padh{display:flex;align-items:center;gap:8px;padding:10px 12px 8px 16px;border-bottom:1px solid var(--line)}
 .padh b{font-size:16px}
 .padsave{flex:1;font-size:12px;color:var(--sub)}
+/* 메모장 여러 장: 메모1, 메모2 … */
+.padtabs{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+.padtab{flex:none;border:1px solid #C4D0CA;background:#fff;border-radius:8px;padding:5px 13px;font-size:14px;font-weight:700;min-height:38px;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.padtab:hover{border-color:var(--accent)}
+.padtab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.padtabs .padren{flex:none;min-width:36px;min-height:36px;font-size:16px}
+.padadd{flex:none;border:1px dashed #9FB3AA;background:transparent;border-radius:8px;padding:5px 12px;font-size:14px;font-weight:700;min-height:38px;color:var(--sub);white-space:nowrap;cursor:pointer}
+.padadd:hover{border-color:var(--accent);color:var(--accent);background:#F3F7F5}
 .padtools{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
 .padmode{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
 .padmode button{flex:1;border:none;background:#fff;padding:8px 4px;font-size:14px;font-weight:700;min-height:40px;color:var(--ink)}
@@ -763,6 +789,7 @@ body.docking .pad{display:none}
 <section id="library">
   <div class="libtop">
     <h1>📘 교과서 분석</h1>
+    <button class="btn primary ownadd" id="ownAdd" title="내 컴퓨터의 PDF를 올려서 교과서처럼 메모·형광펜·메모장을 써요">＋ 내 PDF 올리기</button>
     <a class="homelink" href="임용 준비.html#demo">← 수업실연</a>
   </div>
   <div class="gdlib hidden" id="gdLib"></div>
@@ -826,11 +853,14 @@ body.docking .pad{display:none}
         <div class="ph">내 노트</div>
         <button class="tool" data-type="memo" title="누른 뒤 교과서 글에 형광펜을 칠하세요">📝<span>메모</span></button>
         <button class="tool" data-type="mc" title="누른 뒤 교과서 글에 형광펜을 칠하세요">⚠️<span>오개념</span></button>
+        <div class="hcsec"><div class="hcl">메모 형광펜 색</div><div class="hcols" id="hcPen"></div></div>
+        <div class="hcsec"><div class="hcl">색만 보기</div><button class="hcall on" data-only="">전체</button><div class="hcols" id="hcOnly"></div></div>
       </div>
     </div>
     <aside class="panel" id="panel"></aside>
     <aside class="pad" id="pad" aria-label="내 메모장">
       <div class="padh"><b>📒 내 메모장</b><span class="padsave" id="padSave"></span><button class="iconbtn" id="padClose" title="메모장 닫기" aria-label="메모장 닫기">✕</button></div>
+      <div class="padtabs" id="padTabs" role="tablist" aria-label="메모장 고르기"></div>
       <div class="padtools">
         <div class="padmode" role="group" aria-label="쓰는 방법">
           <button data-pm="type" class="on" title="키보드로 쓰기">⌨️ 글</button><button data-pm="pen" title="펜으로 쓰기">✏️ 펜</button><button data-pm="erase" title="펜 글씨 지우기">🧽 지우개</button>
@@ -1217,8 +1247,16 @@ function renderLibrary() {
   const rank = n => { let m = n.match(/공통\s*수학\s*([12])/); if (m) return 3 + +m[1]; m = n.match(/수학\s*([123])/); return m ? +m[1] : 9; };
   const byRank = (a, b) => rank(a) - rank(b) || a.localeCompare(b, 'ko');
   const rest = names.filter(n => !linked.has(n)).sort(byRank);
+  // 내가 올린 PDF: 선생님 분석 없이 메모·형광펜·메모장만 씀
+  const own = S.books.filter(b => b.own).sort((a, b) => b.added - a.added);
+  const ownHtml = own.map(b => {
+    const mine = lsGet(mineKey(b.analysis), []).length, bm = lsGet(bmKey(b.analysis), []).length;
+    return `<div class="book own" data-id="${b.id}"><div class="nm">📄 ${esc(b.analysis)}</div>
+      <div class="meta"><span>${b.pages}쪽${mine ? ` · 내 노트 ${mine}` : ''}${bm ? ` · 🔖${bm}` : ''}</span>
+      <button class="iconbtn del" data-id="${b.id}" title="PDF 지우기">🗑</button></div></div>`;
+  }).join('');
   const mineCards = [
-    ...S.books.map(b => ({n: b.analysis, h: card(b)})),
+    ...S.books.filter(b => !b.own).map(b => ({n: b.analysis, h: card(b)})),
     ...rest.filter(n => PL[n]).map(n => ({n, h: `<div class="book" data-pack="${esc(n)}">
       <div class="nm">📗 ${esc(n)}</div>
       <div class="meta"><span>${T[n].pages || '?'}쪽 · 소단원 ${T[n].subunits.length}</span><span class="go">처음 열 때 한 번 담아요 ›</span></div></div>`}))
@@ -1230,8 +1268,9 @@ function renderLibrary() {
   // 인터넷 주소에서 교과서 PDF가 빠져 있으면 폴더 넣기 안내
   $('#dropIn').classList.toggle('hidden', GD_ONFILE || (names.length > 0 && !rest.length));
   box.innerHTML = (packed ? `<div class="libsec" style="grid-column:1/-1">내 교과서</div>${packed}` : '')
+    + (ownHtml ? `<div class="libsec" style="grid-column:1/-1">내가 올린 PDF</div>${ownHtml}` : '')
     + (need ? `<div class="libsec" style="grid-column:1/-1">PDF를 연결하면 열 수 있어요</div>${need}` : '')
-    + (!names.length ? `<div class="empty" style="grid-column:1/-1">${GD_ONFILE ? '분석 자료가 없어요. 아래 <b>분석 파일 업데이트</b>로 교과서분석_모음.json을 불러오세요.'
+    + (!names.length && !own.length ?`<div class="empty" style="grid-column:1/-1">${GD_ONFILE ? '분석 자료가 없어요. 아래 <b>분석 파일 업데이트</b>로 교과서분석_모음.json을 불러오세요.'
       : '교과서가 아직 없어요. 구글 드라이브에 연결돼 있으면 저장해 둔 교과서가 곧 나와요. 처음이라면 위의 안내대로 「임용 준비」 폴더를 이 화면에 끌어다 놓아 주세요.'}</div>` : '');
 }
 let needName = null;
@@ -1240,6 +1279,14 @@ $('#books').addEventListener('click', async e => {
   if (del) {
     e.stopPropagation();
     const b = S.books.find(x => x.id === del.dataset.id);
+    if (b.own) {   // 내가 올린 PDF는 메모·책갈피·메모장까지 함께 지움
+      if (!confirm(`'${b.analysis}' PDF를 지울까요?\n여기에 단 메모·책갈피·메모장도 함께 지워져요.`)) return;
+      S.books = S.books.filter(x => x.id !== b.id); saveBooks(); await pdfDel(b.id);
+      const k = b.analysis;
+      for (const p of lsGet('tbl:padlist:' + k, [{id: ''}])) await pdfDel('pad:' + k + (p.id ? ':' + p.id : '')).catch(() => {});
+      [mineKey(k), bmKey(k), ansKey(k), lastKey(k), 'tbl:padlist:' + k, 'tbl:padcur:' + k].forEach(x => localStorage.removeItem(x));
+      gdSoon?.(); renderLibrary(); return;
+    }
     if (!confirm(`'${b.analysis}' PDF 연결을 지울까요?\n(내 노트·책갈피·답안은 남아요)`)) return;
     S.books = S.books.filter(x => x.id !== b.id); saveBooks();
     await pdfDel(b.id); renderLibrary(); return;
@@ -1283,7 +1330,26 @@ async function openPacked(name) {
   } catch (err) { console.error(err); toast('교과서 PDF를 담지 못했어요: ' + err.message); }
   finally { bar.remove(); packing = false; }
 }
-$('#pdfInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) addPdf(f, needName); needName = null; };
+let ownPick = false;
+$('#pdfInput').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) ownPick ? addOwnPdf(f) : addPdf(f, needName); needName = null; ownPick = false; };
+// ＋ 내 PDF 올리기: 선생님 분석이 없는 아무 PDF나 올려서 메모·형광펜·메모장을 씀
+$('#ownAdd').onclick = () => { ownPick = true; needName = null; $('#pdfInput').click(); };
+async function addOwnPdf(file) {
+  if (!/pdf$/i.test(file.type) && !/\.pdf$/i.test(file.name)) return toast('PDF 파일만 올릴 수 있어요.');
+  toast('PDF를 읽는 중…');
+  try {
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjsLib.getDocument({data: buf.slice(0)}).promise;
+    // 이름(= 메모 저장 이름)이 선생님 교과서나 이미 올린 PDF와 겹치지 않게
+    const base = file.name.replace(/\.pdf$/i, '').trim() || '내 PDF', T = getTeach().books;
+    let name = base, n = 2; while (T[name] || S.books.some(b => b.analysis === name)) name = `${base} (${n++})`;
+    const id = uid();
+    await pdfPut(id, new Blob([buf], {type: 'application/pdf'}));
+    S.books.unshift({id, name, analysis: name, pages: doc.numPages, added: Date.now(), own: true});
+    saveBooks(); doc.destroy();
+    openBook(id);
+  } catch (err) { console.error(err); toast('PDF를 열 수 없어요: ' + err.message); }
+}
 
 /* ---------- 내 컴퓨터 폴더 넣기 (인터넷 주소에서 처음 한 번) ----------
    「임용 준비」 폴더를 서재에 끌어다 놓거나 골라 주면, 그 안에서 분석 자료(교과서분석_데이터.js)와
@@ -1743,6 +1809,7 @@ function addItemAt(type, page, x, y, rects) {
   let s = suAtPage(page) || sorted()[0];
   if (!s) { s = newSu('내 노트', 1); S.data.subunits.push(s); }
   const it = newItem(type); it.mine = true; it.pos = rects ? {page, x, y, rects} : {page, x, y};
+  if (type === 'memo') { it.color = S.pen; if (S.only && S.only !== S.pen) { S.only = null; hcUi(); } }   // 고른 형광펜 색 · 다른 색만 보던 중이면 전체로
   S.editPage = page;
   s[TYPES[type].list].push(it); saveData();
   S.sel = s.id; S.selItem = it.id; refreshAll();
@@ -1802,7 +1869,7 @@ function renderPins() {
     const m = S.pageEls[n].querySelector('.margin'); m.innerHTML = ''; m.style.height = m.style.width = '';
   }
   const byPage = {};
-  for (const x of allItems()) if (x.it.pos && S.pageEls[x.it.pos.page]) (byPage[x.it.pos.page] ||= []).push(x);
+  for (const x of allItems()) if (x.it.pos && S.pageEls[x.it.pos.page] && hcShown(x)) (byPage[x.it.pos.page] ||= []).push(x);
   for (const pg in byPage) {
     const row = S.pageEls[pg], list = byPage[pg];
     list.sort((a, b) => a.it.pos.y - b.it.pos.y || a.it.pos.x - b.it.pos.x);
@@ -1810,6 +1877,7 @@ function renderPins() {
       const el = document.createElement('div'), p = it.pos;
       const R = type !== 'mark' && hlRects(p);
       el.className = `pin ${type}${R ? ' hlt' : ''}${it.mine ? ' mine' : ''}${it.id === S.selItem ? ' sel' : ''}`;
+      if (type === 'memo' && it.mine) el.dataset.hc = it.color || 'g';
       el.dataset.id = it.id;
       if (R) {
         hlFill(el, R); addHandles(el); el.insertAdjacentHTML('beforeend', `<span class="ulab">${pinLabel(type, it, s)}</span>`);
@@ -1847,6 +1915,7 @@ function layoutNotes(row, list) {
   const els = list.map(x => {
     const el = document.createElement('div');
     el.className = `mnote ${x.type}${x.it.mine ? ' mine' : ''}${x.it.id === S.selItem ? ' sel' : ''}`; el.dataset.id = x.it.id;
+    if (x.type === 'memo' && x.it.mine) el.dataset.hc = x.it.color || 'g';
     el.innerHTML = noteHtml(x); m.appendChild(el); return el;
   });
   renderMath(m);
@@ -1897,6 +1966,29 @@ function hlFill(el, R) {
 // 편집 모드: 칠한 조각 양 끝에 크기 조절 손잡이
 function addHandles(el) { if (S.mode === 'edit') el.querySelectorAll('.hr').forEach(h => h.innerHTML = '<b class="hh l" title="끌어서 길이 조절"></b><b class="hh r" title="끌어서 길이 조절"></b>'); }
 const JOSA = {task: '를', memo: '를', mc: '을'};
+/* 내 메모 형광펜 색 (노랑·파랑·초록·보라) · 색만 보기 — 예전 메모는 색이 없으면 초록 */
+const HC = [['y', '노랑'], ['b', '파랑'], ['g', '초록'], ['p', '보라']];
+const HC_DOTS = k => HC.map(([c, n]) => `<button type="button" class="hcd" data-hc="${c}" data-${k}="${c}" title="${n}" aria-label="${n}"></button>`).join('');
+S.pen = lsGet('tbl:pen', 'g'); S.only = null;
+// 색만 보기: 그 색으로 칠한 내 메모만 남기고 나머지 표시는 숨김
+const hcShown = x => !S.only || (x.type === 'memo' && x.it.mine && (x.it.color || 'g') === S.only && hlRects(x.it.pos));
+function hcUi() {
+  document.querySelectorAll('#hcPen .hcd').forEach(b => b.classList.toggle('on', b.dataset.pen === S.pen));
+  document.querySelectorAll('#palette [data-only]').forEach(b => b.classList.toggle('on', b.dataset.only === (S.only || '')));
+}
+$('#hcPen').innerHTML = HC_DOTS('pen'); $('#hcOnly').innerHTML = HC_DOTS('only'); hcUi();
+$('#palette').addEventListener('click', e => {
+  const pen = e.target.closest('[data-pen]')?.dataset.pen, only = e.target.closest('[data-only]');
+  if (pen) {   // 색을 고르면 바로 메모 형광펜 시작 (칠하는 중이면 색만 바꿈)
+    S.pen = pen; lsSet('tbl:pen', pen); hcUi();
+    if (S.hl?.type === 'memo') drawHlTmp(); else if (!S.hl) startHl('memo');
+  }
+  if (only) {
+    S.only = only.dataset.only && S.only !== only.dataset.only ? only.dataset.only : null;   // 같은 색을 한 번 더 누르면 전체
+    hcUi(); renderPins();
+    if (S.only) { const nm = HC.find(x => x[0] === S.only)[1], n = allItems().filter(x => x.it.pos && hcShown(x)).length; toast(n ? `${nm} 메모 ${n}개만 보여요` : `${nm} 메모가 없어요`); }
+  }
+});
 function startHl(type) {
   endPick(); endHl(false);
   S.hl = {type, page: null, rects: []}; document.body.classList.add('hling');
@@ -1916,7 +2008,7 @@ function drawHlTmp() {
   const h = S.hl; if (!h) return;
   const cnt = $('#hlbar .hlcnt'); if (cnt) cnt.textContent = h.rects.length ? `(${h.rects.length}번 칠함)` : '· 여러 번 칠해도 돼요';
   if (!h.rects.length) return;
-  const el = document.createElement('div'); el.className = `pin hlt ${h.type} hltmp`;
+  const el = document.createElement('div'); el.className = `pin hlt ${h.type} hltmp`; if (h.type === 'memo') el.dataset.hc = S.pen;
   hlFill(el, h.rects); S.pageEls[h.page]?.querySelector('.pins').appendChild(el);
 }
 function endHl(commit = true) {
@@ -1934,7 +2026,7 @@ $('#pages').addEventListener('pointerdown', e => {
   if (S.hl.page && S.hl.page !== n) return toast('한 항목은 같은 쪽에만 칠할 수 있어요. 「다 칠했어요」를 누른 뒤 새로 시작해 주세요.');
   const r = box.getBoundingClientRect(), cl = v => Math.min(1, Math.max(0, v));
   const c = {x0: cl((e.clientX - r.left) / r.width), y0: cl((e.clientY - r.top) / r.height)}; c.x1 = c.x0; c.y1 = c.y0;
-  const tmp = document.createElement('div'); tmp.className = `pin hlt ${S.hl.type} hltmp hlnow`; box.querySelector('.pins').appendChild(tmp);
+  const tmp = document.createElement('div'); tmp.className = `pin hlt ${S.hl.type} hltmp hlnow`; if (S.hl.type === 'memo') tmp.dataset.hc = S.pen; box.querySelector('.pins').appendChild(tmp);
   const norm = () => {
     let x0 = Math.min(c.x0, c.x1), x1 = Math.max(c.x0, c.x1), y0 = Math.min(c.y0, c.y1), y1 = Math.max(c.y0, c.y1);
     if (y1 - y0 < 0.018) { const cy = (y0 + y1) / 2; y0 = cl(cy - 0.009); y1 = cl(cy + 0.009); }   // 옆으로만 그으면 글 한 줄 높이로
@@ -2001,17 +2093,55 @@ function padFlush() {
   if (!P.timer || !P.key) return;
   clearTimeout(P.timer); P.timer = null;
   const k = P.key, v = {text: P.text, strokes: P.strokes, at: Date.now()};
-  pdfPut('pad:' + k, v).then(() => { if (P.key === k) padEl('padSave').textContent = '저장됨'; }).catch(e => toast('메모장을 저장하지 못했어요: ' + e.message));
+  pdfPut(k, v).then(() => { if (P.key === k) padEl('padSave').textContent = '저장됨'; }).catch(e => toast('메모장을 저장하지 못했어요: ' + e.message));
 }
-async function padLoad() {
+/* 메모장 여러 장 (교과서마다): 목록 'tbl:padlist:<분석이름>' [{id, name}]
+   첫 장(id '')은 예전 메모장 그대로 'pad:<분석이름>', 나머지는 'pad:<분석이름>:<id>' */
+const padLK = () => 'tbl:padlist:' + S.key, padCK = () => 'tbl:padcur:' + S.key;
+const padList = () => lsGet(padLK(), null) || [{id: '', name: '메모1'}];
+const padKeyOf = id => 'pad:' + S.key + (id ? ':' + id : '');
+function padTabs() {
+  const el = padEl('padTabs'), cur = P.cur;
+  el.innerHTML = padList().map(p => `<button class="padtab ${p.id === cur ? 'on' : ''}" role="tab" aria-selected="${p.id === cur}" data-pt="${p.id}" title="${p.id === cur ? '한 번 더 누르면 이름 바꾸기' : esc(p.name)}">${esc(p.name)}</button>`).join('')
+    + `<button class="iconbtn padren" data-pa="ren" title="이 메모장 이름 바꾸기" aria-label="이 메모장 이름 바꾸기">✎</button><button class="padadd" data-pa="add">＋ 메모 추가</button>`;
+  el.querySelector('.padtab.on')?.scrollIntoView({block: 'nearest', inline: 'nearest'});
+}
+async function padLoad(id) {
   padFlush();
-  P.key = S.key; P.hist = [];
-  const v = await pdfGet('pad:' + P.key).catch(() => null);
-  if (P.key !== S.key) return;
+  if (id === undefined) { id = lsGet(padCK(), ''); if (!padList().some(p => p.id === id)) id = ''; }
+  P.cur = id; P.key = padKeyOf(id); P.hist = [];
+  P.text = ''; P.strokes = []; padEl('padText').value = ''; padEl('padSave').textContent = '';
+  padTabs(); padSize();
+  const k = P.key, v = await pdfGet(k).catch(() => null);
+  if (P.key !== k) return;
   P.text = v?.text || ''; P.strokes = v?.strokes || [];
-  padEl('padText').value = P.text; padEl('padSave').textContent = '';
+  padEl('padText').value = P.text;
   padSize();
 }
+function padGo(id) { lsSet(padCK(), id); padLoad(id); }
+function padRename() {
+  const all = padList(), p = all.find(x => x.id === P.cur); if (!p) return;
+  modal('📒 메모장 이름', `<input type="text" id="padNm" value="${esc(p.name)}" maxlength="30" style="width:100%;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px">`, [
+    ...(all.length > 1 ? [{label: '삭제', danger: true, onClick: () => {
+      if (!confirm(`'${p.name}' 메모장을 지울까요? 안에 쓴 글과 펜 글씨도 지워져요.`)) return false;
+      clearTimeout(P.timer); P.timer = null;
+      pdfDel(padKeyOf(p.id)).catch(() => {});
+      lsSet(padLK(), all.filter(x => x !== p)); padGo(padList()[0].id);
+    }}] : []),
+    {label: '취소'},
+    {label: '저장', primary: true, onClick: box => { p.name = box.querySelector('#padNm').value.trim() || p.name; lsSet(padLK(), all); padTabs(); }}
+  ], box => { const i = box.querySelector('#padNm'); i.focus(); i.select(); i.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) box.querySelector('.mf .primary').click(); }; });
+}
+padEl('padTabs').addEventListener('click', e => {
+  if (!S.key) return;
+  const t = e.target.closest('[data-pt]'), a = e.target.closest('[data-pa]')?.dataset.pa;
+  if (t) return t.dataset.pt === P.cur ? padRename() : padGo(t.dataset.pt);
+  if (a === 'ren') padRename();
+  if (a === 'add') {   // 새 메모장: 메모2, 메모3 … (비어 있는 번호)
+    const all = padList(); let n = all.length + 1; while (all.some(p => p.name === '메모' + n)) n++;
+    const p = {id: uid(), name: '메모' + n}; lsSet(padLK(), [...all, p]); padGo(p.id);
+  }
+});
 function padMode(m) {
   P.mode = m;
   document.querySelectorAll('.padmode button').forEach(b => b.classList.toggle('on', b.dataset.pm === m));
@@ -2223,6 +2353,13 @@ function openSmallEditor(s, type, it, isNew) {
     addMathPreviews(box);
     box.querySelectorAll('[data-k]').forEach(t => t.oninput = () => { it[t.dataset.k] = t.value; saveData(); });
     bindStarPicker(box, () => it.stars, v => { it.stars = v; saveData(); });
+    // 내 메모 형광펜 색 바꾸기
+    if (type === 'memo' && hlRects(it.pos)) {
+      box.querySelector('.mb').insertAdjacentHTML('afterbegin', `<div class="mcolrow">형광펜 색 ${HC_DOTS('mc')}</div>`);
+      const show = () => box.querySelectorAll('.mcolrow .hcd').forEach(b => b.classList.toggle('on', b.dataset.mc === (it.color || 'g')));
+      box.querySelectorAll('.mcolrow .hcd').forEach(b => b.onclick = () => { it.color = b.dataset.mc; saveData(); renderPins(); show(); });
+      show();
+    }
     setTimeout(() => box.querySelector('textarea')?.focus(), 30);
   }, () => {
     if (isNew && itemEmpty(type, it) && findItem(it.id)) deleteItem(it.id); else refreshAll();

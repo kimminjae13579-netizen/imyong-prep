@@ -76,7 +76,7 @@ main{max-width:1080px;margin:0 auto;padding:36px 20px 80px}
 .lead{color:var(--sub);margin:0 0 22px}
 
 /* 첫 화면: 아이콘 타일 (태블릿 홈 화면처럼) — 윗줄 수업실연은 연한 초록, 아랫줄 면접은 연한 파랑 */
-.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:4px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:4px}
 .tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:clamp(140px,22vh,210px);padding:20px 10px;border-radius:16px;text-decoration:none;text-align:center;background:#E1F5EE;color:#085041;border:1px solid #BFE6D6;transition:transform .12s,border-color .12s,background .12s}
 .tile.intv{background:#E6F1FB;color:#0C447C;border-color:#C6DDF3}
 .tile .tic{display:flex;width:clamp(44px,5.5vw,60px);height:clamp(44px,5.5vw,60px)}
@@ -85,7 +85,7 @@ main{max-width:1080px;margin:0 auto;padding:36px 20px 80px}
 .tile:hover{transform:translateY(-2px);border-color:#5DCAA5;background:#D3EFE4}
 .tile.intv:hover{border-color:#85B7EB;background:#D9E9F8}
 .tile:focus-visible{outline:3px solid currentColor;outline-offset:3px}
-@media (max-width:520px){.tiles{gap:10px}.tile{min-height:118px;gap:10px;padding:16px 6px;border-radius:14px}}
+@media (max-width:520px){.tiles{gap:8px}.tile{min-height:110px;gap:8px;padding:14px 4px;border-radius:12px}.tile .tnm{font-size:15px}}
 @media (prefers-reduced-motion:reduce){.tile:hover{transform:none}}
 
 /* 목록 머리 */
@@ -126,6 +126,20 @@ body[data-sec=intv] .rec .th{background:var(--navy)}
 .row .nm{font-family:var(--serif);font-weight:700;font-size:20px}
 .row .mt{font-size:14px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .list{display:flex;flex-direction:column;gap:10px}
+/* 연습 폴더 */
+.folds{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:30px 18px;padding-top:14px}
+/* 폴더 모양: 뒤쪽 탭 + 노란 앞판, 이름은 앞판 위에 */
+.fold{position:relative;aspect-ratio:5/4;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:20px 14px 14px;text-align:center;color:var(--ink);background:linear-gradient(#FFEDAE,#FADC85);border-radius:4px 12px 12px 12px;box-shadow:0 2px 0 #E5C463,0 8px 16px rgba(60,45,0,.08);transition:transform .12s,box-shadow .12s}
+.fold::before{content:"";position:absolute;left:0;top:-13px;width:44%;height:17px;background:#F4D274;border-radius:9px 12px 0 0}
+.fold::after{content:"";position:absolute;left:0;right:0;top:0;height:7px;background:rgba(255,255,255,.35);border-radius:4px 12px 0 0}
+.fold:hover{transform:translateY(-2px);box-shadow:0 2px 0 #E5C463,0 12px 22px rgba(60,45,0,.14)}
+.fold:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+.fold .nm{font-family:var(--serif);font-weight:700;font-size:clamp(17px,2vw,21px);line-height:1.35;word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+.fold .fed{position:absolute;right:4px;top:4px;color:#8A7A4A;min-width:36px;min-height:36px;z-index:1}
+.fold .fed:hover{background:rgba(255,255,255,.45);color:#4A3500}
+@media (max-width:520px){.folds{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 12px}.fold{padding:18px 8px 10px}}
+@media (prefers-reduced-motion:reduce){.fold:hover{transform:none}}
 
 /* 오버레이 (전체 화면) */
 .ov{position:fixed;inset:0;z-index:40;background:var(--paper);display:flex;flex-direction:column}
@@ -250,9 +264,6 @@ body[data-sec=intv] .rec .th{background:var(--navy)}
 .piczoom img{max-width:96%;max-height:86vh;border-radius:6px;background:#fff}
 .piczoom p{color:rgba(255,255,255,.75);margin:12px 0 0;font-size:14px}
 .edck{overflow-x:auto}
-.durbig{display:flex;align-items:baseline;gap:8px;border-bottom:2px solid var(--accent);padding:0 2px 10px}
-.durbig b{font-family:var(--serif);font-size:30px;color:var(--accent);font-variant-numeric:tabular-nums}
-.durbig span{color:var(--sub);font-size:13px}
 .vbox.aud video{height:58px;max-height:none}
 
 /* 받아쓴 글 */
@@ -273,7 +284,7 @@ button.segt:hover{background:var(--accent);color:#fff}
 .iq{background:#fff;border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:8px;padding:12px 16px 12px;margin-bottom:12px}
 .iqh{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
 .iqh b{font-size:16px;color:var(--accent)}
-.iqh span{font-size:13px;color:var(--sub);background:#EEF2F0;border-radius:999px;padding:1px 10px;font-variant-numeric:tabular-nums}
+.iqh > span{font-size:13px;color:var(--sub);background:#EEF2F0;border-radius:999px;padding:1px 10px;font-variant-numeric:tabular-nums}
 .iq .lab{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:var(--accent);border-radius:5px;padding:0 7px;margin-right:7px;vertical-align:1px;line-height:1.7}
 .iqq{margin-top:9px;background:var(--accent-soft);border-radius:7px;padding:8px 12px}
 .iqq p{margin:0;line-height:1.65;max-width:72ch}
@@ -287,19 +298,98 @@ button.segt:hover{background:var(--accent);color:#fff}
 .iqfl p{margin:0}
 .iqfl .lab{background:#7A8A84}
 .iqtop .sp{flex:1}
+/* 문제와 답변 나눠 보기: 받아쓴 글·오른쪽 칸 아래에서 시작 (위 줄이 두 칸의 맨 아래와 맞음) */
+.sumwrap:empty{display:none}
+.sumwrap .iqs{margin-top:0}
+/* 답변과 답변 사이: 위쪽 긴 줄과 같은 폭의 점선 */
+.iqitem > .iq,.iqitem > .iqrow{margin-bottom:0}
+.iqitem + .iqitem{border-top:1px dashed #B9C6C0;margin-top:16px;padding-top:16px}
+
+/* 답변 한 줄 = 왼쪽 답변 + 오른쪽 평가 (위 두 칸과 같은 폭) */
+.iqrow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:20px;align-items:start;margin-bottom:12px}
+.iqrow .iq{margin-bottom:0}
+@media (max-width:900px){.iqrow{grid-template-columns:1fr;gap:8px}}
+/* 평가: 답변 카드와 같은 구성, 파란 부분만 노랑 */
+.iq.evc{--accent:#C99A2E;--accent-soft:#FFF3C9;background:#FFFEF7}
+.iq.evc .iqh b{color:#8A6400}
+.evnone{min-height:1px}
+.evstack{display:flex;flex-direction:column;gap:10px}
+/* 평가 글: 번호 없이 글만 */
+.evtext{margin-top:8px;line-height:1.65;max-width:76ch}
+.evtext p{margin:2px 0;white-space:pre-wrap}
+
+.evw textarea.iqevt{display:block;width:100%;margin-top:10px;border:1px solid #E5C463;border-radius:7px;background:#fff;padding:9px 11px;line-height:1.65;font-size:15px;resize:vertical;min-height:90px}
+.evw textarea.iqevt:focus{outline:3px solid #FBF1C9;border-color:#C99A2E}
+/* 평가 줄: 보기 · 이름 고르기 · 쓰는 중 */
+.evbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#FFFBEA;border:1px solid #EFDFA6;border-left:5px solid #E5C463;border-radius:8px;padding:10px 12px;margin:0 0 12px;scroll-margin-top:12px}
+.evbar .evq{font-size:14px;font-weight:700;color:#5A4100}
+.evbar .sp{flex:1}
+.evbar .evdone{min-width:84px}
+.evstart{background:#FFF1BF;border-color:#E5C463;color:#5A4100}
+.evstart:hover{background:#F9E39A;border-color:#D9B34A}
+.evf{display:inline-flex;align-items:center;gap:4px;border:1px solid #E5C463;background:#fff;color:#5A4100;border-radius:999px;padding:4px 14px;font-size:14px;font-weight:700;min-height:38px}
+.evf:hover{background:#FFF1BF}
+.evf.has{background:#FFF7D6}
+.evf i{font-style:normal;color:#2F7A4B;font-weight:800}
+.evf.on{background:#F4D274;border-color:#C99A2E;color:var(--ink);box-shadow:0 0 0 2px #F4D274}
+.evtag{display:inline-block;font-size:13px;font-weight:700;color:#5A4100;background:#F4D274;border-radius:5px;padding:2px 9px}
+/* 받아쓴 글 칸은 오른쪽 칸 아래 끝까지 늘어남 (글만 있는 기록) */
+/* 면접 기록 화면(uni): 맨 위 제목 + 오른쪽 걸린 시간 / 왼쪽 클로바노트 글·문제 사진 / 오른쪽 영상·좋은 점·고칠 점 / 아래 나눠 보기·평가 */
+.ed.uni .edtop{max-width:1180px;margin:0 auto 18px;display:flex;align-items:flex-end;gap:16px 24px;flex-wrap:wrap}
+.edtitle{flex:1 1 320px;min-width:0;font-family:var(--serif);font-size:26px;font-weight:700;color:var(--ink);border:none;border-bottom:2px solid var(--line);background:transparent;padding:6px 2px;border-radius:0}
+.edtitle::placeholder{color:#8A9A93}
+.edtitle:focus{outline:none;border-bottom-color:var(--accent)}
+.eddur{display:flex;align-items:baseline;gap:10px;white-space:nowrap;border-bottom:2px solid var(--accent);padding:0 2px 8px}
+.eddur span{font-size:13px;color:var(--sub);font-weight:700}
+.eddur b{font-family:var(--serif);font-size:26px;color:var(--accent);font-variant-numeric:tabular-nums}
+.eddur input{width:96px;border:1px solid #C4D0CA;border-radius:7px;padding:6px 10px;font-size:18px;text-align:center;background:#fff;font-variant-numeric:tabular-nums}
+.eddur input:focus{outline:3px solid var(--accent-soft);border-color:var(--accent)}
+.ed.uni .lcol{display:flex;flex-direction:column;gap:20px;min-width:0;align-self:stretch}
+.ed.uni .lcol > .scr{flex:1 1 auto;display:flex;flex-direction:column}
+.ed.uni .lcol > .scr #scrBox{flex:1 1 0;min-height:0;display:flex;flex-direction:column}
+.ed.uni .lcol > .scr .segs{flex:1 1 0;min-height:240px;max-height:none}
+.ed.uni .lcol > .scr #scrBox > textarea{flex:1 1 auto}
+.ed.uni .side{display:flex;flex-direction:column;gap:20px;min-width:0}
+.vidnone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;min-height:210px;border:2px dashed #BCCBC4;border-radius:10px;background:#F7FAF8;color:var(--sub);font-size:14px}
+.vidnone .ic{font-size:42px;line-height:1}
+.vidnone b{color:var(--ink);font-size:17px}
+.vidnone:hover{border-color:var(--accent);background:#EEF2F8}
+.vidsec .vbox video{max-height:42vh}
+@media (max-width:900px){.ed.uni .lcol > .scr .segs{flex:none;max-height:460px}}
+/* 면접: 문제 사진 칸 높이 = 영상 칸 높이 (스크립트로 맞춤), 받아쓴 글 칸 = 영상 + 문제 사진 높이 */
+.ed.uni .lcol > .scr .segs{min-height:160px}
+.ed.uni .side{align-self:start}
+.ed.uni .side > .picsec{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.ed.uni .side > .picsec .pics{flex:1 1 0;min-height:0;overflow:auto;align-content:flex-start}
+/* 면접: 문제 사진 미리보기를 칸 폭에 맞춰 크게 (사진 전체가 보이게) */
+.ed.uni .picsec .pics{display:grid;grid-template-columns:1fr;gap:12px}
+.ed.uni .picsec .pic{width:100%;height:auto;aspect-ratio:4/3;background:#F3F6F4}
+.ed.uni .picsec .pic img{object-fit:contain}
+
+/* 문제 사진 전체화면 */
+.piczoom:fullscreen{background:#0E1612}
+.piczoom:fullscreen img{max-width:96vw;max-height:90vh}
+.pznav{position:absolute;top:50%;transform:translateY(-50%);width:56px;height:56px;border-radius:50%;border:none;background:rgba(255,255,255,.18);color:#fff;font-size:34px;line-height:1;cursor:pointer}
+.pznav:hover{background:rgba(255,255,255,.32)}
+.pznav.prev{left:16px}
+.pznav.next{right:16px}
+
 .iqtop .btn{min-height:34px}
-.iq.ed{border-left-color:var(--hl)}
-.iq.ed .iqh .sp{flex:1;background:none;padding:0}
-.iqin{width:100%;border:1px solid #C4D0CA;border-radius:7px;padding:7px 10px;background:#fff;font-size:15px;line-height:1.6}
-.iqin:focus{outline:3px solid var(--accent-soft);border-color:var(--accent)}
-.scr textarea.iqin{resize:none;overflow:hidden;display:block;min-height:0;padding:7px 10px;line-height:1.6}
-.iqh .iqlabel{width:auto;flex:0 1 14em;padding:4px 9px;font-size:14px}
-.iqg.ed{margin-top:10px;background:#F6F8F7;border-radius:8px;padding:8px}
-.iqgh{display:flex;gap:6px;align-items:center;margin-bottom:6px}
-.iqgh .iqin{font-weight:700}
-.iqgh .iqin::placeholder{color:#C3CCC8;font-weight:400}
-.iq.ed > .btn{margin-top:8px}
-.iqs.editing > .btn{margin-top:2px}
+/* 고치기: 보는 화면과 같은 모양, 글자 칸만 연하게 표시 */
+.iq.qed .ce{outline:none;border-radius:3px;cursor:text;transition:background .1s;-webkit-user-select:text;user-select:text}
+.iq.qed .ce:hover{background:rgba(242,223,74,.2)}
+.iq.qed .ce:focus{background:#FFF7CC;box-shadow:0 0 0 2px #F2DF4A}
+.iq.qed .ce:empty{display:inline-block;min-width:3em;min-height:1.4em;vertical-align:bottom;background:rgba(242,223,74,.2)}
+.iq.qed .ce:empty::before{content:attr(data-ph);color:#A9B5B0;font-weight:400}
+/* 고치기 중에만 보이는 더하기·지우기 */
+.iq.qed .qsp{flex:1}
+.qx{border:none;background:none;color:#9AA7A1;border-radius:6px;min-width:30px;min-height:30px;font-size:14px;cursor:pointer;padding:0 6px}
+.qx:hover{background:#FBE4E0;color:var(--warn)}
+.iq.qed .qg{position:relative;padding-right:30px}
+.iq.qed .qgx{position:absolute;right:-6px;top:0}
+.qadd{margin-top:10px;border:1px dashed #B9C6C0;background:none;color:var(--sub);border-radius:7px;padding:4px 12px;font-size:13.5px;font-weight:700;min-height:32px;cursor:pointer}
+.qadd:hover{border-color:var(--accent);color:var(--accent)}
+.qaddu{margin-top:14px}
 
 /* 유형정리 */
 .tview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px;align-items:start}
@@ -456,6 +546,48 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .mk-o.on{background:#2F7A4B;border-color:#2F7A4B;color:#fff}
 .mk-t.on{background:#E3A81B;border-color:#E3A81B;color:#fff}
 .mk-x.on{background:#C9412F;border-color:#C9412F;color:#fff}
+/* 체크리스트 점수 3·2·1 (3 잘했어요 · 2 보통 · 1 부족해요) */.mk-3.on{background:#2F7A4B;border-color:#2F7A4B;color:#fff}
+.mk-2.on{background:#E3A81B;border-color:#E3A81B;color:#fff}
+.mk-1.on{background:#C9412F;border-color:#C9412F;color:#fff}
+.cktable tr[data-mark="3"] td.it{background:#EEF7F1}
+.cktable tr[data-mark="2"] td.it{background:#FDF6E1}
+.cktable tr[data-mark="1"] td.it{background:#FBEDEA}
+.ckhost{display:flex;flex-direction:column;gap:12px}
+.ckbtn{align-self:flex-start;min-height:48px;font-size:16px;padding:10px 20px}
+.cksel{display:flex;flex-direction:column;gap:8px;scroll-margin-top:80px}
+.ckselh{font-size:13px;font-weight:700;color:var(--sub)}
+.ckfold{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid var(--line);border-left:5px solid #F4D274;background:#FFFBEA;border-radius:8px;padding:12px 14px;min-height:50px}
+.ckfold:hover{border-color:#E5C463}
+.ckfold.on{background:#FFF1BF;border-color:#E5C463;box-shadow:0 0 0 1px #E5C463}
+.ckfold .nm{flex:1;min-width:0;font-family:var(--serif);font-weight:700;font-size:17px}
+#ckBody{scroll-margin-top:80px}
+#ckBody:empty{display:none}
+.ckh{margin-top:4px}
+.cklegend{margin:0 0 8px;font-size:13px;color:var(--sub)}
+.cklegend b{color:var(--ink)}
+/* 📊 평균 체크리스트 */.ckfold.avg{border-left-color:var(--accent);background:#EEF4F1}
+.ckfold.avg.on{background:#DDEBE4;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.avgtable th.fc{max-width:110px;font-size:12.5px;line-height:1.35;text-align:center;word-break:keep-all}
+.avgtable td.avc{width:56px;text-align:center;font-variant-numeric:tabular-nums}
+.avgtable td.avc b{font-size:16px}
+.avgtable td.avc b[data-lv="3"]{color:#2F7A4B}
+.avgtable td.avc b[data-lv="2"]{color:#B07F0C}
+.avgtable td.avc b[data-lv="1"]{color:#C9412F}
+.avgtable td.avc .none{color:#B5C1BC}
+.avgtable .tot{background:#FFFBEA}
+.avgtable th.tot{background:#FBF1C9;text-align:center}
+.avgtable td.tot b{font-size:18px}
+.cknone2{color:var(--sub);margin:4px 0 0}
+/* 비고가 길어도 점검 항목·단계는 한 줄을 지키고, 모자라면 비고 칸이 아래로 길어짐 */
+.avgtable td.it,.avgtable th.stage{white-space:nowrap}
+.avgtable th.fc{white-space:nowrap;max-width:none}
+.avgtable td.avmemo{width:100%;min-width:160px;font-size:13.5px;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
+.avgtable td.avmemo .none{color:#B5C1BC}
+.avgtable .amm + .amm{margin-top:5px;padding-top:5px;border-top:1px dashed #E1E7E4}
+.avgtable .amm b{display:inline-block;font-size:11.5px;font-weight:700;color:var(--accent);background:#EEF4F1;border-radius:4px;padding:0 5px;margin-right:5px}
+.modal .box.wide{width:min(920px,100%)}
+
+
 .cktable tr[data-mark="o"] td.it{background:#EEF7F1}
 .cktable tr[data-mark="t"] td.it{background:#FDF6E1}
 .cktable tr[data-mark="x"] td.it{background:#FBEDEA}
@@ -499,15 +631,31 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .pvpal .tool span{font-size:15px;font-weight:700;margin-top:6px;color:var(--ink)}
 .pvpal .tool:hover{border-color:#2F9E44;background:#EBFBEE}
 .pvpal .tool.on{outline:3px solid #2F9E44;background:#D3F9D8;border-color:#2F9E44}
+/* 형광펜 색: 노랑·파랑·초록(기본)·보라 — --hc 칠, --hb 테두리, --hbg 글자 버튼 바탕, --ht 글자 */
+.mhl,[data-hc=g]{--hc:rgba(64,192,87,.32);--hb:#2F9E44;--hbg:#EBFBEE;--ht:#2B8A3E}
+[data-hc=y]{--hc:rgba(250,204,21,.42);--hb:#E0A800;--hbg:#FFF9DB;--ht:#8A5A00}
+[data-hc=b]{--hc:rgba(77,171,247,.34);--hb:#1C7ED6;--hbg:#E7F5FF;--ht:#1864AB}
+[data-hc=p]{--hc:rgba(132,94,247,.3);--hb:#7048E8;--hbg:#F3F0FF;--ht:#5F3DC4}
 .mhl{position:absolute;z-index:2;pointer-events:none}
-.mhl .hr{position:absolute;display:block;background:rgba(64,192,87,.32);mix-blend-mode:multiply;border-radius:3px;pointer-events:auto;cursor:pointer}
+.mhl .hr{position:absolute;display:block;background:var(--hc);mix-blend-mode:multiply;border-radius:3px;pointer-events:auto;cursor:pointer}
 .mhl.tmp .hr{pointer-events:none}
-.mhl.sel .hr{box-shadow:0 0 0 2px #2F9E44}
-.mhl .ulab{position:absolute;right:100%;transform:translateY(-28%);margin-right:6px;white-space:nowrap;pointer-events:auto;cursor:pointer;background:#EBFBEE;color:#2B8A3E;border:2px solid #2F9E44;border-radius:999px;padding:2px 11px;font-size:14px;font-weight:800;line-height:1.4;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.mhl.sel .hr{box-shadow:0 0 0 2px var(--hb)}
+.mhl .ulab{position:absolute;right:100%;transform:translateY(-28%);margin-right:6px;white-space:nowrap;pointer-events:auto;cursor:pointer;background:var(--hbg);color:var(--ht);border:2px solid var(--hb);border-radius:999px;padding:2px 11px;font-size:14px;font-weight:800;line-height:1.4;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+/* 내 노트 도구: 형광펜 색 고르기 · 색만 보기 */
+.hcsec{display:flex;flex-direction:column;align-items:center;gap:6px;border-top:1px solid var(--line);padding-top:9px}
+.hcl{font-size:12.5px;font-weight:700;color:var(--sub);text-align:center;line-height:1.3}
+.hcols{display:grid;grid-template-columns:repeat(2,32px);gap:7px;justify-content:center}
+.hcd{width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px #B9C6C0;padding:0;background:var(--hb)}
+.hcd:hover{box-shadow:0 0 0 2px var(--hb)}
+.hcd.on{box-shadow:0 0 0 3px var(--ink)}
+.hcall{border:1px solid #C4D0CA;background:#fff;border-radius:999px;padding:3px 0;font-size:13px;font-weight:700;width:71px;min-height:32px}
+.hcall.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.mcolrow{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px;color:var(--sub);font-weight:700}
+.mcolrow .hcd{width:30px;height:30px}
 .pv.hling .pg{cursor:crosshair;touch-action:none}
 .pv.hling .mhl:not(.tmp),.pv.hling .mpin{pointer-events:none;opacity:.55}
 .pv.hling .mhl:not(.tmp) *{pointer-events:none}
-.hlbar{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;background:var(--ink);color:#fff;border-left:6px solid #40C057;border-radius:10px;padding:10px 14px;box-shadow:0 8px 24px rgba(0,0,0,.3);font-size:15px;max-width:94vw}
+.hlbar{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;background:var(--ink);color:#fff;border-left:6px solid var(--hb,#40C057);border-radius:10px;padding:10px 14px;box-shadow:0 8px 24px rgba(0,0,0,.3);font-size:15px;max-width:94vw}
 .hlbar .hlcnt{opacity:.75;font-size:13px}
 .hlbar .btn:not(.primary){background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.3)}
 .padhost .pad{display:none;width:420px;flex:none;flex-direction:column;min-height:0;background:var(--card);border-left:1px solid var(--line)}
@@ -523,6 +671,14 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .padh{display:flex;align-items:center;gap:8px;padding:10px 12px 8px 16px;border-bottom:1px solid var(--line)}
 .padh b{font-size:16px}
 .padsave{flex:1;font-size:12px;color:var(--sub)}
+/* 메모장 여러 장: 메모1, 메모2 … */
+.padtabs{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+.padtab{flex:none;border:1px solid #C4D0CA;background:#fff;border-radius:8px;padding:5px 13px;font-size:14px;font-weight:700;min-height:38px;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.padtab:hover{border-color:var(--accent)}
+.padtab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.padtabs .padren{flex:none;min-width:36px;min-height:36px;font-size:16px}
+.padadd{flex:none;border:1px dashed #9FB3AA;background:transparent;border-radius:8px;padding:5px 12px;font-size:14px;font-weight:700;min-height:38px;color:var(--sub);white-space:nowrap}
+.padadd:hover{border-color:var(--accent);color:var(--accent);background:#F3F7F5}
 .padtools{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
 .padmode{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
 .padmode button{flex:1;border:none;background:#fff;padding:8px 4px;font-size:14px;font-weight:700;min-height:40px}
@@ -597,6 +753,83 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .gdnote{margin-top:18px;background:var(--hl-soft);border-radius:8px;padding:12px 16px;font-size:14.5px}
 .gdnote ul{margin:4px 0 0;padding-left:1.2em;display:grid;gap:4px}
 @media (max-width:600px){.gdhome{padding:16px 16px 12px}.gdsteps > li{padding-left:38px}}
+/* 첫 화면: 오른쪽 위 일정 · 오른쪽 아래 Q&A */
+
+/* 일정: 2026.12 ~ 2027.1 달력 */
+.calwrap{display:grid;grid-template-columns:1fr;gap:26px}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cal h2{margin:0;padding:12px 16px;font-family:var(--serif);font-size:22px;background:var(--board);color:var(--chalk);display:flex;align-items:baseline;gap:8px}
+.cal h2 small{font-size:14px;font-weight:500;color:rgba(244,247,242,.7)}
+.cal .wk,.cal .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.cal .wk div{text-align:center;font-size:13px;font-weight:700;color:var(--sub);padding:6px 0;border-bottom:1px solid var(--line);background:#F5F8F6}
+.cal .wk div:first-child,.cday.sun .dn,.cday.hol .dn{color:var(--warn)}
+.cal .wk div:last-child,.cday.sat .dn{color:#2B5BA8}
+.cday{min-height:104px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:4px 4px 6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0;transition:background .1s}
+.cday:nth-child(7n){border-right:none}
+.cday:hover{background:#F3F7F5}
+.cday.pad{background:repeating-linear-gradient(135deg,#F3F6F4 0 6px,#EEF2F0 6px 12px);cursor:default}
+.cday.pad .dn,.cday.oth .dn{color:#A3B1AB!important;font-weight:500}
+.cday.oth{background:#F7F9F8}
+.cday.oth:hover{background:#EEF3F0}
+.cday .dn{font-size:14px;font-weight:700;padding:1px 5px;display:flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
+.cday .dn i{font-style:normal;font-size:11px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.cday.today .dn b{background:var(--hl);color:var(--ink);border-radius:999px;padding:0 7px}
+.cday.over{background:var(--hl-soft);box-shadow:inset 0 0 0 2px #D9C437}
+.ev{display:block;width:100%;text-align:left;border:none;border-left:4px solid var(--c);background:var(--cs);color:var(--ink);border-radius:5px;padding:3px 6px;font-size:13px;line-height:1.35;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.ev:hover{filter:brightness(.96)}
+.ev .tm{font-weight:700;font-variant-numeric:tabular-nums;margin-right:4px}
+.ev.drag{opacity:.35}
+.evghost{position:fixed;z-index:95;pointer-events:none;width:150px;box-shadow:0 8px 20px rgba(0,0,0,.25);transform:translate(-50%,-60%) rotate(-2deg);cursor:grabbing}
+.ev[data-c=g],.colr[data-c=g],.upi[data-c=g]{--c:#2F7A4B;--cs:#E1F2E7}
+.ev[data-c=b],.colr[data-c=b],.upi[data-c=b]{--c:#2B5BA8;--cs:#E3ECFA}
+.ev[data-c=y],.colr[data-c=y],.upi[data-c=y]{--c:#C9A21E;--cs:#FBF4BF}
+.ev[data-c=r],.colr[data-c=r],.upi[data-c=r]{--c:#C9412F;--cs:#FBE4E0}
+.ev[data-c=p],.colr[data-c=p],.upi[data-c=p]{--c:#7A4FB0;--cs:#EEE5F8}
+.calhint{font-size:14px;color:var(--sub);margin:-8px 0 18px}
+/* 휴대폰에서 일정: 달력 아래 다가오는 일정 목록 (넓은 화면에서는 숨김) */
+.uplist{display:none}
+@media (max-width:700px){
+  .uplist{display:block;margin-top:22px}
+  .uplist h2{font-family:var(--serif);font-size:20px;margin:0 0 10px}
+  .upi{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:8px;padding:10px 12px;margin-bottom:8px;min-height:52px}
+  .upi .ud{flex:none;width:58px;text-align:center;line-height:1.2}
+  .upi .ud b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
+  .upi .ud small{font-size:12px;color:var(--sub)}
+  .upi .ut{flex:1;min-width:0}
+  .upi .ut b{display:block;font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .upi .ut small{font-size:12.5px;color:var(--sub)}
+  .upi .dd{flex:none;font-size:13px;font-weight:700;color:var(--accent)}
+  .upnone{color:var(--sub);font-size:14px}
+}
+.colrs{display:flex;gap:8px;flex-wrap:wrap}
+.colr{display:inline-flex;align-items:center;gap:6px;border:2px solid transparent;background:var(--cs);border-radius:999px;padding:5px 14px 5px 8px;min-height:40px;font-size:14px}
+.colr::before{content:"";width:16px;height:16px;border-radius:50%;background:var(--c)}
+.colr.on{border-color:var(--c);font-weight:700}
+.fl input[type=date],.fl input[type=time]{border:1px solid #C4D0CA;border-radius:7px;padding:9px 12px;background:#fff;min-height:44px}
+.fl2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:700px){
+  .cday{min-height:74px;padding:3px 2px 4px}
+  .cday .dn{font-size:13px;padding:0 3px}
+  .cday .dn i{display:none}
+  .ev{font-size:11.5px;padding:2px 4px;border-left-width:3px}
+  .ev .tm{display:none}
+}
+
+/* Q&A: 질문을 누르면 답변과 편집 버튼이 보임 */
+.qna{display:flex;flex-direction:column;gap:10px}
+.faq{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;border-left:5px solid var(--board)}
+.faq.base{border-left-color:#C99A2E}.qq .qbase{flex:none;align-self:center;font-size:12px;font-weight:700;color:#7A5B0E;background:#FFF1BF;border-radius:999px;padding:2px 10px}
+.faq.open{border-color:var(--board);box-shadow:0 0 0 1px var(--board)}
+.qq{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;background:none;border:none;padding:16px 16px;min-height:56px}
+.qq:hover{background:#F3F7F5}
+.qq .qm{flex:none;width:30px;height:30px;line-height:1;border-radius:50%;color:var(--board);font-family:var(--serif);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:24px}
+.qq .qt{flex:1;min-width:0;font-family:var(--serif);font-weight:700;font-size:17px;line-height:1.5;padding-top:2px;white-space:pre-wrap}
+.qa{display:none;gap:12px;padding:0 16px 18px 16px}
+.faq.open .qa{display:flex}
+.qa .am{flex:none;width:30px;height:30px;line-height:1;border-radius:50%;color:#B8860B;font-family:var(--serif);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:24px}
+.qa .at{flex:1;min-width:0;font-family:var(--serif);font-weight:500;white-space:pre-wrap;line-height:1.7;border-top:1px dashed var(--line);padding-top:12px}
+.faq .qed{display:none;gap:4px;padding:0 12px 12px;justify-content:flex-end}
+.faq.open .qed{display:flex}
 .edonly{display:none!important}
 body.editing .edonly{display:inline-flex!important}
 </style>
@@ -957,7 +1190,10 @@ const D = {
   get templates() { return lsGet('templates', []); }, set templates(v) { lsSet('templates', v); },
   get docs() { return lsGet('docs', []); }, set docs(v) { lsSet('docs', v); },
   get types() { return lsGet('types', []); }, set types(v) { lsSet('types', v); },
+  get sched() { return lsGet('sched', []); }, set sched(v) { lsSet('sched', v); },
+  get qna() { return lsGet('qna', []); }, set qna(v) { lsSet('qna', v); },
   recs: k => lsGet('rec:' + k, []), setRecs: (k, v) => lsSet('rec:' + k, v),
+  folders: k => lsGet('fold:' + k, []), setFolders: (k, v) => lsSet('fold:' + k, v),
   ans: id => lsGet('ans:' + id, []), setAns: (id, v) => lsSet('ans:' + id, v),
   ann: id => lsGet('ann:' + id, {memos: [], bms: []}), setAnn: (id, v) => lsSet('ann:' + id, v)
 };
@@ -978,23 +1214,33 @@ const ROUTES = {
   'intv': {title: '면접', sec: 'intv', render: renderIntv},
   'intv/lib': {title: '자료실', sec: 'intv', parent: 'intv', render: renderLib, upload: true},
   'intv/practice': {title: '면접 연습', sec: 'intv', parent: 'intv', render: () => renderPractice('intv')},
-  'intv/types': {title: '유형정리', sec: 'intv', parent: 'intv', render: renderTypes, edit: true}
+  'intv/types': {title: '유형정리', sec: 'intv', parent: 'intv', render: renderTypes, edit: true},
+  'sched': {title: '일정', render: renderSched},
+  'qna': {title: 'Q&A', render: renderQna}
 };
 function route() {
   const key = location.hash.replace(/^#\/?/, '').replace(/^home$/, '');
-  const r = ROUTES[key] || ROUTES[''];
+  let r = ROUTES[key];
+  // 연습 폴더: #demo/practice/<폴더id>, #intv/practice/<폴더id>
+  const fm = !r && key.match(/^(demo|intv)\/practice\/([\w-]+)$/);
+  if (fm) {
+    const k = fm[1], f = D.folders(k).find(x => x.id === fm[2]);
+    if (f) r = {title: f.name, sec: k, parent: k, up: {href: `#${k}/practice`, title: KIND[k].name + ' 연습'}, render: () => renderFolder(k, f.id)};
+    else { history.replaceState(null, '', `#${k}/practice`); r = ROUTES[`${k}/practice`]; }
+  }
+  r = r || ROUTES[''];
   document.body.dataset.sec = r.sec || '';
   const crumbs = [`<a href="#home">🏠</a>`];
   if (r.parent) crumbs.push(`<span class="sep">›</span><a href="#home" data-parent="${r.parent}">${ROUTES[r.parent].title}</a>`);   // 수업실연·면접은 첫 화면 칸반 보드의 열
-  if (key) crumbs.push(`<span class="sep">›</span><span class="cur">${r.title}</span>`);
+  if (r.up) crumbs.push(`<span class="sep">›</span><a href="${r.up.href}">${r.up.title}</a>`);   // 좁은 화면에서도 폴더 목록으로 돌아갈 수 있게
+  if (key) crumbs.push(`<span class="sep">›</span><span class="cur">${esc(r.title)}</span>`);
   else crumbs.push(`<span class="cur">임용 준비</span>`);
   $('#crumb').innerHTML = crumbs.join('');
   $('#editBtn').classList.toggle('hidden', !r.edit);
   $('#upBtn').classList.toggle('hidden', !r.upload);
   document.body.classList.toggle('editing', !!r.edit && editing);
   $('#editBtn').classList.toggle('on', editing);
-  document.title = key ? r.title + ' · 임용 준비' : '임용 준비';
-  scrollTo(0, 0);
+  document.title = key ? r.title + ' · 임용 준비' : '임용 준비';  scrollTo(0, 0);
   r.render();
 }
 addEventListener('hashchange', route);
@@ -1024,9 +1270,11 @@ const TILES = [
   {sec: 'demo', href: '#demo/tpl', name: '만능틀', icon: TI('<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M7 21h10M12 17v4M7 9h5M7 12h8"/>')},
   {sec: 'demo', href: '교과서 분석 학습자.html', name: '교과서 분석', icon: TI('<path d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z"/><path d="M12 6v13.5"/>')},
   {sec: 'demo', href: '#demo/practice', name: '수업실연 연습', icon: TI('<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10.5l5-3v9l-5-3"/>')},
+  {sec: 'demo', href: '#sched', name: '일정', icon: TI('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7.5 14h2M11 14h2M14.5 14h2M7.5 17.5h2M11 17.5h2"/>')},
   {sec: 'intv', href: '#intv/lib', name: '자료실', icon: TI('<path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13h6"/>')},
+  {sec: 'intv', href: '#intv/types', name: '유형정리', icon: TI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>')},
   {sec: 'intv', href: '#intv/practice', name: '면접 연습', icon: TI('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/>')},
-  {sec: 'intv', href: '#intv/types', name: '유형정리', icon: TI('<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>')}
+  {sec: 'intv', href: '#qna', name: 'Q&amp;A', icon: TI('<path d="M4 5h16v11H9l-5 4z"/><path d="M10 9a2 2 0 1 1 2.5 1.9c-.4.2-.5.5-.5.9v.4M12 14.2v.1"/>')}
 ];
 function renderHome() {
   app().innerHTML = `
@@ -1192,6 +1440,8 @@ function renderLib() {
     if (e.target.closest('.del')) {
       if (!confirm(`'${d.title}'을(를) 삭제할까요?`)) return;
       D.docs = D.docs.filter(x => x.id !== d.id); await blobDel('file:' + d.id); await blobDel('pad:' + d.id); localStorage.removeItem('imy:ann:' + d.id);
+      for (const p of lsGet('padlist:pad:' + d.id, [])) if (p.id) await blobDel('pad:' + d.id + ':' + p.id);   // 더 만든 메모장도
+      localStorage.removeItem('imy:padlist:pad:' + d.id); localStorage.removeItem('imy:padcur:pad:' + d.id);
       return renderLib();
     }
     openViewer({fileId: d.id, title: d.title, type: 'application/pdf', onClose: renderLib});
@@ -1206,6 +1456,7 @@ function renderLib() {
 const PAD_W = 400, PAD_COLS = ['#1E2B27', '#E03131', '#1971C2', '#2F9E44'], PAD_WS = [1.5, 3, 6];
 function makePad(root, key, onClose) {
   root.innerHTML = `<div class="padh"><b>📒 내 메모장</b><span class="padsave"></span><button class="iconbtn" data-p="close" title="메모장 닫기" aria-label="메모장 닫기">✕</button></div>
+    <div class="padtabs" role="tablist" aria-label="메모장 고르기"></div>
     <div class="padtools">
       <div class="padmode" role="group" aria-label="쓰는 방법"><button data-pm="type" class="on" title="키보드로 쓰기">⌨️ 글</button><button data-pm="pen" title="펜으로 쓰기">✏️ 펜</button><button data-pm="erase" title="펜 글씨 지우기">🧽 지우개</button></div>
       <div class="padink">
@@ -1218,6 +1469,41 @@ function makePad(root, key, onClose) {
     </div>
     <div class="padscroll"><div class="padpaper"><textarea class="padtext" spellcheck="false" aria-label="메모장"></textarea><canvas class="padinkc"></canvas></div></div>`;
   const P = {text: '', strokes: [], hist: [], mode: 'type', col: PAD_COLS[0], w: PAD_WS[0], timer: null, penSeen: false, loaded: false};
+  // 메모장 여러 장: 목록은 'padlist:<key>' [{id, name}], 첫 장(id '')은 예전 메모장 그대로 <key>, 나머지는 <key>:<id>
+  const LK = 'padlist:' + key, CK = 'padcur:' + key;
+  const pads = () => lsGet(LK, null) || [{id: '', name: '메모1'}];
+  const keyOf = id => id ? key + ':' + id : key;
+  let cur = lsGet(CK, ''); if (!pads().some(p => p.id === cur)) cur = '';
+  const tabsEl = $('.padtabs', root);
+  const tabs = () => {
+    tabsEl.innerHTML = pads().map(p => `<button class="padtab ${p.id === cur ? 'on' : ''}" role="tab" aria-selected="${p.id === cur}" data-pt="${p.id}" title="${p.id === cur ? '한 번 더 누르면 이름 바꾸기' : esc(p.name)}">${esc(p.name)}</button>`).join('')
+      + `<button class="iconbtn padren" data-p="ren" title="이 메모장 이름 바꾸기" aria-label="이 메모장 이름 바꾸기">✎</button><button class="padadd" data-p="add">＋ 메모 추가</button>`;
+    tabsEl.querySelector('.padtab.on')?.scrollIntoView({block: 'nearest', inline: 'nearest'});
+  };
+  const load = async () => {
+    const want = cur, v = await blobGet(keyOf(want)).catch(() => null);
+    if (want !== cur) return;
+    P.text = v?.text || ''; P.strokes = v?.strokes || []; P.hist = []; ta.value = P.text; P.loaded = true; saveEl.textContent = '';
+    requestAnimationFrame(size);
+  };
+  const go = id => { flush(); cur = id; lsSet(CK, id); P.text = ''; P.strokes = []; ta.value = ''; draw(); tabs(); load(); };
+  const rename = () => {
+    const all = pads(), p = all.find(x => x.id === cur);
+    modal('📒 메모장 이름', `<div class="fl"><input type="text" id="padNm" value="${esc(p.name)}" maxlength="30"></div>`, [
+      ...(all.length > 1 ? [{label: '삭제', danger: true, onClick: async () => {
+        if (!confirm(`'${p.name}' 메모장을 지울까요? 안에 쓴 글과 펜 글씨도 지워져요.`)) return false;
+        clearTimeout(P.timer); P.timer = null;
+        await blobDel(keyOf(p.id)).catch(() => {});
+        lsSet(LK, all.filter(x => x !== p)); cur = pads()[0].id; lsSet(CK, cur); tabs(); load();
+      }}] : []),
+      {label: '취소'},
+      {label: '저장', primary: true, onClick: box => { p.name = $('#padNm', box).value.trim() || p.name; lsSet(LK, all); tabs(); }}
+    ], box => { const i = $('#padNm', box); i.focus(); i.select(); i.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) $('.mf .primary', box).click(); }; });
+  };
+  tabsEl.addEventListener('click', e => {
+    const t = e.target.closest('[data-pt]'); if (!t) return;
+    t.dataset.pt === cur ? rename() : go(t.dataset.pt);
+  });
   const paper = $('.padpaper', root), ta = $('.padtext', root), cv = $('.padinkc', root), sc = $('.padscroll', root), saveEl = $('.padsave', root);
   const scale = () => paper.clientWidth / PAD_W;
   const strokePath = (ctx, s, k) => {
@@ -1244,7 +1530,8 @@ function makePad(root, key, onClose) {
   };
   const flush = () => {
     if (!P.timer) return; clearTimeout(P.timer); P.timer = null;
-    blobPut(key, {text: P.text, strokes: P.strokes, at: Date.now()}).then(() => saveEl.textContent = '저장됨').catch(e => toast('메모장을 저장하지 못했어요: ' + e.message));
+    const k = keyOf(cur);
+    blobPut(k, {text: P.text, strokes: P.strokes, at: Date.now()}).then(() => { if (keyOf(cur) === k) saveEl.textContent = '저장됨'; }).catch(e => toast('메모장을 저장하지 못했어요: ' + e.message));
   };
   const saveSoon = () => { saveEl.textContent = '저장 중…'; clearTimeout(P.timer); P.timer = setTimeout(flush, 400); };
   const mode = m => {
@@ -1258,6 +1545,11 @@ function makePad(root, key, onClose) {
     if (c) { P.col = c.dataset.c; $$('.pcol', root).forEach(x => x.classList.toggle('on', x === c)); if (P.mode !== 'pen') mode('pen'); }
     if (w) { P.w = +w.dataset.w; $$('.pw', root).forEach(x => x.classList.toggle('on', x === w)); if (P.mode !== 'pen') mode('pen'); }
     if (a === 'close') { flush(); onClose?.(); }
+    if (a === 'ren') rename();
+    if (a === 'add') {   // 새 메모장: 메모2, 메모3 … (비어 있는 번호)
+      const all = pads(); let n = all.length + 1; while (all.some(p => p.name === '메모' + n)) n++;
+      const p = {id: uid(), name: '메모' + n}; lsSet(LK, [...all, p]); go(p.id);
+    }
     if (a === 'undo') { if (!P.hist.length) return toast('되돌릴 펜 글씨가 없어요.'); P.strokes = P.hist.pop(); size(); saveSoon(); }
     // 묻지 않고 바로 지움 (↶ 되돌리기로 되살릴 수 있음)
     if (a === 'clear' && P.strokes.length) { P.hist.push(P.strokes); P.strokes = []; size(); saveSoon(); toast('펜 글씨를 지웠어요. ↶ 되돌리기로 되살릴 수 있어요.'); }
@@ -1295,13 +1587,23 @@ function makePad(root, key, onClose) {
   return {
     flush,
     async show() {
-      if (!P.loaded) { const v = await blobGet(key).catch(() => null); P.text = v?.text || ''; P.strokes = v?.strokes || []; ta.value = P.text; P.loaded = true; }
-      requestAnimationFrame(size);
+      tabs();
+      if (!P.loaded) await load(); else requestAnimationFrame(size);
     }
   };
 }
 
 let PV = null;
+// 형광펜 메모 색: 노랑·파랑·초록·보라 (예전 메모는 색이 없으면 초록)
+const HC = [['y', '노랑'], ['b', '파랑'], ['g', '초록'], ['p', '보라']];
+const HC_DOTS = k => HC.map(([c, n]) => `<button class="hcd" data-hc="${c}" data-${k}="${c}" title="${n}" aria-label="${n}"></button>`).join('');
+const hcOf = m => m.color || 'g';
+function pvColorUi() {
+  const ov = PV.ov, pen = PV.pen, only = PV.only || '';
+  $$('#pvPen .hcd', ov).forEach(b => b.classList.toggle('on', b.dataset.pen === pen));
+  $$('[data-only]', ov).forEach(b => b.classList.toggle('on', b.dataset.only === only));
+  ov.dataset.hc = pen;   // 칠하는 중인 형광펜·안내 띠도 고른 색으로
+}
 async function openViewer({fileId, title, type, extra, onClose}) {
   const blob = await blobGet('file:' + fileId);
   if (!blob) return toast('파일을 찾을 수 없어요.');
@@ -1319,13 +1621,24 @@ async function openViewer({fileId, title, type, extra, onClose}) {
     <div class="body" style="position:relative">
       <aside class="pvside"></aside>
       <div class="pvwrap"><div class="pvview"><div class="pvpages"></div></div>
-        <div class="pvpal" aria-label="내 메모 도구"><div class="ph">내 노트</div><button class="tool" id="pvMemo" title="누른 뒤 자료 글에 형광펜을 칠하세요">📝<span>메모</span></button></div></div>
+        <div class="pvpal" aria-label="내 메모 도구"><div class="ph">내 노트</div><button class="tool" id="pvMemo" title="누른 뒤 자료 글에 형광펜을 칠하세요">📝<span>메모</span></button>
+          <div class="hcsec"><div class="hcl">형광펜 색</div><div class="hcols" id="pvPen">${HC_DOTS('pen')}</div></div>
+          <div class="hcsec"><div class="hcl">색만 보기</div><button class="hcall on" data-only="">전체</button><div class="hcols" id="pvOnly">${HC_DOTS('only')}</div></div></div></div>
       ${extra ? `<aside class="pvextra">${extra.html}</aside>` : ''}
       <aside class="pad"></aside>
     </div>`;
   $('#ovRoot').appendChild(ov);
   document.body.style.overflow = 'hidden';
-  PV = {ov, fileId, ann: D.ann(fileId), scale: lsGet('pvScale', 1.3), cur: 1, rows: [null], sel: null, hl: null, onClose};
+  PV = {ov, fileId, ann: D.ann(fileId), scale: lsGet('pvScale', 1.3), cur: 1, rows: [null], sel: null, hl: null, onClose, pen: lsGet('pvPen', 'g'), only: null};
+  pvColorUi();
+  // 형광펜 색 고르기 (기억해 둠) · 색만 보기
+  $('#pvPen', ov).onclick = e => { const c = e.target.closest('[data-pen]')?.dataset.pen; if (!c) return; PV.pen = c; lsSet('pvPen', c); pvColorUi(); if (!PV.hl) pvStartHl(); };
+  $('.pvpal', ov).addEventListener('click', e => {
+    const b = e.target.closest('[data-only]'); if (!b) return;
+    PV.only = b.dataset.only && PV.only !== b.dataset.only ? b.dataset.only : null;   // 같은 색을 한 번 더 누르면 전체
+    pvColorUi(); pvMarks();
+    if (PV.only) { const n = PV.ann.memos.filter(m => m.rects?.length && hcOf(m) === PV.only).length; toast(n ? `${HC.find(x => x[0] === PV.only)[1]} 메모 ${n}개만 보여요` : `${HC.find(x => x[0] === PV.only)[1]} 메모가 없어요`); }
+  });
   PV.pad = makePad($('.pad', ov), 'pad:' + fileId, () => { ov.classList.remove('padon'); $('#pvPad', ov).classList.remove('on'); });
   $('#pvPad', ov).onclick = () => { const on = ov.classList.toggle('padon'); $('#pvPad', ov).classList.toggle('on', on); if (on) PV.pad.show(); else PV.pad.flush(); };
   const view = $('.pvview', ov);
@@ -1374,7 +1687,7 @@ async function openViewer({fileId, title, type, extra, onClose}) {
     if (PV.hl.page && PV.hl.page !== n) return toast('한 메모는 같은 쪽에만 칠할 수 있어요. 「다 칠했어요」를 누른 뒤 새로 시작해 주세요.');
     const r = pg.getBoundingClientRect(), cl = v => Math.min(1, Math.max(0, v));
     const c = {x0: cl((e.clientX - r.left) / r.width), y0: cl((e.clientY - r.top) / r.height)}; c.x1 = c.x0; c.y1 = c.y0;
-    const tmp = document.createElement('div'); tmp.className = 'mhl tmp'; pg.appendChild(tmp);
+    const tmp = document.createElement('div'); tmp.className = 'mhl tmp'; tmp.dataset.hc = PV.pen; pg.appendChild(tmp);
     const norm = () => {
       let x0 = Math.min(c.x0, c.x1), x1 = Math.max(c.x0, c.x1), y0 = Math.min(c.y0, c.y1), y1 = Math.max(c.y0, c.y1);
       if (y1 - y0 < 0.018) { const cy = (y0 + y1) / 2; y0 = cl(cy - 0.009); y1 = cl(cy + 0.009); }   // 옆으로만 그으면 글 한 줄 높이로
@@ -1444,7 +1757,7 @@ function pvDrawHl() {
   const h = PV.hl; if (!h) return;
   $('.hlbar .hlcnt', PV.ov).textContent = h.rects.length ? `(${h.rects.length}번 칠함)` : '· 여러 번 칠해도 돼요';
   if (!h.rects.length) return;
-  const el = document.createElement('div'); el.className = 'mhl tmp tmp2'; hlFill(el, h.rects); PV.rows[h.page]?.appendChild(el);
+  const el = document.createElement('div'); el.className = 'mhl tmp tmp2'; el.dataset.hc = PV.pen; hlFill(el, h.rects); PV.rows[h.page]?.appendChild(el);
 }
 function pvEndHl(commit) {
   if (!PV?.hl) return;
@@ -1452,7 +1765,8 @@ function pvEndHl(commit) {
   PV.ov.classList.remove('hling'); $('#pvMemo', PV.ov).classList.remove('on');
   $('.hlbar', PV.ov)?.remove(); $$('.mhl.tmp', PV.ov).forEach(x => x.remove());
   if (!commit || !h.rects.length) return;
-  const b = hlBox(h.rects), m = {id: uid(), page: h.page, x: b.x0, y: b.y0, rects: h.rects, text: '', at: Date.now()};
+  const b = hlBox(h.rects), m = {id: uid(), page: h.page, x: b.x0, y: b.y0, rects: h.rects, color: PV.pen, text: '', at: Date.now()};
+  if (PV.only && PV.only !== PV.pen) { PV.only = null; pvColorUi(); }   // 다른 색만 보던 중이면 새 메모가 보이게 전체로
   PV.ann.memos.push(m); pvSave(); pvMarks(); pvOpenMemo(m.id, true);
 }
 document.addEventListener('keydown', e => {
@@ -1464,17 +1778,25 @@ function pvOpenMemo(id, isNew) {
   const m = PV.ann.memos.find(x => x.id === id); if (!m) return;
   PV.sel = id; pvMarks();
   const drop = () => { PV.ann.memos = PV.ann.memos.filter(x => x !== m); PV.sel = null; pvSave(); pvMarks(); };
-  modal(`📝 내 메모 <span style="font-weight:400;font-size:14px;color:var(--sub)">${m.page}쪽</span>`, `<textarea id="mmTa" rows="9" style="width:100%;font-size:16px;line-height:1.6" placeholder="메모를 써 주세요.">${esc(m.text)}</textarea>`, [
+  const colRow = m.rects?.length ? `<div class="mcolrow">형광펜 색 ${HC_DOTS('mc')}</div>` : '';
+  modal(`📝 내 메모 <span style="font-weight:400;font-size:14px;color:var(--sub)">${m.page}쪽</span>`, `${colRow}<textarea id="mmTa" rows="9" style="width:100%;font-size:16px;line-height:1.6" placeholder="메모를 써 주세요.">${esc(m.text)}</textarea>`, [
     {label: '🗑 삭제', danger: true, onClick: () => { if (m.text.trim() && !confirm('이 메모를 삭제할까요?')) return false; drop(); }},
     {label: '완료', primary: true, onClick: () => { if (isNew && !m.text.trim()) drop(); else { PV.sel = null; pvMarks(); } }}
-  ], box => { const ta = $('#mmTa', box); ta.oninput = () => { m.text = ta.value; pvSave(); }; setTimeout(() => ta.focus(), 30); });
+  ], box => {
+    const ta = $('#mmTa', box); ta.oninput = () => { m.text = ta.value; pvSave(); }; setTimeout(() => ta.focus(), 30);
+    // 이미 칠한 메모의 색 바꾸기
+    const show = () => $$('.mcolrow .hcd', box).forEach(b => b.classList.toggle('on', b.dataset.mc === hcOf(m)));
+    $$('.mcolrow .hcd', box).forEach(b => b.onclick = () => { m.color = b.dataset.mc; pvSave(); pvMarks(); show(); });
+    show();
+  });
 }
 function pvMarks() {
   $$('.mpin, .mhl:not(.tmp), .ribbon', PV.ov).forEach(x => x.remove());
   for (const m of PV.ann.memos) {
     const d = PV.rows[m.page]; if (!d) continue;
+    if (PV.only && (!m.rects?.length || hcOf(m) !== PV.only)) continue;   // 색만 보기
     if (m.rects?.length) {   // 형광펜 메모
-      const el = document.createElement('div'); el.className = `mhl${PV.sel === m.id ? ' sel' : ''}`; el.dataset.id = m.id; el.title = m.text.slice(0, 80);
+      const el = document.createElement('div'); el.className = `mhl${PV.sel === m.id ? ' sel' : ''}`; el.dataset.id = m.id; el.dataset.hc = hcOf(m); el.title = m.text.slice(0, 80);
       hlFill(el, m.rects, '내 메모'); d.appendChild(el);
     } else d.insertAdjacentHTML('beforeend', `<div class="mpin ${PV.sel === m.id ? 'sel' : ''}" data-id="${m.id}" style="left:${m.x * 100}%;top:${m.y * 100}%" title="${esc(m.text.slice(0, 80))}">📝</div>`);
   }
@@ -1798,6 +2120,186 @@ function openTypePad() {
 // 유형 보이는 순서 (이름에 이 말이 들어 있으면 그 자리, 없으면 맨 뒤)
 const TYPE_ORDER = ['교직관', '교사역량', '미래교육', '수업', '생활지도', '학급운영', '학교폭력', '동료교사', '교권', '주제별'];
 const typeRank = n => { const s = n.replace(/[\s·・,]/g, ''); const i = TYPE_ORDER.findIndex(k => s.includes(k)); return i < 0 ? 99 : i; };
+/* =========================================================
+   일정: 2026년 12월 ~ 2027년 1월 달력 (12월 첫 줄의 11/29·11/30도 씀)
+   빈 칸을 누르면 일정 추가 · 일정을 누르면 고치기 · 끌어서 다른 날로 옮기기
+   ========================================================= */
+const CAL_MONTHS = [[2026, 12], [2027, 1]];
+const CAL_MIN = '2026-11-29', CAL_MAX = '2027-01-31';   // 12월 달력 첫 줄의 11/29·11/30부터
+const CAL_HOL = {'2026-12-25': '성탄절', '2027-01-01': '신정'};
+const CAL_COLORS = [['g', '초록'], ['b', '파랑'], ['y', '노랑'], ['r', '빨강'], ['p', '보라']];
+const ymd = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+const todayStr = () => { const t = new Date(); return ymd(t.getFullYear(), t.getMonth() + 1, t.getDate()); };
+const evSort = (a, b) => (a.date + (a.time || '99')).localeCompare(b.date + (b.time || '99')) || a.title.localeCompare(b.title);
+const mdStr = s => `${+s.slice(5, 7)}/${+s.slice(8, 10)}`;
+function calMonth(y, m, evs) {
+  const first = new Date(y, m - 1, 1).getDay(), n = new Date(y, m, 0).getDate(), t = todayStr();
+  let cells = '';
+  // 앞뒤 빈 칸에는 지난달·다음 달 날짜를 연하게 (예: 12월 1일 화요일 앞 월요일 = 11월 30일)
+  // 그중 일정 범위 안이고 다른 달력에 없는 날(11/29, 11/30)은 일정도 넣을 수 있음
+  const prevN = new Date(y, m - 1, 0).getDate(), py = m === 1 ? y - 1 : y, pm = m === 1 ? 12 : m - 1;
+  const firstShown = ymd(CAL_MONTHS[0][0], CAL_MONTHS[0][1], 1);
+  const days = [];
+  for (let i = 0; i < first; i++) {
+    const d = prevN - first + 1 + i, ds = ymd(py, pm, d);
+    days.push(ds >= CAL_MIN && ds < firstShown ? {ds, d, w: i, oth: true} : {pad: d});
+  }
+  for (let d = 1; d <= n; d++) days.push({ds: ymd(y, m, d), d, w: (first + d - 1) % 7});
+  for (const {ds, d, w, oth, pad} of days) {
+    if (pad) { cells += `<div class="cday pad"><div class="dn"><b>${pad}</b></div></div>`; continue; }
+    const hol = CAL_HOL[ds];
+    const cls = ['cday', oth && 'oth', w === 0 && 'sun', w === 6 && 'sat', hol && 'hol', ds === t && 'today'].filter(Boolean).join(' ');
+    const list = evs.filter(e => e.date === ds).sort(evSort);
+    cells += `<div class="${cls}" data-d="${ds}"><div class="dn"><b>${d}</b>${hol ? `<i>${hol}</i>` : oth ? `<i>${pm}월</i>` : ''}</div>${list.map(e =>
+      `<button class="ev" data-id="${e.id}" data-c="${e.color || 'g'}" title="${esc((e.time ? e.time + ' ' : '') + e.title)}">${e.time ? `<span class="tm">${e.time}</span>` : ''}${esc(e.title)}</button>`).join('')}</div>`;
+  }
+  const tail = (7 - (first + n) % 7) % 7;
+  for (let i = 0; i < tail; i++) cells += `<div class="cday pad"><div class="dn"><b>${i + 1}</b></div></div>`;
+  return `<section class="cal"><h2>${m}월 <small>${y}</small></h2>
+    <div class="wk">${'일월화수목금토'.split('').map(x => `<div>${x}</div>`).join('')}</div>
+    <div class="days">${cells}</div></section>`;
+}
+// 휴대폰에서는 달력 칸이 좁아 일정 이름이 잘리니, 달력 아래에 오늘부터의 일정을 목록으로 (넓은 화면에서는 CSS로 숨김)
+function upcomingHtml(evs) {
+  const t = todayStr(), list = evs.filter(e => e.date >= t).sort(evSort);
+  const dday = d => { const n = Math.round((new Date(d + 'T00:00') - new Date(t + 'T00:00')) / 864e5); return n ? `D-${n}` : '오늘'; };
+  const wd = d => '일월화수목금토'[new Date(d + 'T00:00').getDay()];
+  return `<section class="uplist" aria-label="다가오는 일정"><h2>다가오는 일정</h2>${list.length ? list.map(e => `<button class="upi" data-id="${e.id}" data-c="${e.color || 'g'}">
+      <span class="ud"><b>${mdStr(e.date)}</b><small>${wd(e.date)}요일</small></span>
+      <span class="ut"><b>${esc(e.title)}</b>${e.time || e.memo ? `<small>${esc([e.time, e.memo].filter(Boolean).join(' · '))}</small>` : ''}</span>
+      <span class="dd">${dday(e.date)}</span></button>`).join('') : '<p class="upnone">앞으로 남은 일정이 없어요.</p>'}</section>`;
+}
+function renderSched() {
+  const evs = D.sched;
+  app().innerHTML = `<div class="lhead"><h1 class="h1">일정</h1><button class="btn primary" id="addEv">＋ 일정 추가</button></div>
+    <p class="calhint">날짜 칸을 누르면 그날에 일정을 넣어요. 일정을 누르면 고치거나 지울 수 있고, 끌어서 다른 날로 옮길 수 있어요.</p>
+    <div class="calwrap">${CAL_MONTHS.map(([y, m]) => calMonth(y, m, evs)).join('')}</div>
+    ${upcomingHtml(evs)}`;
+  $('#addEv').onclick = () => { const t = todayStr(); editEv(null, t >= CAL_MIN && t <= CAL_MAX ? t : CAL_MIN); };
+  $$('.upi').forEach(b => b.onclick = () => { const ev = D.sched.find(x => x.id === b.dataset.id); ev && editEv(ev); });
+  $$('.cday[data-d]').forEach(c => c.onclick = e => { if (!e.target.closest('.ev')) editEv(null, c.dataset.d); });
+  $$('.ev').forEach(calDrag);
+}
+// 일정 끌어 옮기기 (마우스·터치 모두): 조금 움직이면 끌기, 그냥 떼면 고치기
+function calDrag(btn) {
+  let st = null;
+  btn.onpointerdown = e => {
+    if (e.button) return;
+    st = {x: e.clientX, y: e.clientY, drag: false, ghost: null, over: null};
+    btn.setPointerCapture(e.pointerId);
+  };
+  btn.onpointermove = e => {
+    if (!st) return;
+    if (!st.drag && Math.hypot(e.clientX - st.x, e.clientY - st.y) < 8) return;
+    if (!st.drag) {
+      st.drag = true; btn.classList.add('drag');
+      st.ghost = btn.cloneNode(true); st.ghost.classList.remove('drag'); st.ghost.classList.add('evghost'); document.body.appendChild(st.ghost);
+    }
+    st.ghost.style.left = e.clientX + 'px'; st.ghost.style.top = e.clientY + 'px';
+    const cell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.cday[data-d]');
+    if (cell !== st.over) { st.over?.classList.remove('over'); st.over = cell; cell?.classList.add('over'); }
+    // 화면 끝에 가까우면 저절로 스크롤
+    if (e.clientY > innerHeight - 50) scrollBy(0, 14); else if (e.clientY < 90) scrollBy(0, -14);
+  };
+  const end = ok => {
+    if (!st) return;
+    const s = st; st = null;
+    s.ghost?.remove(); s.over?.classList.remove('over'); btn.classList.remove('drag');
+    if (!ok) return;
+    const all = D.sched, ev = all.find(x => x.id === btn.dataset.id); if (!ev) return;
+    if (!s.drag) return editEv(ev);
+    if (s.over && s.over.dataset.d !== ev.date) {
+      ev.date = s.over.dataset.d; D.sched = all;
+      const y = scrollY; renderSched(); scrollTo(0, y);
+      toast(`${mdStr(ev.date)}로 옮겼어요`);
+    }
+  };
+  btn.onpointerup = () => end(true);
+  btn.onpointercancel = () => end(false);
+  btn.onclick = e => e.stopPropagation();
+  btn.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const ev = D.sched.find(x => x.id === btn.dataset.id); ev && editEv(ev); } };
+}
+function editEv(ev, date) {
+  const isNew = !ev; ev = ev ? {...ev} : {id: uid(), date, title: '', time: '', memo: '', color: 'g'};
+  const box = modal(isNew ? '📅 일정 추가' : '📅 일정 고치기', `<div class="form">
+    <div class="fl"><label for="evT">할 일</label><input type="text" id="evT" value="${esc(ev.title)}" placeholder="예: 2차 수업실연 · 면접 연습 모임" autocomplete="off"></div>
+    <div class="fl2">
+      <div class="fl"><label for="evD">날짜</label><input type="date" id="evD" value="${ev.date}" min="${CAL_MIN}" max="${CAL_MAX}"></div>
+      <div class="fl"><label for="evH">시간 (안 써도 돼요)</label><input type="time" id="evH" value="${esc(ev.time)}"></div>
+    </div>
+    <div class="fl"><label>색</label><div class="colrs">${CAL_COLORS.map(([c, n]) => `<button type="button" class="colr ${ev.color === c ? 'on' : ''}" data-c="${c}">${n}</button>`).join('')}</div></div>
+    <div class="fl"><label for="evM">메모</label><textarea id="evM" rows="3" placeholder="장소, 준비물 등">${esc(ev.memo)}</textarea></div></div>`, [
+    ...(isNew ? [] : [{label: '삭제', danger: true, onClick: () => {
+      if (!confirm(`'${ev.title}' 일정을 지울까요?`)) return false;
+      D.sched = D.sched.filter(x => x.id !== ev.id); renderSchedKeep();
+    }}]),
+    {label: '취소'},
+    {label: '저장', primary: true, onClick: box => {
+      ev.title = $('#evT', box).value.trim(); if (!ev.title) { toast('할 일을 써 주세요'); return false; }
+      const d = $('#evD', box).value;
+      if (!d || d < CAL_MIN || d > CAL_MAX) { toast('날짜는 2026년 11월 29일 ~ 2027년 1월 31일 안에서 골라 주세요'); return false; }
+      ev.date = d; ev.time = $('#evH', box).value; ev.memo = $('#evM', box).value.trim();
+      const all = D.sched, i = all.findIndex(x => x.id === ev.id);
+      if (i < 0) all.push(ev); else all[i] = ev;
+      D.sched = all; renderSchedKeep();
+    }}
+  ], box => { if (isNew) $('#evT', box).focus(); });
+  $$('.colr', box).forEach(b => b.onclick = () => { ev.color = b.dataset.c; $$('.colr', box).forEach(x => x.classList.toggle('on', x === b)); });
+}
+function renderSchedKeep() { const y = scrollY; renderSched(); scrollTo(0, y); }
+
+/* =========================================================
+   Q&A: 질문 목록 → 누르면 답변이 펼쳐짐 (＋ 질문 추가하기 · 펼친 질문 아래 편집으로 고치기·지우기)
+   ========================================================= */
+/* 공통 Q&A: 앱 파일에 들어 있어서 이 앱을 여는 모든 사람에게 보임 (고치거나 지울 수 없음)
+   내 Q&A를 공통으로 만들려면: 「📤 공통 Q&A로 보낼 글 복사」 → 복사된 글을 이 목록에 넣음 */
+const QNA_BUILTIN = [];
+function renderQna() {
+  const list = D.qna, open = new Set($$('.faq.open').map(x => x.dataset.id));
+  // 이미 공통에 들어간 질문(같은 질문 글)은 내 목록에서 겹쳐 보이지 않게
+  const inBase = new Set(QNA_BUILTIN.map(x => x.q.trim()));
+  const mine = list.filter(q => !inBase.has(q.q.trim()));
+  const item = (q, base) => `<div class="faq ${open.has(q.id) ? 'open' : ''}${base ? ' base' : ''}" data-id="${q.id}">
+      <button class="qq" aria-expanded="${open.has(q.id)}"><span class="qm">Q</span><span class="qt">${esc(q.q)}</span>${base ? '<span class="qbase">공통</span>' : ''}</button>
+      <div class="qa"><span class="am">A</span><div class="at">${q.a ? esc(q.a) : '<span style="color:var(--sub)">아직 답변이 없어요.</span>'}</div></div>
+      ${base ? '' : '<div class="qed"><button class="btn small" data-q="edit">편집</button><button class="btn small danger" data-q="del">삭제</button></div>'}
+    </div>`;
+  app().innerHTML = `<div class="lhead"><h1 class="h1">Q&amp;A</h1>${mine.length ? '<button class="btn" id="qExport" title="내 Q&A를 모두가 보는 공통 Q&A로 넣을 수 있게 글로 복사해요">📤 공통으로 보낼 글 복사</button>' : ''}<button class="btn primary" id="addQ">＋ 질문 추가하기</button></div>
+    ${QNA_BUILTIN.length || mine.length ? `<div class="qna">${QNA_BUILTIN.map((q, i) => item({...q, id: 'base' + i}, true)).join('')}${mine.map(q => item(q, false)).join('')}</div>`
+    : `<div class="empty"><span class="ic">💬</span>아직 질문이 없어요.</div>`}`;
+  $('#addQ').onclick = () => editQ(null);
+  if ($('#qExport')) $('#qExport').onclick = () => {
+    const txt = JSON.stringify(mine.map(({q, a}) => ({q, a})), null, 2);
+    navigator.clipboard?.writeText(txt).then(() => toast(`내 질문 ${mine.length}개를 복사했어요. 이 글을 앱의 공통 Q&A 목록에 넣으면 모두에게 보여요.`), () => toast('복사하지 못했어요.'));
+  };
+  $$('.faq').forEach(el => {
+    const id = el.dataset.id;
+    $('.qq', el).onclick = () => { const o = el.classList.toggle('open'); $('.qq', el).setAttribute('aria-expanded', o); };
+    if (el.classList.contains('base')) return;
+    $('[data-q=edit]', el).onclick = () => editQ(D.qna.find(x => x.id === id));
+    $('[data-q=del]', el).onclick = () => { if (confirm('이 질문을 지울까요?')) { D.qna = D.qna.filter(x => x.id !== id); renderQna(); } };
+  });
+}
+function editQ(q) {
+  const isNew = !q; q = q ? {...q} : {id: uid(), q: '', a: ''};
+  modal(isNew ? '💬 질문 추가' : '💬 질문 편집', `<div class="form">
+    <div class="fl"><label for="qQ">질문</label><textarea id="qQ" rows="2" placeholder="예: 2차 시험 날 무엇을 챙겨 가나요?">${esc(q.q)}</textarea></div>
+    <div class="fl"><label for="qA">답변</label><textarea id="qA" rows="7">${esc(q.a)}</textarea></div></div>`, [
+    ...(isNew ? [] : [{label: '삭제', danger: true, onClick: () => {
+      if (!confirm('이 질문을 지울까요?')) return false;
+      D.qna = D.qna.filter(x => x.id !== q.id); renderQna();
+    }}]),
+    {label: '취소'},
+    {label: '저장', primary: true, onClick: box => {
+      q.q = $('#qQ', box).value.trim(); if (!q.q) { toast('질문을 써 주세요'); return false; }
+      q.a = $('#qA', box).value.trim();
+      const all = D.qna, i = all.findIndex(x => x.id === q.id);
+      if (i < 0) all.push(q); else all[i] = q;
+      D.qna = all; renderQna();
+    }}
+  ], box => $('#qQ', box).focus());
+}
+
 function renderTypes() {
   const list = D.types.map((t, i) => ({t, i})).sort((a, b) => typeRank(a.t.name) - typeRank(b.t.name) || a.i - b.i).map(x => x.t);
   app().innerHTML = `<div class="lhead"><h1 class="h1">유형정리</h1><button class="btn primary edonly" id="addType">＋ 유형 추가</button></div>
@@ -1968,22 +2470,78 @@ function openType(t) {
 /* =========================================================
    수업실연 연습 / 면접 연습 — 녹화 기록
    ========================================================= */
+/* ---------- 폴더: 연습 아이콘 → 폴더 목록 → 폴더 안에서 녹화·기록 ----------
+   폴더 'fold:<kind>' = [{id, name, at, checklist:[{g, items:[{id, text}]}]}], 기록에는 r.folder
+   체크리스트는 폴더마다 하나 (제목 = 폴더 이름). 수업실연 폴더는 기본 점검 항목으로 시작 */
+let CUR_FOLDER = null;   // 지금 열어 둔 폴더 (새 기록이 이 폴더에 들어감)
+const newChecklist = kind => kind === 'demo' ? practiceChecklist() : [];
+function foldersFixed(kind) {
+  // 폴더가 생기기 전에 찍은 기록은 「기존 기록」 폴더로
+  let F = D.folders(kind);
+  const recs = D.recs(kind), lost = recs.filter(r => !F.some(f => f.id === r.folder));
+  if (lost.length) {
+    let f = F.find(x => x.name === '기존 기록');
+    if (!f) { f = {id: uid(), name: '기존 기록', at: Date.now(), checklist: newChecklist(kind)}; F = [...F, f]; D.setFolders(kind, F); }
+    D.setRecs(kind, recs.map(r => F.some(x => x.id === r.folder) ? r : {...r, folder: f.id}));
+  }
+  return F;
+}
 function renderPractice(kind) {
-  const K = KIND[kind], recs = D.recs(kind).slice().sort((a, b) => b.at - a.at);
-  const demo = kind === 'demo';   // 수업실연 연습: 썸네일 없이 기록만
-  app().innerHTML = `<div class="lhead"><h1 class="h1">${K.name} 연습</h1>
-      ${kind === 'intv' ? '<button class="btn" id="newTxt">📝 받아쓴 글</button>' : ''}<button class="btn" id="upVid">📁 영상·녹음 올리기</button><button class="btn primary" id="newRec">● 녹화</button></div>
+  CUR_FOLDER = null;
+  const K = KIND[kind], F = foldersFixed(kind);
+  app().innerHTML = `<div class="lhead"><h1 class="h1">${K.name} 연습</h1>${F.some(x => (x.checklist || []).some(g => g.items.length)) ? '<button class="btn" id="avgCk">📊 평균 체크리스트</button>' : ''}<button class="btn primary" id="newFold">＋ 폴더 만들기</button></div>
+    ${F.length ? `<div class="folds">${F.map(f => {
+      return `<div class="fold" data-id="${f.id}" role="link" tabindex="0" aria-label="${esc(f.name)} 폴더 열기">
+        <div class="nm">${esc(f.name)}</div>
+        <button class="iconbtn fed" data-f="edit" title="폴더 이름 바꾸기·지우기" aria-label="${esc(f.name)} 폴더 이름 바꾸기">✎</button></div>`;
+    }).join('')}</div>`
+    : `<div class="empty"><span class="ic">📁</span>아직 폴더가 없어요.</div>`}`;
+  $('#newFold').onclick = () => editFolder(kind, null);
+  if ($('#avgCk')) $('#avgCk').onclick = () => openAvgChecklist(kind);
+  $$('.fold').forEach(c => c.onclick = e => {
+    const f = D.folders(kind).find(x => x.id === c.dataset.id);
+    if (e.target.closest('[data-f=edit]')) return editFolder(kind, f);
+    location.hash = `#${kind}/practice/${f.id}`;
+  });
+  $$('.fold').forEach(c => c.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === c) { e.preventDefault(); c.click(); } });
+}
+function editFolder(kind, f) {
+  const isNew = !f, K = KIND[kind];
+  modal(isNew ? '📁 새 폴더' : '📁 폴더 이름', `<div class="fl"><label for="fName">폴더 이름</label><input type="text" id="fName" value="${esc(f?.name || '')}" maxlength="40"></div>
+`, [
+    ...(isNew ? [] : [{label: '삭제', danger: true, onClick: () => {
+      const n = D.recs(kind).filter(r => r.folder === f.id).length;
+      if (n) { toast(`이 폴더에 기록이 ${n}개 있어요. 기록을 먼저 지워 주세요.`); return false; }
+      if (!confirm(`'${f.name}' 폴더와 체크리스트를 지울까요?`)) return false;
+      D.setFolders(kind, D.folders(kind).filter(x => x.id !== f.id)); route();
+    }}]),
+    {label: '취소'},
+    {label: isNew ? '만들기' : '저장', primary: true, onClick: box => {
+      const name = $('#fName', box).value.trim(); if (!name) { toast('폴더 이름을 써 주세요'); return false; }
+      const all = D.folders(kind);
+      if (isNew) { const nf = {id: uid(), name, at: Date.now(), checklist: newChecklist(kind)}; D.setFolders(kind, [...all, nf]); location.hash = `#${kind}/practice/${nf.id}`; }
+      else { const x = all.find(y => y.id === f.id); x.name = name; D.setFolders(kind, all); route(); }
+    }}
+  ], box => { const i = $('#fName', box); i.focus(); i.select(); i.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) $('.mf .primary', box).click(); }; });
+}
+function renderFolder(kind, fid) {
+  CUR_FOLDER = fid;
+  const K = KIND[kind], f = D.folders(kind).find(x => x.id === fid);
+  const recs = D.recs(kind).filter(r => r.folder === fid).sort((a, b) => b.at - a.at);
+  app().innerHTML = `<div class="lhead"><h1 class="h1">${esc(f.name)}</h1>
+      ${kind === 'intv' ? '<button class="btn" id="upAll">⬆ 업로드</button>' : '<button class="btn" id="upVid">📁 영상·녹음 올리기</button>'}<button class="btn primary" id="newRec">● 녹화</button></div>
     ${recs.length ? `<div class="grid">${recs.map(r => `<div class="card rec" data-id="${r.id}">
       <div class="bd"><div class="ti ${r.title || r.unit ? '' : 'no'}">${r.title || r.unit ? esc(r.title || r.unit) : '제목을 아직 안 썼어요'}</div>
         <div class="mt">${dstr(r.at)}${recDur(r) ? ' · ' + fmtK(recDur(r)) : ''}</div>
-        ${markSummary(r.checks) ? `<div class="ln"><span>${markSummary(r.checks)}</span></div>` : ''}</div></div>`).join('')}</div>`
+        </div></div>`).join('')}</div>`
     : `<div class="empty"><span class="ic">🎥</span>● 녹화로 ${K.name} 연습을 시작하세요.</div>`}`;
   $('#newRec').onclick = () => openRecorder(kind);
-  $('#upVid').onclick = async () => {
+  if ($('#upVid')) $('#upVid').onclick = async () => {
     const f = await pickFile('video/*,audio/*,.m4a,.mp3,.wav,.aac,.ogg,.flac'); if (!f) return;
     openEditor(kind, null, f);
   };
-  if ($('#newTxt')) $('#newTxt').onclick = () => openEditor(kind, null, null);
+  // 면접: ⬆ 업로드 하나로 — 클로바노트 글·문제 사진·영상을 한 화면에서 올림
+  if ($('#upAll')) $('#upAll').onclick = () => openEditor(kind, null, null);
   $$('.rec').forEach(c => c.onclick = () => openEditor(kind, D.recs(kind).find(r => r.id === c.dataset.id)));
 }
 const recDur = r => Math.max(0, (r.out ?? r.dur) - (r.in || 0));
@@ -1997,7 +2555,73 @@ const PRACTICE_CHECKLIST = [
   {g: '태도', items: ['목소리의 크기, 말 빠르기가 적당했다.', '교실 곳곳에 고르게 시선을 두었다.', '뒤돌며 판서하지 않았다.']}
 ];
 const practiceChecklist = () => PRACTICE_CHECKLIST.map((g, gi) => ({g: g.g, items: g.items.map((x, ii) => ({id: `pv-${gi}-${ii}`, text: x}))}));
-const markSummary = m => { if (!m) return ''; const c = {o: 0, t: 0, x: 0}; Object.values(m).forEach(v => { if (c[v] != null) c[v]++; }); return c.o + c.t + c.x ? `○ ${c.o} · △ ${c.t} · ✕ ${c.x}` : ''; };
+// 기록의 체크리스트 점수: r.ck = {폴더id: {항목id: 3|2|1}}, r.ckMemo = {폴더id: {항목id: 비고}}
+// 예전 기록(r.checks: ○△✕)은 3·2·1로 바꿔서 그 기록의 폴더 체크리스트로 읽음
+const OLD_MK = {o: 3, t: 2, x: 1};
+function recCk(r) {
+  if (r.ck) return {ck: r.ck, memo: r.ckMemo || {}};
+  const ck = {}, memo = {};
+  if (r.checks && r.folder) { const m = {}; for (const [k, v] of Object.entries(r.checks)) if (OLD_MK[v]) m[k] = OLD_MK[v]; if (Object.keys(m).length) ck[r.folder] = m; }
+  if (r.checkMemo && r.folder) memo[r.folder] = {...r.checkMemo};
+  return {ck, memo};
+}
+/* 📊 평균 체크리스트: 한 항목을 여러 체크리스트(폴더)에서 받은 점수로 평균
+   줄 = 점검 항목 (단계 + 글이 같으면 같은 항목), 칸 = 점수가 있는 체크리스트, 끝 칸 = 그 체크리스트들의 평균
+   한 체크리스트 안에 기록이 여럿이면 그 체크리스트의 점수는 기록들의 평균 */
+const AVG_CK = '__avg';
+const num1 = v => Number.isInteger(v) ? String(v) : v.toFixed(1);
+function avgChecklistHtml(kind) {
+  const F = D.folders(kind).filter(f => (f.checklist || []).some(g => g.items.length)), recs = D.recs(kind).map(recCk);
+  const score = (fid, iid) => { const v = recs.map(c => c.ck[fid]?.[iid]).filter(Boolean); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
+  const groups = [], rows = new Map();
+  for (const f of F) for (const g of f.checklist) for (const it of g.items) {
+    const key = g.g + '\n' + it.text;
+    if (!rows.has(key)) { let grp = groups.find(x => x.g === g.g); if (!grp) groups.push(grp = {g: g.g, rows: []}); const row = {text: it.text, cells: {}, memos: []}; grp.rows.push(row); rows.set(key, row); }
+    const row = rows.get(key), s = score(f.id, it.id); if (s != null) row.cells[f.id] = s;
+    // 비고: 각 체크리스트에서 이 항목에 쓴 글 (체크리스트 이름과 함께)
+    for (const c of recs) { const t = c.memo[f.id]?.[it.id]?.trim(); if (t) row.memos.push({f: f.name, t}); }
+  }
+  const cols = F.filter(f => [...rows.values()].some(r => r.cells[f.id] != null));
+  const anyMemo = [...rows.values()].some(r => r.memos.length);
+  const head = `<div class="edh ckh"><h3>📊 평균 체크리스트</h3><span class="edcnt">체크리스트 ${cols.length}개</span></div>`;
+  if (!cols.length && !anyMemo) return head + '<p class="cknone2">아직 점수를 매긴 체크리스트가 없어요.</p>';
+  const memoCell = row => `<td class="avmemo">${row.memos.length ? row.memos.map(m => `<div class="amm"><b>${esc(m.f)}</b>${esc(m.t)}</div>`).join('') : '<span class="none">–</span>'}</td>`;
+  const cell = v => v == null ? '<td class="avc"><span class="none">–</span></td>' : `<td class="avc"><b data-lv="${Math.round(v)}">${num1(v)}</b></td>`;
+  let no = 0;
+  return head + `<p class="cklegend"><b>3</b> 잘했어요 · <b>2</b> 보통이에요 · <b>1</b> 부족해요</p>
+    <div class="edck"><table class="cktable avgtable"><thead><tr><th>번호</th><th>단계</th><th>점검 항목</th>${cols.map(f => `<th class="fc" title="${esc(f.name)}">${esc(f.name)}</th>`).join('')}<th class="tot">평균</th><th>비고</th></tr></thead><tbody>${groups.map(g => {
+      const [stage, ...rest] = g.g.split(' · '), cond = rest.join(' · ');
+      return g.rows.map((row, ii) => {
+        no++;
+        const v = cols.map(f => row.cells[f.id]).filter(x => x != null), avg = v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
+        return `<tr><td class="no">${no}</td>${ii ? '' : `<th class="stage" rowspan="${g.rows.length}">${esc(stage)}${cond ? `<small>${esc(cond)}</small>` : ''}</th>`}<td class="it">${esc(row.text)}</td>${cols.map(f => cell(row.cells[f.id])).join('')}${cell(avg).replace('class="avc"', 'class="avc tot"')}${memoCell(row)}</tr>`;
+      }).join('');
+    }).join('')}</tbody></table></div>`;
+}
+// 체크리스트 항목 고치기: ■로 시작하는 줄은 단계, 나머지 줄은 점검 항목 (같은 단계·같은 글이면 예전 점수가 그대로 남음)
+function editChecklist(kind, fid, done) {
+  const all = D.folders(kind), f = all.find(x => x.id === fid); if (!f) return;
+  const txt = (f.checklist || []).map(g => `■ ${g.g}\n${g.items.map(x => x.text).join('\n')}`).join('\n');
+  modal(`📋 ${esc(f.name)} · 항목 고치기`, `<div class="fl">
+    <textarea id="ckTa" rows="16" placeholder="■ 시작하기&#10;단원명을 썼다.&#10;학습 목표를 썼다.&#10;■ 마무리&#10;시간이 넘지 않았다." aria-label="체크리스트 항목">${esc(txt)}</textarea>
+    <div class="hint">■로 시작하는 줄은 단계 이름이에요. 그 아래에 점검 항목을 한 줄에 하나씩 써요.</div></div>`, [
+    {label: '취소'},
+    {label: '저장', primary: true, onClick: box => {
+      const old = new Map((f.checklist || []).flatMap(g => g.items.map(x => [g.g + '\n' + x.text, x.id])));
+      const out = []; let g = null;
+      for (const line of $('#ckTa', box).value.split('\n').map(s => s.trim()).filter(Boolean)) {
+        if (/^[■#]/.test(line)) { g = {g: line.replace(/^[■#]+\s*/, '') || '점검', items: []}; out.push(g); continue; }
+        if (!g) { g = {g: '점검', items: []}; out.push(g); }
+        g.items.push({id: old.get(g.g + '\n' + line) || uid(), text: line});
+      }
+      f.checklist = out.filter(x => x.items.length); D.setFolders(kind, all); done?.(f.checklist);
+    }}
+  ], box => $('#ckTa', box).focus());
+}
+function openAvgChecklist(kind) {
+  modal('📊 평균 체크리스트', avgChecklistHtml(kind).replace(/^<div class="edh ckh"><h3>.*?<\/h3>/, '<div class="edh ckh">'), [{label: '닫기', primary: true}]);
+  $('#modalRoot .box').classList.add('wide');
+}
 
 /* ---------- 받아쓴 글 (클로바노트 등에서 복사하거나 내려받은 글) ---------- */
 const clock = s => { const p = String(s).trim().split(':').map(Number); return p.some(isNaN) ? 0 : p.reduce((a, x) => a * 60 + x, 0); };
@@ -2153,29 +2777,64 @@ function qaAuto(P) {
   });
 }
 // 고친 뒤 정리: 빈 줄·빈 묶음·빈 답변 빼기
-const qaTidy = qa => qa.map(u => ({...u, label: (u.label || '').trim(), question: (u.question || '').trim(),
-  groups: u.groups.map(g => ({...g, head: (g.head || '').trim(), points: g.points.map(p => p.trim()).filter(Boolean)})).filter(g => g.head || g.points.length)}))
+const qaTidy = qa => qa.map(({_new, ...u}) => ({...u, label: (u.label || '').trim(), question: (u.question || '').trim(),
+  groups: u.groups.map(({_new, ...g}) => ({...g, head: (g.head || '').trim(), points: g.points.map(p => p.trim()).filter(Boolean)})).filter(g => g.head || g.points.length)}))
   .filter(u => u.label || u.question || u.groups.length);
-function qaHtml(qa, editing, edited) {
+// ev (선택): {folders:[{id,name}], evals:{답변번호:{t:{폴더id: 평가 글}}}, mode:'view'|'pick'|'edit', name:폴더id}
+// 「✍️ 평가 쓰기」 → 폴더 이름 고르기 → 답변마다 옆에 그 이름의 평가 쓰기 → 「완료」
+// 완료하면 답변 옆에 답변 카드와 같은 모양(파란 부분만 노랑)으로 평가가 보임. 이름마다 평가가 따로 있음
+function qaHtml(qa, editing, edited, ev) {
   if (!qa.length && !editing) return '';
   const meta = u => `${u.dur ? `<span>말한 시간 ${fmtK(u.dur)}</span>` : ''}${u.think > 3 ? `<span>생각 ${fmtK(u.think)}</span>` : ''}`;
-  const view = (u, i) => `<article class="iq">
+  const on = ev?.folders.length && !editing, F = on ? ev.folders.find(x => x.id === ev.name) : null;
+  const txt = (i, fid) => (ev.evals[i]?.t || {})[fid] || '';
+  const has = fid => Object.values(ev?.evals || {}).some(x => x.t?.[fid]?.trim());
+  // 평가 카드: 답변 카드 모양(머리 · 번호 목록), 색만 노랑, 문제는 빼고 — 그 답변에 쓴 이름의 평가를 모두 한꺼번에
+  const evCard = (u, i, f) => {
+    const lines = txt(i, f.id).split('\n').map(s => s.trim()).filter(Boolean);
+    return `<article class="iq evc" data-u="${i}"><div class="iqh"><b>평가 · ${esc(f.name)}</b></div>
+      <div class="evtext">${lines.map(p => `<p>${esc(p)}</p>`).join('')}</div></article>`;
+  };
+  const evCards = (u, i) => {
+    const fs = ev.folders.filter(f => txt(i, f.id).trim());
+    return fs.length ? `<div class="evstack">${fs.map(f => evCard(u, i, f)).join('')}</div>` : '<div class="evnone"></div>';
+  };
+  // 쓰는 칸: 문제 없이 글만
+  const evWrite = (u, i) => `<article class="iq evc evw" data-u="${i}"><div class="iqh"><b>평가 · ${esc(F.name)}</b></div>
+      <textarea class="iqevt" rows="3" placeholder="평가를 써 주세요." aria-label="답변 ${i + 1} 평가 · ${esc(F.name)}">${esc(txt(i, F.id))}</textarea></article>`;
+  // 쓰는 중이거나 평가가 하나라도 있으면 답변과 평가를 한 줄에 나란히 (좁은 화면은 위아래)
+  const anyEv = on && ev.folders.some(f => has(f.id));
+  const view = (u, i) => !on || ev.mode === 'pick' || (ev.mode === 'view' && !anyEv) ? viewQ(u, i)
+    : `<div class="iqrow">${viewQ(u, i)}${ev.mode === 'edit' && F ? evWrite(u, i) : evCards(u, i)}</div>`;
+  // 위쪽 평가 줄: 이름 고르기 / 쓰는 중 (보기 줄은 없음 — 평가는 모두 한꺼번에 보임)
+  const evBar = !on ? '' : ev.mode === 'pick'
+    ? `<div class="evbar pick"><span class="evq">어떤 이름으로 평가할까요?</span>${ev.folders.map(x => `<button class="evf ${has(x.id) ? 'has' : ''}" data-a="evPick" data-f="${x.id}">${has(x.id) ? '<i aria-hidden="true">✓</i>' : ''}${esc(x.name)}</button>`).join('')}<span class="sp"></span><button class="btn small ghost" data-a="evCancel">취소</button></div>`
+    : ev.mode === 'edit'
+    ? `<div class="evbar edit"><span class="evtag">${esc(F?.name || '')}</span><span class="evq">평가를 쓰는 중이에요 · 답변 옆 칸에 써 주세요</span><span class="sp"></span><button class="btn small primary evdone" data-a="evDone">완료</button></div>`
+    : '';
+  const viewQ = (u, i) => `<article class="iq">
       <div class="iqh"><b>답변 ${i + 1}${u.label ? ` · ${esc(u.label)}` : ''}</b>${meta(u)}</div>
       ${u.question ? `<div class="iqq"><span class="lab">문제</span><p>${esc(u.question)}</p></div>` : ''}
       ${u.groups.map(g => g.fl ? `<div class="iqfl">${g.points.map((p, k) => `<p><span class="lab">${k ? '끝 문장' : '첫 문장'}</span>${esc(p)}</p>`).join('')}</div>`
         : `<div class="iqg">${g.head ? `<h5>${u.question ? '' : '<span class="lab">문제</span>'}${esc(g.head)}</h5>` : ''}${g.points.length ? `<ol>${g.points.map(p => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}</div>`).join('')}
     </article>`;
-  const edit = (u, i) => `<article class="iq ed" data-u="${i}">
-      <div class="iqh"><b>답변 ${i + 1}</b><input class="iqin iqlabel" data-f="label" value="${esc(u.label)}" placeholder="예: 구상형 1번" aria-label="답변 ${i + 1} 이름">${meta(u)}<span class="sp"></span><button class="btn small ghost danger" data-a="iqDelU">이 답변 지우기</button></div>
-      ${u.groups.map((g, gi) => `<div class="iqg ed" data-g="${gi}">
-        <div class="iqgh"><input class="iqin" data-f="head" value="${esc(g.head)}" placeholder="문제" aria-label="답변 ${i + 1}의 ${gi + 1}번째 문제"><button class="iconbtn" data-a="iqDelG" title="이 묶음 지우기" aria-label="이 묶음 지우기">✕</button></div>
-        <textarea class="iqin" data-f="points" rows="${Math.max(2, g.points.length + 1)}" placeholder="방안을 한 줄에 하나씩 써 주세요" aria-label="답변 ${i + 1}의 ${gi + 1}번째 묶음 방안">${esc(g.points.join('\n'))}</textarea></div>`).join('')}
-      <button class="btn small" data-a="iqAddG">＋ 묶음 추가</button>
+  // 고치기: 보는 화면과 똑같은 모양에서 글자만 바로 고침 (줄에서 Enter = 아래에 새 줄, 빈 줄에서 ⌫ = 줄 지우기)
+  const ce = (f, txt, extra = '') => `<span class="ce" contenteditable="true" spellcheck="false" data-ed="${f}"${extra}>${esc(txt)}</span>`;
+  // 고치기 중에만: 🗑 답변 지우기 · ✕ 문제 묶음 지우기 · ＋ 문제 추가 · ＋ 답변 추가 (새로 만든 칸은 _new 표시로 빈칸도 보여 줌)
+  const ph = t => ` data-ph="${t}"`;
+  const edit = (u, i) => `<article class="iq qed" data-u="${i}">
+      <div class="iqh"><b>답변 ${i + 1}${u.label || u._new ? ` · ${ce('label', u.label, ph('이름 (예: 즉답형)'))}` : ''}</b>${meta(u)}<i class="qsp"></i><button class="qx" data-a="iqDelU" title="이 답변 지우기" aria-label="답변 ${i + 1} 지우기">🗑</button></div>
+      ${u.question ? `<div class="iqq"><span class="lab">문제</span><p>${ce('question', u.question)}</p></div>` : ''}
+      ${u.groups.map((g, gi) => g.fl ? `<div class="iqfl" data-g="${gi}">${g.points.map((p, k) => `<p><span class="lab">${k ? '끝 문장' : '첫 문장'}</span>${ce('pt', p, ` data-k="${k}"`)}</p>`).join('')}</div>`
+        : `<div class="iqg qg" data-g="${gi}"><button class="qx qgx" data-a="iqDelG" title="이 문제 묶음 지우기" aria-label="문제 묶음 지우기">✕</button>${g.head || g._new ? `<h5>${u.question ? '' : '<span class="lab">문제</span>'}${ce('head', g.head, ph('문제'))}</h5>` : ''}${g.points.length ? `<ol>${g.points.map((p, k) => `<li>${ce('pt', p, ` data-k="${k}"` + ph('방안'))}</li>`).join('')}</ol>` : ''}</div>`).join('')}
+      <button class="qadd" data-a="iqAddG">＋ 문제 추가</button>
     </article>`;
   return `<div class="iqs${editing ? ' editing' : ''}"><div class="iqtop"><h4>문제와 답변 나눠 보기</h4><span>${edited ? '내가 고친 내용' : '받아쓴 글에서 규칙으로 뽑았어요'} · 답변 ${qa.length}개</span><span class="sp"></span>
-      ${editing ? '<button class="btn small primary" data-a="iqDone">✓ 다 고쳤어요</button>' : `${edited ? '<button class="btn small ghost" data-a="iqAuto">↺ 받아쓴 글로 다시 나누기</button>' : ''}<button class="btn small" data-a="iqEdit">✏️ 고치기</button>`}</div>
-    ${qa.map(editing ? edit : view).join('')}
-    ${editing ? '<button class="btn small" data-a="iqAddU">＋ 답변 추가</button>' : ''}</div>`;
+      ${editing ? '<button class="btn small primary" data-a="iqDone">✓ 다 고쳤어요</button>' : `${on && ev.mode === 'view' ? '<button class="btn small evstart" data-a="evStart">✍️ 평가 쓰기</button>' : ''}${edited ? '<button class="btn small ghost" data-a="iqAuto">↺ 받아쓴 글로 다시 나누기</button>' : ''}<button class="btn small" data-a="iqEdit">✏️ 고치기</button>`}</div>
+    ${evBar}
+    ${qa.map((u, i) => `<div class="iqitem">${(editing ? edit : view)(u, i)}</div>`).join('')}
+    ${editing ? '<button class="btn small qaddu" data-a="iqAddU">＋ 답변 추가</button>' : ''}
+</div>`;
 }
 
 /* ---------- 녹화 ---------- */
@@ -2242,7 +2901,7 @@ async function openRecorder(kind) {
   };
 }
 async function saveNewRec(kind, blob, dur) {
-  const r = {id: uid(), at: Date.now(), dur, in: 0, out: dur, unit: '', good: '', fix: '', type: blob.type};
+  const r = {id: uid(), at: Date.now(), dur, in: 0, out: dur, unit: '', good: '', fix: '', type: blob.type, folder: CUR_FOLDER};
   await blobPut('vid:' + r.id, blob);
   D.setRecs(kind, [...D.recs(kind), r]);
   return r;
@@ -2260,40 +2919,46 @@ function realDuration(v) {
 async function openEditor(kind, rec, file) {
   // 영상·녹음 없이 받아쓴 글만으로도 기록할 수 있음 (rec도 file도 없으면 글만 있는 새 기록)
   const K = KIND[kind], isUpload = !rec, noMedia = rec ? !!rec.noMedia : !file;
-  const blob = noMedia ? null : file || await blobGet('vid:' + rec.id);
+  // 면접: 한 화면(uni)에서 제목·걸린 시간 / 왼쪽 클로바노트 글·문제 사진 / 오른쪽 영상(나중에 올려도 됨) / 아래 나눠 보기·평가
+  // 수업실연도 같은 틀: 제목·걸린 시간 / 왼쪽 영상 · 오른쪽 문제 사진(영상과 같은 높이) / 아래 체크리스트 (좋은 점·고칠 점 칸은 없음, 예전 글은 기록에 남아 있음)
+  const uni = true, isIntv = kind === 'intv';
+  let blob = noMedia ? null : file || await blobGet('vid:' + rec.id), newFile = file || null;
   if (!noMedia && !blob) return toast('영상을 찾을 수 없어요.');
-  const r = rec ? {...rec} : {id: uid(), at: file?.lastModified || Date.now(), unit: '', good: '', fix: '', in: 0, type: file?.type || ''};
+  const r = rec ? {...rec} : {id: uid(), at: file?.lastModified || Date.now(), unit: '', good: '', fix: '', in: 0, type: file?.type || '', folder: CUR_FOLDER};
+  const fold = D.folders(kind).find(x => x.id === (r.folder || CUR_FOLDER));   // 이 기록의 폴더
+  // 체크리스트: 폴더마다 하나 (제목 = 폴더 이름). 저장한 기록에서 「📋 체크리스트」 → 폴더 제목을 골라 3·2·1로 점검
+  const ckFolders = D.folders(kind).sort((a, b) => (b.id === fold?.id) - (a.id === fold?.id));
   if (!rec && noMedia) Object.assign(r, {noMedia: true, dur: 0, out: 0});
   if (file) r.ext = (file.name.match(/\.([a-z0-9]{2,4})$/i) || [])[1]?.toLowerCase() || '';
   const mw = () => r.audio ? '녹음' : '영상';
-  const url = blob ? URL.createObjectURL(blob) : '';
+  let url = blob ? URL.createObjectURL(blob) : '';
   const scrSec = kind !== 'intv' ? '' : `<section class="card edsec scr"><div class="edh"><h3>받아쓴 글</h3><span class="sp"></span><button class="btn small" data-a="scrFile">📄 글 파일 올리기</button><button class="btn small" data-a="scrEdit" id="scrEditBtn"></button></div>
-      <div id="scrBox"></div><div id="scrSum"></div></section>`;
-  const ov = document.createElement('div'); ov.className = 'ov ed';
-  ov.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← ${isUpload ? '취소' : '닫기'}</button><div class="t">${K.name} 연습 기록</div>
-      ${isUpload ? '' : `${noMedia ? '' : '<button class="btn small ghost" data-a="dl" title="파일로 저장">⬇ <span id="dlW">영상</span></button>'}<button class="btn small ghost danger" data-a="del">삭제</button>`}
-      <button class="btn primary" data-a="save">저장</button></div>
-    <div class="body"><div class="wrap">
-      ${noMedia ? scrSec : `<div class="vbox"><video src="${url}" controls playsinline preload="auto"></video>
+      <div id="scrBox"></div></section>`;
+  // 문제와 답변 나눠 보기: 받아쓴 글 칸 밖, 두 칸(받아쓴 글·오른쪽 기록 칸) 아래에서 시작 → 답변 옆 빈자리에 평가
+  const sumSec = kind !== 'intv' ? '' : '<section class="scr sumwrap" id="scrSum"></section>';
+  const vboxHtml = `<div class="vbox${blob ? '' : ' hidden'}"><video ${url ? `src="${url}"` : ''} controls playsinline preload="auto"></video>
         <div class="trim">
           <div class="track" id="track"><div class="sel"></div><div class="h" data-h="in"></div><div class="h" data-h="out"></div><div class="ph"></div></div>
           <div class="tr"><button class="btn small" data-a="setIn">⟦ 여기서 시작</button><button class="btn small" data-a="setOut">여기서 끝 ⟧</button>
             <span class="sp"></span><span class="tm" id="tmIn"></span>–<span class="tm" id="tmOut"></span>&nbsp; <span class="len" id="tmLen"></span></div>
-        </div></div>`}
-      <div class="side"><div class="card form">
-        ${noMedia ? `<div class="fl"><label for="eDur">걸린 시간</label><input type="text" id="eDur" value="${r.dur ? fmt(r.dur) : ''}" placeholder="예: 3:20"></div>` : '<div class="durbig"><b id="durTxt">–</b><span>걸린 시간</span></div>'}
-        <div class="fl"><label>제목</label><input type="text" id="eTitle" value="${esc(r.title || '')}" placeholder="${kind === 'demo' ? '예: 경우의 수 · 합의 법칙 1회차' : '예: 교직관 질문 답변 연습'}"></div>
-        <div class="fl good"><label>👍 좋은 점</label><textarea id="eGood" rows="5">${esc(r.good)}</textarea></div>
-        <div class="fl fix"><label>🔧 고칠 점</label><textarea id="eFix" rows="5">${esc(r.fix)}</textarea></div>
-        <div class="hint" style="font-size:13px;color:var(--sub)">${dstr(r.at)} ${noMedia ? '기록' : '촬영'}</div>
-      </div></div>
-    </div>
-    <div class="edmore">
-      ${noMedia ? '' : scrSec}
-      <section class="card edsec"><div class="edh"><h3>문제 사진</h3><span class="sp"></span><button class="btn small" data-a="addPic">📷 사진 올리기</button></div><div class="pics" id="pics"></div></section>
-      ${kind === 'demo' ? `<section class="card edsec"><div class="edh"><h3>실연 체크리스트</h3><span class="edcnt" id="eCnt"></span><span class="sp"></span><button class="btn small" data-a="clrMarks">표시 모두 지우기</button></div><div class="edck" id="eCk"></div></section>` : ''}
-    </div>
-    <div class="piczoom hidden" data-a="zoomClose"></div></div>`;
+        </div></div>`;
+  const picSec = `<section class="card edsec picsec"><div class="edh"><h3>문제 사진</h3><span class="sp"></span><button class="btn small" data-a="addPic">📷 사진 올리기</button></div><div class="pics" id="pics"></div></section>`;
+  const ckSec = !isUpload && ckFolders.length ? `<section class="card edsec ckhost" id="ckHost"><button class="btn primary ckbtn" data-a="ckOpen" aria-expanded="false">📋 체크리스트</button><div class="cksel hidden" id="ckSel"></div><div id="ckBody"></div></section>` : '';
+  const vidSec = `<section class="card edsec vidsec"><div class="edh"><h3>영상</h3><span class="sp"></span><button class="btn small${blob ? '' : ' hidden'}" data-a="vidFs" id="vidFs" title="영상 전체화면">⛶ 전체화면</button><button class="btn small${blob ? '' : ' hidden'}" data-a="addVid" id="vidSwap">🎬 다른 영상으로 바꾸기</button></div>
+            <button class="vidnone${blob ? ' hidden' : ''}" data-a="addVid"><span class="ic">🎬</span><b>영상 올리기</b><span>${K.name} 영상이나 녹음 파일을 골라요</span></button>
+            ${vboxHtml}</section>`;
+  const ov = document.createElement('div'); ov.className = 'ov ed' + (uni ? ' uni' : '');
+  ov.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← ${isUpload ? '취소' : '닫기'}</button><div class="t">${K.name} 연습 기록</div>
+      ${isUpload ? '' : `${noMedia ? '' : '<button class="btn small ghost" data-a="dl" title="파일로 저장">⬇ <span id="dlW">영상</span></button>'}<button class="btn small ghost danger" data-a="del">삭제</button>`}
+      <button class="btn primary" data-a="save">저장</button></div>
+    ${uni ? `<div class="body">
+      <div class="edtop"><input type="text" id="eTitle" class="edtitle" value="${esc(r.title || '')}" placeholder="제목" aria-label="제목">
+        <div class="eddur"><span>걸린 시간</span><b id="durTxt" class="${blob ? '' : 'hidden'}">–</b><input type="text" id="eDur" class="${blob ? 'hidden' : ''}" value="${!blob && r.dur ? fmt(r.dur) : ''}" placeholder="0:00" aria-label="걸린 시간"></div></div>
+      <div class="wrap">
+        ${isIntv ? `<div class="lcol">${scrSec}</div><div class="side">${vidSec}${picSec}</div>` : `<div class="lcol">${vidSec}</div><div class="side">${picSec}</div>`}
+      </div>
+      <div class="edmore">${isIntv ? sumSec : ''}${ckSec}</div>
+      <div class="piczoom hidden" data-a="zoomClose"></div></div>` : ''}`;
   $('#ovRoot').appendChild(ov); document.body.style.overflow = 'hidden';
   const v = $('video', ov) || document.createElement('video'), track = $('#track', ov);
   let D0 = r.dur || 0;
@@ -2301,69 +2966,149 @@ async function openEditor(kind, rec, file) {
   let script = r.script || '', scrEditing = !script;
   // 나눠 보기: 고친 적 없으면 받아쓴 글에서 매번 새로 뽑고, 고치면 그 내용(qa)을 기록에 저장
   let qa = r.qa ? JSON.parse(JSON.stringify(r.qa)) : null, qaEditing = false;
+  // 답변별 평가: {답변번호: {f: 폴더id, t: 평가 글}} — 폴더 이름(지금 폴더 먼저)을 고르면 평가 칸이 나옴, 저장을 눌러야 기록에 들어감
+  // {답변번호: {f: 지금 고른 이름, t: {폴더id: 글}}} — 예전 모양 {f, t: '글'}은 그 이름의 글로 옮김
+  const qaEv = {};
+  for (const [u, x] of Object.entries(r.qaEval || {})) qaEv[u] = {f: '', t: typeof x.t === 'string' ? (x.f && x.t ? {[x.f]: x.t} : {}) : {...(x.t || {})}};
+  const evFolders = D.folders(kind).map(x => ({id: x.id, name: x.name})).sort((a, b) => (b.id === fold?.id) - (a.id === fold?.id));
+  // 평가 화면: view(모든 평가 보기) · pick(이름 고르기) · edit(고른 이름으로 쓰는 중)
+  let evMode = 'view', evName = '';
   const drawSum = () => {
     const sum = $('#scrSum', ov); if (!sum) return;
     if (!qa && !script.trim()) { sum.innerHTML = ''; return; }
-    try { sum.innerHTML = qaHtml(qa || qaAuto(parseScript(script)), qaEditing, !!qa); } catch (e) { sum.innerHTML = ''; console.warn(e); }
-    $$('textarea.iqin', sum).forEach(qaFit);
+    try { sum.innerHTML = qaHtml(qa || qaAuto(parseScript(script)), qaEditing, !!qa, {folders: evFolders, evals: qaEv, mode: evMode, name: evName}); } catch (e) { sum.innerHTML = ''; console.warn(e); }
+    // 평가 칸은 화면이 다 그려진 뒤 글 길이에 맞춤 (3줄보다 작아지지는 않음)
+    requestAnimationFrame(() => $$('textarea.iqevt', sum).forEach(t => { t.style.height = ''; if (t.scrollHeight > t.clientHeight) qaFit(t); }));
   };
   // 방안 칸은 글 길이만큼 늘어나서 스크롤 없이 다 보이게
   const qaFit = ta => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; };
-  const qaFocus = sel => { const f = $(sel, ov); if (f) { f.focus(); f.scrollIntoView({block: 'center'}); } };
+  // 고치기 글자 칸에 커서 두기 (start: 맨 앞, 아니면 맨 끝)
+  const ceFocus = (el, start) => {
+    if (!el) return; el.focus({preventScroll: true});
+    const rg = document.createRange(); rg.selectNodeContents(el); rg.collapse(!!start);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(rg);
+    el.scrollIntoView({block: 'nearest'});
+  };
+  // 고치기: 방안 줄에서 Enter = 커서 뒤 글을 새 줄로, 빈 줄에서 ⌫ = 그 줄 지우고 윗줄 끝으로. 다른 칸은 Enter 막기
+  ov.addEventListener('keydown', e => {
+    const el = e.target.closest?.('[data-ed]'); if (!el || !qa || e.isComposing) return;
+    const ui = +el.closest('[data-u]').dataset.u, f = el.dataset.ed;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (f !== 'pt') return el.blur();
+      const gi = +el.closest('[data-g]').dataset.g, k = +el.dataset.k, g = qa[ui].groups[gi];
+      const sel = getSelection(), rg = sel.rangeCount ? sel.getRangeAt(0) : null;
+      let at = el.textContent.length;
+      if (rg && el.contains(rg.startContainer)) { const pre = document.createRange(); pre.selectNodeContents(el); pre.setEnd(rg.startContainer, rg.startOffset); at = pre.toString().length; }
+      const t = el.textContent; g.points[k] = t.slice(0, at).trimEnd(); g.points.splice(k + 1, 0, t.slice(at).trimStart());
+      dirty = true; drawSum();
+      return ceFocus($(`#scrSum [data-u="${ui}"] [data-g="${gi}"] [data-ed="pt"][data-k="${k + 1}"]`, ov), true);
+    }
+    if (e.key === 'Backspace' && f === 'pt' && !el.textContent.length) {
+      const gi = +el.closest('[data-g]').dataset.g, k = +el.dataset.k, g = qa[ui].groups[gi];
+      if (g.points.length < 2) return;
+      e.preventDefault(); g.points.splice(k, 1); dirty = true; drawSum();
+      return ceFocus($(`#scrSum [data-u="${ui}"] [data-g="${gi}"] [data-ed="pt"][data-k="${Math.max(0, k - 1)}"]`, ov));
+    }
+  });
+  // 붙여 넣을 때는 글자만
+  ov.addEventListener('paste', e => {
+    if (!e.target.closest?.('[data-ed]')) return;
+    e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData?.getData('text/plain') || '').replace(/\s*\n\s*/g, ' '));
+  });
   const scrBtn = () => { const b = $('#scrEditBtn', ov); b.textContent = scrEditing ? '✓ 다 넣었어요' : '✏️ 고치기'; b.classList.toggle('hidden', scrEditing && !script.trim()); };
   // 글에 길이가 적혀 있으면 걸린 시간 칸을 채워 줌 (글만 있는 기록)
   const fillDur = () => { const d = $('#eDur', ov); if (d && !d.value.trim()) { const t = parseScript(script).dur; if (t) d.value = fmt(t); } };
   const renderScript = () => {
     const box = $('#scrBox', ov); if (!box) return;
-    box.innerHTML = scrEditing ? `<textarea id="scrTa" placeholder="클로바노트에서 복사한 글을 여기에 붙여 넣으세요." aria-label="받아쓴 글">${esc(script)}</textarea>` : segsHtml(parseScript(script), !noMedia);
+    box.innerHTML = scrEditing ? `<textarea id="scrTa" placeholder="클로바노트에서 복사한 글을 여기에 붙여 넣으세요." aria-label="받아쓴 글">${esc(script)}</textarea>` : segsHtml(parseScript(script), !!blob);
     scrBtn(); drawSum();
   };
   // 문제 사진(img:<id>)과 체크리스트 표시는 저장을 눌러야 기록에 들어감
-  let pics = [...(r.photos || [])], added = [], removed = [], marks = {...(r.checks || {})}, cmemo = {...(r.checkMemo || {})}, dirty = false;
+  let pics = [...(r.photos || [])], added = [], removed = [], dirty = false;
+  // 체크리스트 점수는 누르는 즉시 기록에 저장 (저장 버튼과 상관없이)
+  const ckS = recCk(r), ck = JSON.parse(JSON.stringify(ckS.ck)), ckMemo = JSON.parse(JSON.stringify(ckS.memo));
+  let ckFid = null;   // 지금 펼친 체크리스트 (폴더 id)
   const picUrls = {};
   const close = saved => {
     if (!saved && dirty && !confirm('저장하지 않은 내용이 있어요. 저장하지 않고 닫을까요?')) return;
     if (!saved) added.forEach(id => blobDel('img:' + id));
-    v.pause(); URL.revokeObjectURL(url); Object.values(picUrls).forEach(u => URL.revokeObjectURL(u));
-    ov.remove(); document.body.style.overflow = ''; renderPractice(kind);
+    document.removeEventListener('fullscreenchange', onFs); picRO?.disconnect(); v.pause(); URL.revokeObjectURL(url); Object.values(picUrls).forEach(u => URL.revokeObjectURL(u));
+    ov.remove(); document.body.style.overflow = ''; route();   // 폴더 화면 다시 그리기
   };
   const renderPics = async () => {
     for (const id of pics) if (!picUrls[id]) { const b = await blobGet('img:' + id); if (b) picUrls[id] = URL.createObjectURL(b); }
     $('#pics', ov).innerHTML = pics.length ? pics.map((id, i) => `<figure class="pic"><img src="${picUrls[id] || ''}" alt="문제 사진 ${i + 1}" data-a="zoom" data-id="${id}"><button class="picdel" data-a="delPic" data-id="${id}" title="사진 지우기" aria-label="문제 사진 ${i + 1} 지우기">✕</button></figure>`).join('')
       : '<p class="picnone">문제지 사진을 올려 두면 영상을 다시 볼 때 문제도 함께 볼 수 있어요.</p>';
   };
-  const ckItems = kind === 'demo' ? practiceChecklist() : [];
-  const MK = [['o', '○', '잘했어요'], ['t', '△', '보통이에요'], ['x', '✕', '못했어요']];
-  const drawMarks = () => {
-    const box = $('#eCk', ov); if (!box) return;
-    $$('tr[data-id]', box).forEach(tr => { const m = marks[tr.dataset.id] || ''; tr.dataset.mark = m; $$('.mk', tr).forEach(b => { const on = b.dataset.v === m; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); });
-    const all = ckItems.flatMap(g => g.items.map(x => x.id)), c = {o: 0, t: 0, x: 0};
-    all.forEach(id => { if (c[marks[id]] != null) c[marks[id]]++; });
-    $('#eCnt', ov).textContent = `○ ${c.o} · △ ${c.t} · ✕ ${c.x}  (${c.o + c.t + c.x}/${all.length})`;
+  const MK = [[3, '잘했어요'], [2, '보통이에요'], [1, '부족해요']];
+  // 이 기록의 점수를 저장해 둔 기록에 바로 씀
+  const ckPersist = () => {
+    const all = D.recs(kind), x = all.find(y => y.id === r.id); if (!x) return;
+    x.ck = ck; x.ckMemo = ckMemo; delete x.checks; delete x.checkMemo; D.setRecs(kind, all);
   };
-  const renderChecks = () => {
-    const box = $('#eCk', ov); if (!box) return;
+  // 체크리스트 고르기: 맨 위는 📊 평균 체크리스트 (여러 체크리스트의 항목별 평균), 그 아래 폴더별 체크리스트
+  const renderCkSel = () => {
+    $('#ckSel', ov).innerHTML = `<div class="ckselh">체크리스트 고르기</div>
+      <button class="ckfold avg ${ckFid === AVG_CK ? 'on' : ''}" data-a="ckPick" data-f="${AVG_CK}"><span class="nm">📊 평균 체크리스트</span></button>
+      ${ckFolders.map(f => `<button class="ckfold ${f.id === ckFid ? 'on' : ''}" data-a="ckPick" data-f="${f.id}"><span class="nm">📋 ${esc(f.name)}</span></button>`).join('')}`;
+  };
+  const drawCk = () => {
+    const box = $('#ckBody', ov); if (!box || !ckFid || ckFid === AVG_CK) return;
+    const f = ckFolders.find(x => x.id === ckFid), m = ck[ckFid] || {};
+    $$('tr[data-id]', box).forEach(tr => {
+      const val = m[tr.dataset.id] || 0;
+      tr.dataset.mark = val || '';
+      $$('.mk', tr).forEach(b => { const on = +b.dataset.v === val; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    });
+    const items = f.checklist.flatMap(g => g.items);
+    $('#ckCnt', ov).textContent = `${items.filter(x => m[x.id]).length}/${items.length}`;
+  };
+  const renderCk = () => {
+    const box = $('#ckBody', ov); if (!box) return;
+    renderCkSel();
+    if (ckFid === AVG_CK) { box.innerHTML = avgChecklistHtml(kind); return; }
+    const f = ckFolders.find(x => x.id === ckFid); if (!f) { box.innerHTML = ''; return; }
     let no = 0;
-    box.innerHTML = `<table class="cktable"><thead><tr><th>번호</th><th>단계</th><th>점검 항목</th><th>확인</th><th>비고</th></tr></thead><tbody>${ckItems.map(g => {
+    box.innerHTML = `<div class="edh ckh"><h3>📋 ${esc(f.name)}</h3><span class="edcnt" id="ckCnt"></span><span class="sp"></span><button class="btn small" data-a="ckItems">✏️ 항목 고치기</button><button class="btn small" data-a="clrMarks">점수 모두 지우기</button></div>
+      <p class="cklegend"><b>3</b> 잘했어요 · <b>2</b> 보통이에요 · <b>1</b> 부족해요</p>
+      <div class="edck"><table class="cktable"><thead><tr><th>번호</th><th>단계</th><th>점검 항목</th><th>점수</th><th>비고</th></tr></thead><tbody>${f.checklist.map(g => {
       const [stage, ...rest] = g.g.split(' · '), cond = rest.join(' · ');
       return g.items.map((x, ii) => { no++; return `<tr data-id="${x.id}"><td class="no">${no}</td>${ii ? '' : `<th class="stage" rowspan="${g.items.length}">${esc(stage)}${cond ? `<small>${esc(cond)}</small>` : ''}</th>`}<td class="it">${esc(x.text)}</td>
-        <td class="ok"><span class="mks">${MK.map(([val, sym, nm]) => `<button class="mk mk-${val}" data-a="mark" data-v="${val}" data-id="${x.id}" title="${nm}" aria-label="${no}번 ${nm}">${sym}</button>`).join('')}</span></td>
-        <td class="memo"><input class="ckmemo" data-m="${x.id}" value="${esc(cmemo[x.id] || '')}" placeholder="비고" aria-label="${no}번 비고"></td></tr>`; }).join('');
-    }).join('')}</tbody></table>`;
-    drawMarks();
+        <td class="ok"><span class="mks">${MK.map(([val, nm]) => `<button class="mk mk-${val}" data-a="mark" data-v="${val}" data-id="${x.id}" title="${val}점 · ${nm}" aria-label="${no}번 ${val}점 ${nm}">${val}</button>`).join('')}</span></td>
+        <td class="memo"><input class="ckmemo" data-m="${x.id}" value="${esc(ckMemo[ckFid]?.[x.id] || '')}" placeholder="비고" aria-label="${no}번 비고"></td></tr>`; }).join('');
+    }).join('')}</tbody></table></div>${f.checklist.some(g => g.items.length) ? '' : '<p class="cknone2">아직 점검 항목이 없어요. ✏️ 항목 고치기로 넣어 주세요.</p>'}`;
+    drawCk();
   };
-  renderPics(); renderChecks(); renderScript();
-  if (noMedia && isUpload) $('#scrTa', ov)?.focus();
+  renderPics(); renderScript();
+  // Esc 등으로 전체화면이 끝나면 크게 본 사진도 닫음
+  const onFs = () => { const z = $('.piczoom', ov); if (z && !z.classList.contains('hidden') && document.fullscreenElement !== z && !document.fullscreenElement) z.classList.add('hidden'); };
+  document.addEventListener('fullscreenchange', onFs);
+  // 면접: 문제 사진 칸을 영상 칸과 같은 높이로 (영상을 올리거나 바꾸면 다시 맞춤). 받아쓴 글 칸은 두 칸을 합친 높이로 늘어남
+  const picFit = () => { if (!uni) return; const vs = $('.vidsec', ov), ps = $('.picsec', ov); if (vs && ps) ps.style.height = vs.offsetHeight + 'px'; };
+  const picRO = uni ? new ResizeObserver(picFit) : null;
+  picRO?.observe($('.vidsec', ov)); picFit();
+  v.addEventListener('loadedmetadata', () => setTimeout(picFit, 0));
+  if (noMedia && isUpload) $('#scrTa', ov)?.focus({preventScroll: true});
   ov.addEventListener('input', e => {
-    dirty = true;
     const mm = e.target.closest('.ckmemo');
-    if (mm) { if (mm.value.trim()) cmemo[mm.dataset.m] = mm.value; else delete cmemo[mm.dataset.m]; }
-    const qi = e.target.closest('.iqin');
-    if (qi && qa) {
-      const u = qa[+qi.closest('[data-u]').dataset.u], f = qi.dataset.f;
-      if (f === 'head' || f === 'points') { const g = u.groups[+qi.closest('[data-g]').dataset.g]; g.fl = false; if (f === 'head') g.head = qi.value; else g.points = qi.value.split('\n'); }
-      else u[f] = qi.value;
-      if (qi.tagName === 'TEXTAREA') qaFit(qi);
+    if (mm) {   // 비고도 바로 저장
+      const o = ckMemo[ckFid] ||= {};
+      if (mm.value.trim()) o[mm.dataset.m] = mm.value; else delete o[mm.dataset.m];
+      ckPersist(); return;
+    }
+    dirty = true;
+    const evt = e.target.closest('.iqevt');
+    if (evt) {   // 지금 쓰는 이름(evName)의 평가만 고침
+      const u = evt.closest('[data-u]').dataset.u, x = qaEv[u] ||= {t: {}};
+      x.t = {...x.t, [evName]: evt.value};
+      evt.style.height = ''; if (evt.scrollHeight > evt.clientHeight) qaFit(evt); return;
+    }
+    const cel = e.target.closest('[data-ed]');
+    if (cel && qa) {   // 고치기: 글자를 고친 곳을 나눠 보기 자료(qa)에 바로 반영
+      const u = qa[+cel.closest('[data-u]').dataset.u], f = cel.dataset.ed, t = cel.textContent.replace(/\s*\n\s*/g, ' ');
+      if (f === 'label' || f === 'question') u[f] = t;
+      else { const g = u.groups[+cel.closest('[data-g]').dataset.g]; if (f === 'head') g.head = t; else g.points[+cel.dataset.k] = t; }
       return;
     }
     if (e.target.id === 'scrTa') { script = e.target.value; fillDur(); scrBtn(); drawSum(); }
@@ -2378,7 +3123,7 @@ async function openEditor(kind, rec, file) {
     $('#tmIn', ov).textContent = fmt(r.in); $('#tmOut', ov).textContent = fmt(r.out);
     $('#tmLen', ov).textContent = fmt(r.out - r.in); $('#durTxt', ov).textContent = fmtK(r.out - r.in);
   };
-  v.addEventListener('loadedmetadata', async () => {
+  if (blob) v.addEventListener('loadedmetadata', async () => {
     const d = await realDuration(v); D0 = d || D0;
     if (r.out == null || r.out > D0 || !rec) r.out = rec?.out && rec.out <= D0 ? rec.out : D0;
     r.dur = D0; v.currentTime = r.in; paint();
@@ -2424,25 +3169,100 @@ async function openEditor(kind, rec, file) {
       if (added.includes(id)) { added = added.filter(x => x !== id); blobDel('img:' + id); } else removed.push(id);
       dirty = true; return renderPics();
     }
-    if (a === 'zoom') { const z = $('.piczoom', ov); z.innerHTML = `<img src="${picUrls[e.target.dataset.id]}" alt="문제 사진 크게 보기"><p>아무 곳이나 누르면 닫혀요.</p>`; z.classList.remove('hidden'); return; }
-    if (a === 'zoomClose') { $('.piczoom', ov).classList.add('hidden'); return; }
-    if (a === 'mark') { const b = e.target.closest('[data-v]'), id = b.dataset.id; if (marks[id] === b.dataset.v) delete marks[id]; else marks[id] = b.dataset.v; dirty = true; return drawMarks(); }
-    if (a === 'clrMarks') { if (!Object.keys(marks).length || !confirm('○ △ ✕ 표시를 모두 지울까요?\n(비고는 그대로 남아요)')) return; marks = {}; dirty = true; return drawMarks(); }
+    // 문제 사진: 누르면 전체화면으로 크게 (여러 장이면 ‹ › 로 넘기기)
+    if (a === 'zoom' || a === 'picPrev' || a === 'picNext') {
+      const z = $('.piczoom', ov), n = pics.length;
+      let i = a === 'zoom' ? pics.indexOf(e.target.dataset.id) : (+z.dataset.i + (a === 'picNext' ? 1 : -1) + n) % n;
+      z.dataset.i = i;
+      z.innerHTML = `<img src="${picUrls[pics[i]]}" alt="문제 사진 ${i + 1} 크게 보기">
+        ${n > 1 ? `<button class="pznav prev" data-a="picPrev" aria-label="앞 사진">‹</button><button class="pznav next" data-a="picNext" aria-label="다음 사진">›</button>` : ''}
+        <p>${n > 1 ? `${i + 1} / ${n} · ` : ''}아무 곳이나 누르면 닫혀요.</p>`;
+      if (a === 'zoom') { z.classList.remove('hidden'); try { await z.requestFullscreen?.(); } catch {} }
+      return;
+    }
+    if (a === 'zoomClose') { $('.piczoom', ov).classList.add('hidden'); if (document.fullscreenElement === $('.piczoom', ov)) document.exitFullscreen?.().catch(() => {}); return; }
+    // 영상 전체화면 (아이패드는 영상 자체의 전체화면)
+    if (a === 'vidFs') { try { v.requestFullscreen ? await v.requestFullscreen() : v.webkitEnterFullscreen?.(); } catch { toast('전체화면을 열 수 없어요.'); } return; }
+    // 체크리스트: 버튼 → 폴더 제목 목록(아래로 스크롤) → 고른 체크리스트에 3·2·1
+    if (a === 'ckOpen') {
+      const sel = $('#ckSel', ov), open = sel.classList.toggle('hidden') === false;
+      e.target.closest('[data-a]').setAttribute('aria-expanded', open);
+      if (open) { renderCkSel(); setTimeout(() => sel.scrollIntoView({behavior: 'smooth', block: 'start'}), 30); }
+      return;
+    }
+    if (a === 'ckPick') {
+      ckFid = e.target.closest('[data-f]').dataset.f; renderCk();
+      setTimeout(() => $('#ckBody', ov).scrollIntoView({behavior: 'smooth', block: 'start'}), 30); return;
+    }
+    if (a === 'mark') {
+      const b = e.target.closest('[data-v]'), id = b.dataset.id, val = +b.dataset.v, m = ck[ckFid] ||= {};
+      if (m[id] === val) delete m[id]; else m[id] = val;
+      if (!Object.keys(m).length) delete ck[ckFid];
+      ckPersist(); return drawCk();
+    }
+    if (a === 'ckItems') {   // 이 체크리스트(폴더)의 점검 항목 고치기
+      return editChecklist(kind, ckFid, cl => { const f = ckFolders.find(x => x.id === ckFid); if (f) f.checklist = cl; renderCk(); });
+    }
+    if (a === 'clrMarks') {
+      if (!Object.keys(ck[ckFid] || {}).length || !confirm('이 체크리스트의 점수를 모두 지울까요?\n(비고는 그대로 남아요)')) return;
+      delete ck[ckFid]; ckPersist(); return drawCk();
+    }
     if (a === 'setIn') { r.in = Math.min(v.currentTime, r.out - 1); paint(); }
     if (a === 'setOut') { r.out = Math.max(v.currentTime, r.in + 1); paint(); }
     // 문제와 답변 나눠 보기 고치기
-    if (a === 'iqEdit') { if (!qa) qa = qaAuto(parseScript(script)); qaEditing = true; drawSum(); return qaFocus('#scrSum .iqin'); }
+    // 답변 평가: ✍️ 평가 쓰기 → 이름 고르기 → 답변 옆에 쓰기 → 완료 (노란 평가 카드로 보기)
+    if (a === 'evStart') { evMode = 'pick'; return drawSum(); }
+    if (a === 'evCancel') { evMode = 'view'; return drawSum(); }
+    if (a === 'evPick') {
+      evName = e.target.closest('[data-f]').dataset.f; evMode = 'edit'; drawSum();
+      return setTimeout(() => { const t = $('#scrSum .iqevt', ov); t?.focus({preventScroll: true}); $('#scrSum .evbar', ov)?.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 30);
+    }
+    if (a === 'evDone') { evMode = 'view'; drawSum(); return $('#scrSum .evbar', ov)?.scrollIntoView({behavior: 'smooth', block: 'nearest'}); }
+
+    if (a === 'iqEdit') { if (!qa) qa = qaAuto(parseScript(script)); qaEditing = true; drawSum(); return ceFocus($('#scrSum [data-ed]', ov)); }
     if (a === 'iqDone') { qa = qaTidy(qa); qaEditing = false; dirty = true; return drawSum(); }
     if (a === 'iqAuto') { if (!confirm('고친 내용을 지우고 받아쓴 글에서 다시 나눌까요?')) return; qa = null; qaEditing = false; dirty = true; return drawSum(); }
-    if (a === 'iqAddU') { qa.push({label: '', question: '', dur: 0, think: 0, groups: [{head: '', points: []}]}); dirty = true; drawSum(); return qaFocus(`#scrSum [data-u="${qa.length - 1}"] .iqin`); }
+    // 고치기: 답변·문제 묶음 더하기와 지우기
+    if (a === 'iqAddU') {
+      qa.push({label: '', question: '', dur: 0, think: 0, _new: true, groups: [{head: '', points: [''], _new: true}]}); dirty = true; drawSum();
+      return ceFocus($(`#scrSum [data-u="${qa.length - 1}"] [data-ed]`, ov));
+    }
     if (a === 'iqDelU') {
       const i = +e.target.closest('[data-u]').dataset.u;
-      if (!confirm(`답변 ${i + 1}을 지울까요?`)) return;
-      qa.splice(i, 1); dirty = true; return drawSum();
+      if (!confirm(`답변 ${i + 1}을 지울까요?${qaEv[i] ? '\n이 답변에 쓴 평가도 함께 지워져요.' : ''}`)) return;
+      qa.splice(i, 1);
+      // 평가는 답변 번호로 붙어 있으니, 지운 답변 뒤의 평가를 한 칸씩 앞으로
+      const ev2 = {}; for (const [k, x] of Object.entries(qaEv)) { const n = +k; if (n < i) ev2[n] = x; else if (n > i) ev2[n - 1] = x; }
+      for (const k of Object.keys(qaEv)) delete qaEv[k]; Object.assign(qaEv, ev2);
+      dirty = true; return drawSum();
     }
-    if (a === 'iqAddG') { const i = +e.target.closest('[data-u]').dataset.u; qa[i].groups.push({head: '', points: []}); dirty = true; drawSum(); return qaFocus(`#scrSum [data-u="${i}"] [data-g="${qa[i].groups.length - 1}"] .iqin`); }
-    if (a === 'iqDelG') { const i = +e.target.closest('[data-u]').dataset.u, g = +e.target.closest('[data-g]').dataset.g; qa[i].groups.splice(g, 1); dirty = true; return drawSum(); }
+    if (a === 'iqAddG') {
+      const i = +e.target.closest('[data-u]').dataset.u; qa[i].groups.push({head: '', points: [''], _new: true}); dirty = true; drawSum();
+      return ceFocus($(`#scrSum [data-u="${i}"] [data-g="${qa[i].groups.length - 1}"] [data-ed]`, ov));
+    }
+    if (a === 'iqDelG') {
+      const i = +e.target.closest('[data-u]').dataset.u, g = +e.target.closest('[data-g]').dataset.g, G = qa[i].groups[g];
+      if ((G.head || G.points.some(p => p.trim())) && !confirm('이 문제 묶음을 지울까요?')) return;
+      qa[i].groups.splice(g, 1); dirty = true; return drawSum();
+    }
     if (a === 'seek') { v.currentTime = +e.target.closest('[data-t]').dataset.t; v.play(); return; }
+    // 면접: 오른쪽 칸에 영상·녹음 올리기 (나중에 올리거나 바꿔도 됨, 저장을 눌러야 기록에 들어감)
+    if (a === 'addVid') {
+      const f = await pickFile('video/*,audio/*,.m4a,.mp3,.wav,.aac,.ogg,.flac'); if (!f) return;
+      if (blob && !confirm('지금 영상을 이 파일로 바꿀까요?')) return;
+      v.pause(); if (url) URL.revokeObjectURL(url);
+      blob = newFile = f; url = URL.createObjectURL(f); dirty = true;
+      r.type = f.type || ''; r.ext = (f.name.match(/\.([a-z0-9]{2,4})$/i) || [])[1]?.toLowerCase() || ''; r.in = 0; r.out = null; D0 = 0;
+      v.addEventListener('loadedmetadata', async () => {
+        D0 = await realDuration(v) || 0; r.out = D0; r.dur = D0; v.currentTime = 0;
+        r.audio = !v.videoWidth; $('.vbox', ov).classList.toggle('aud', r.audio); paint();
+      }, {once: true});
+      v.src = url;
+      $('.vbox', ov).classList.remove('hidden'); $('.vidnone', ov)?.classList.add('hidden'); $('#vidSwap', ov)?.classList.remove('hidden'); $('#vidFs', ov)?.classList.remove('hidden');
+      $('#eDur', ov)?.classList.add('hidden'); $('#durTxt', ov)?.classList.remove('hidden');
+      renderScript(); picFit();   // 받아쓴 글의 시간을 누르면 영상의 그 자리로
+      return;
+    }
     if (a === 'scrFile') {
       const f = await pickFile('.txt,.srt,.vtt,text/plain'); if (!f) return;
       if (script.trim() && !confirm('지금 있는 글을 이 파일 내용으로 바꿀까요?')) return;
@@ -2465,22 +3285,31 @@ async function openEditor(kind, rec, file) {
       close(true);
     }
     if (a === 'save') {
-      r.title = $('#eTitle', ov).value.trim(); if ($('#eUnit', ov)) r.unit = $('#eUnit', ov).value.trim(); r.good = $('#eGood', ov).value.trim(); r.fix = $('#eFix', ov).value.trim();
-      r.photos = pics; r.checks = marks; r.checkMemo = cmemo;
-      if ($('#scrBox', ov)) { if (scrEditing && $('#scrTa', ov)) script = $('#scrTa', ov).value; r.script = script.trim(); r.qa = qa ? qaTidy(qa) : undefined; }
-      if (noMedia) {
-        if (!r.script) return toast('받아쓴 글을 넣어 주세요');
-        r.dur = r.out = parseDur($('#eDur', ov).value); r.in = 0;
+      r.title = $('#eTitle', ov).value.trim(); if ($('#eUnit', ov)) r.unit = $('#eUnit', ov).value.trim(); if ($('#eGood', ov)) r.good = $('#eGood', ov).value.trim(); if ($('#eFix', ov)) r.fix = $('#eFix', ov).value.trim();   // 면접 화면에는 좋은 점·고칠 점 칸이 없음 (예전 글은 그대로 둠)
+      r.photos = pics; r.ck = ck; r.ckMemo = ckMemo; delete r.checks; delete r.checkMemo;
+      if ($('#scrBox', ov)) { if (scrEditing && $('#scrTa', ov)) script = $('#scrTa', ov).value; r.script = script.trim(); r.qa = qa ? qaTidy(qa) : undefined;
+        // 답변 평가: 폴더를 골랐거나 글을 쓴 것만
+        const ev = {};
+        for (const [u, x] of Object.entries(qaEv)) {
+          const t = {}; for (const [fid, s] of Object.entries(x.t || {})) if (s?.trim()) t[fid] = s.trim();
+          if (Object.keys(t).length) ev[u] = {t};
+        }
+        if (Object.keys(ev).length) r.qaEval = ev; else delete r.qaEval; }
+      if (!blob) {   // 영상 없이 글만 (면접은 나중에 영상을 올릴 수 있음)
+        if (!r.script) return toast(isIntv ? '클로바노트 글이나 영상을 올려 주세요' : '영상을 올려 주세요');
+        r.dur = r.out = parseDur($('#eDur', ov).value); r.in = 0; r.noMedia = true;
       } else {
         if (!D0) return toast(`${mw()}을 불러오는 중이에요`);
-        r.dur = D0; r.thumb = r.audio ? '' : await thumbAt(v, r.in);
-        if (isUpload) { toast(`${mw()}을 저장하는 중…`); await blobPut('vid:' + r.id, blob); }
+        r.dur = D0; r.thumb = r.audio ? '' : await thumbAt(v, r.in); delete r.noMedia;
+        if (newFile) { toast(`${mw()}을 저장하는 중…`); await blobPut('vid:' + r.id, newFile); }
       }
       const all = D.recs(kind), i = all.findIndex(x => x.id === r.id);
       if (i < 0) all.push(r); else all[i] = r;
       D.setRecs(kind, all);
       for (const id of removed) await blobDel('img:' + id);
       toast('저장했어요'); close(true);
+      // 새로 올린 영상: 저장하면 다시 열어 아래 「📋 체크리스트」 버튼을 보여 줌
+      if (isUpload && kind === 'demo' && ckFolders.length) { await openEditor(kind, D.recs(kind).find(x => x.id === r.id)); setTimeout(() => $('#ckHost')?.scrollIntoView({behavior: 'smooth', block: 'center'}), 250); }
     }
   });
 }
