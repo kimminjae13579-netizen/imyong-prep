@@ -833,9 +833,7 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .pgg li{margin-bottom:3px}
 .pgg li::marker{color:var(--c)}
 .pgg li b{color:var(--c)}
-.pgg a{color:var(--c);font-weight:700}
-.pgem{font-weight:800;color:var(--warn);background:var(--hl-soft);border-radius:4px;padding:0 4px}
-.pgnote{font-size:13px;color:var(--sub);margin:4px 18px 14px}
+.pgg a{color:var(--c);font-weight:700}.pgnote{font-size:13px;color:var(--sub);margin:4px 18px 14px}
 @media (max-width:700px){
   .prepg summary,.pgtabs,.pgbody{padding-left:12px;padding-right:12px}
   .pgnote{margin-left:12px;margin-right:12px}
@@ -2294,8 +2292,7 @@ const PREP_GUIDE = [
       {g: '수업 구상', items: [
         '첫 한 달은 <b>시간 재지 말고</b> 하고 싶은 것 다 해 보기',
         '<b>어떤 질문을 할지</b>를 중점으로 — 교사·학생 상호작용으로 학생이 내용을 발견하게',
-        '구상할 때 <b>질문만 쭉 적어서</b> 수업을 짜 보기',
-        '한 수업을 여러 명이 해 봐도 좋음 · 같은 문제를 초수는 2주, 재수는 3~4주']},
+        '한 수업을 여러 명이 해 봐도 좋음']},
       {g: '교과서·지도서', items: [
         '지도서 보기 전에 <b>교과서를 한 줄씩</b> 읽으며 의미 해석하기',
         '교과서를 다 본 뒤 지도서로 오개념 파악하기',
@@ -2310,7 +2307,6 @@ const PREP_GUIDE = [
     intv: {motto: '정리해 두고 하루 한 번 보기', groups: [
       {g: '정리', items: [
         '장르별 답을 최대한 많이 생각해 <b>한 곳에 정리</b> (내 생각 + 시책 + 인강) → <a href="#intv/types">유형정리</a>',
-        '<b>외울 필요 없음</b> — 다 정리하면 하루에 한 번씩 읽기',
         '<b>나의 교직관 2개</b> 정해 두기']},
       {g: '연습', items: [
         '실전 연습은 안 해도 됨 (한 달이면 충분) — <b>그 시간에 실연 연습 더</b>',
@@ -2321,7 +2317,7 @@ const PREP_GUIDE = [
       {g: '실전 연습', items: [
         '<b>시간 재고</b> 연습하기 — 시간 안에 끝내는 것이 1순위',
         '분필은 <b>한 가지 색</b>으로만 연습 (여러 색을 쓸 수 있어도 하나면 충분)',
-        '칠판에 <b>어떤 내용을 쓸지</b> 정하기',
+        '칠판에 <b>어떤 내용을 쓸지</b> 정하기, 모든 내용을 쓸 필요 없음',
         '연습만이 살 길']}
     ]},
     intv: {motto: '외우지 말고 무조건 말로 해 보기', groups: [
@@ -2335,7 +2331,7 @@ const PREP_GUIDE = [
       {g: '답변 구조', items: [
         '서론 없이 <b>두괄식</b> → 어떻게 하겠다 / 이게 무엇이다 → 기대점·장점',
         '<b>구체적인 방안</b>으로 (예: 평가 시스템을 쓰겠다 → <b>채움AI</b>를 쓰겠다)',
-        '<span class="pgem">학교에서 반드시 거치는 절차는 꼭 외우기</span> (생명존중위원회, 학폭 발생 시 순서)']}
+        '<b>학교에서 반드시 거치는 절차는 꼭 외우기</b> (생명존중위원회, 학폭 발생 시 순서)']}
     ]}}
 ];
 function prepSplit(evs) {
