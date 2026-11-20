@@ -722,6 +722,16 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .top .gdbtn.need::after{content:"다시 연결"}
 .gdbtn.need i{display:none}
 .top .gdbtn.need:hover{background:#F6E879;color:var(--ink)}
+/* 맨 위 「☁️ 구글 드라이브」 단추 (전체화면 단추 왼쪽): 누르면 연결 방법 안내 창 */
+.top #gdBtn{gap:5px;padding-right:22px}
+.top #gdBtn i{right:7px;top:50%;bottom:auto;margin-top:-4px}
+.top #gdBtn.need{padding-right:12px}
+.top #gdBtn.need .gdl{display:none}
+@media (max-width:520px){.top #gdBtn .gdl{display:none}.top #gdBtn{padding-left:9px}}
+/* 안내 창 안에서는 첫 화면 칸 모양을 빼고 내용만 */
+.modal .box.gdbox{width:min(760px,100%)}
+.modal .gdhome{margin:0;border:none;padding:0;background:none;border-radius:0}
+.modal .gdhome .gdhead h2{display:none}
 @keyframes gdp{to{opacity:.3}}
 .gdhome{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px 16px}
 .gdhead{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap}
@@ -840,8 +850,8 @@ body.editing .edonly{display:inline-flex!important}
   <div class="crumb" id="crumb"></div>
   <button class="btn small hidden" id="upBtn" title="자료실에 PDF 올리기">📄 PDF 올리기</button>
   <button class="btn small hidden" id="editBtn" title="자료 편집">✏️ 편집</button>
+  <button class="btn small gdbtn" id="gdBtn" title="구글 드라이브에 저장하기 · 연결 방법">☁️<span class="gdl">구글 드라이브</span><i></i></button>
   <button class="iconbtn hidden" id="fsBtn" title="전체화면" aria-label="전체화면">⛶</button>
-  <button class="iconbtn gdbtn" id="gdBtn" title="구글 드라이브">☁️<i></i></button>
   <button class="iconbtn" id="setBtn" title="백업">⚙️</button>
 </div></header>
 <main id="app"></main>
@@ -1246,8 +1256,8 @@ function route() {
 addEventListener('hashchange', route);
 
 /* ---------- 전체화면 ----------
-   브라우저는 화면을 한 번 눌러야 전체화면을 허락함 → 앱에 들어와 처음 누를 때 전체화면으로.
-   위쪽 ⛶로 켜고 끔. 홈 화면에 추가해서 앱처럼 열면 처음부터 전체화면이라 버튼을 숨김 */
+   자동으로 전체화면이 되지는 않음 — 위쪽 ⛶를 눌러야 켜고 끔.
+   홈 화면에 추가해서 앱처럼 열면 처음부터 전체화면이라 버튼을 숨김 */
 const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
 const fsCan = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
 const FS_APP = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
@@ -1257,7 +1267,6 @@ const fsShow = () => { const b = $('#fsBtn'); b.classList.toggle('on', !!fsEl())
 if (fsCan && !FS_APP) {
   $('#fsBtn').classList.remove('hidden');
   $('#fsBtn').onclick = () => fsEl() ? fsExit() : fsEnter();
-  addEventListener('pointerdown', function first(e) { removeEventListener('pointerdown', first, true); if (!fsEl() && !e.target.closest('#fsBtn')) fsEnter(); }, true);
   document.addEventListener('fullscreenchange', fsShow); document.addEventListener('webkitfullscreenchange', fsShow);
 }
 $('#editBtn').onclick = () => { editing = !editing; lsSet('editing', editing); route(); };
@@ -1278,8 +1287,7 @@ const TILES = [
 ];
 function renderHome() {
   app().innerHTML = `
-    <nav class="tiles" aria-label="임용 준비 메뉴">${TILES.map(t => `<a class="tile ${t.sec}" href="${t.href}"><span class="tic">${t.icon}</span><span class="tnm">${t.name}</span></a>`).join('')}</nav>
-    ${gdHomeHtml()}`;
+    <nav class="tiles" aria-label="임용 준비 메뉴">${TILES.map(t => `<a class="tile ${t.sec}" href="${t.href}"><span class="tic">${t.icon}</span><span class="tnm">${t.name}</span></a>`).join('')}</nav>`;   // 구글 드라이브 안내는 맨 위 「☁️ 구글 드라이브」 단추로
   hubHooks();
   gdShow();
 }
@@ -1337,7 +1345,7 @@ function gdStatus() {
 }
 function gdShow() {
   const s = gdStatus(), b = $('#gdBtn');
-  if (b) { b.className = 'iconbtn gdbtn ' + s.c; b.title = '구글 드라이브 · ' + s.t; }
+  if (b) { b.className = 'btn small gdbtn ' + s.c; b.title = '구글 드라이브 · ' + s.t; }
   const st = $('#gdStat'); if (st) { st.className = 'gdst ' + s.c; st.textContent = s.t; }
   const act = $('#gdAct'); if (!act) return;
   act.innerHTML = GD_ONFILE ? ''
@@ -1375,11 +1383,14 @@ document.addEventListener('click', e => {
     if (v) gsiLoad().catch(() => {});
   }
 });
-// 위쪽 ☁️: 다시 연결이 필요하면 바로 연결, 아니면 첫 화면의 안내로
+// 맨 위 「☁️ 구글 드라이브」: 다시 연결이 필요하면 바로 연결, 아니면 연결 상태·방법 안내 창
+function openGdGuide() {
+  const box = modal('☁️ 구글 드라이브에 저장하기', gdHomeHtml(), [{label: '닫기', primary: true}]);
+  box.classList.add('gdbox'); gdShow();
+}
 $('#gdBtn').onclick = () => {
   if (GD.on && !GD_ONFILE && gdStatus().c === 'need') return gdConnect();
-  if (location.hash.replace(/^#\/?/, '') && location.hash !== '#home') location.hash = '#home';
-  setTimeout(() => $('#gdPanel')?.scrollIntoView({behavior: 'smooth', block: 'start'}), 60);
+  openGdGuide();
 };
 // 예전 수업실연·면접 화면(#demo, #intv)은 이제 첫 화면 칸반 보드로
 function renderDemo() { history.replaceState(null, '', '#home'); route(); }
