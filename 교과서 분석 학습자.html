@@ -950,7 +950,8 @@ const GD = {
   state: 'off', msg: '', base: undefined, busy: false, again: false, timer: 0, fetching: new Map(), etag: ''
 };
 const gdReady = () => { const s = GD.sess; return !!s && s.exp > Date.now(); };
-const gdKeyOk = k => k.startsWith('tbl:') && k !== 'tbl:ai' && k !== 'tbl:scale' && !/^tbl:(synced|dirty):/.test(k);
+// 마지막으로 본 쪽(tbl:last)·지금 연 메모장(tbl:padcur)은 각자 컴퓨터에만 둠
+const gdKeyOk = k => k.startsWith('tbl:') && k !== 'tbl:ai' && k !== 'tbl:scale' && !/^tbl:(synced|dirty|last|padcur):/.test(k);
 const gdBlobOk = k => !/^(sync|meta):/.test(String(k));
 const gdLast = () => +localStorage.getItem('tblsync:last') || 0;
 const gdPend = () => { try { return JSON.parse(localStorage.getItem('tblsync:pend')) || {}; } catch { return {}; } };
@@ -1039,6 +1040,13 @@ function gdPick(l, r, b, first) {
 function gdMerge(l, r, b, first) {
   if (l === r || l === b || r === b || l === undefined || r === undefined) return gdPick(l, r, b, first);
   const L = gdParse(l), R = gdParse(r), B = gdParse(b);
+  // 답처럼 「번호 → 값」 모양이면 칸마다 따로 합침 (다른 칸을 동시에 고쳐도 둘 다 남음)
+  const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+  if (isObj(L) && isObj(R) && (B === undefined || isObj(B))) {
+    const s = (o, k) => o && Object.prototype.hasOwnProperty.call(o, k) ? JSON.stringify(o[k]) : undefined, out = {};
+    for (const k of new Set([...Object.keys(L), ...Object.keys(R)])) { const v = gdPick(s(L, k), s(R, k), s(B, k), first); if (v !== undefined) out[k] = JSON.parse(v); }
+    return JSON.stringify(out);
+  }
   if (!gdIdList(L) || !gdIdList(R) || (B !== undefined && !gdIdList(B))) return gdPick(l, r, b, first);
   const m = a => new Map((a || []).map(x => [String(x.id), JSON.stringify(x)])), ml = m(L), mr = m(R), mb = m(B);
   const out = [], seen = new Set();
@@ -1097,6 +1105,7 @@ async function gdSync({manual = false, force = false} = {}) {
     // 1) 글 기록
     const L = gdLocalKV(), kv = {};
     for (const k of new Set([...Object.keys(L), ...Object.keys(rkv), ...Object.keys(B.kv)])) {
+      if (!gdKeyOk(k)) continue;
       const v = gdMerge(L[k], rkv[k], B.kv[k], first);
       if (v !== undefined) kv[k] = v;
       if (v !== L[k]) { changed = true; v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, v); }
@@ -1131,7 +1140,7 @@ async function gdSync({manual = false, force = false} = {}) {
     GD.base = {kv, blobs}; await rawPut('sync:base', GD.base);
     // 그림·메모장은 작으니 바로 받아 둠 (PDF는 열 때)
     let gotImg = false;
-    for (const [k, meta] of Object.entries(blobs)) if (/^(img|pad):/.test(k) && !keys.includes(k)) {
+    for (const [k, meta] of Object.entries(blobs)) if ((k.startsWith('img:') || (k.startsWith('pad:') && (!padU() || k.startsWith('pad:' + padU())))) && !keys.includes(k)) {   // 메모장은 내 것만
       try { await rawPut(k, await gdUnpack(meta, await gdDownload(k, meta))); changed = true; if (k.startsWith('img:')) gotImg = true; } catch (e) { console.warn('받기', k, e); }
     }
     if (gotImg) { imgsLoaded = null; await loadImgs(); }
@@ -1296,6 +1305,8 @@ $('#books').addEventListener('click', async e => {
       S.books = S.books.filter(x => x.id !== b.id); saveBooks(); await pdfDel(b.id);
       const k = b.analysis;
       for (const p of lsGet('tbl:padlist:' + k, [{id: ''}])) await pdfDel('pad:' + k + (p.id ? ':' + p.id : '')).catch(() => {});
+      const U = padU();   // 스터디에서 쓴 내 메모장도 (팀원 메모장은 각자 것이라 그대로 둠)
+      if (U) { for (const p of lsGet('tbl:padlist:' + U + k, [{id: ''}])) await pdfDel('pad:' + U + k + (p.id ? ':' + p.id : '')).catch(() => {}); localStorage.removeItem('tbl:padlist:' + U + k); }
       [mineKey(k), bmKey(k), ansKey(k), lastKey(k), 'tbl:padlist:' + k, 'tbl:padcur:' + k].forEach(x => localStorage.removeItem(x));
       gdSoon?.(); renderLibrary(); return;
     }
@@ -2129,9 +2140,18 @@ function padFlush() {
 }
 /* 메모장 여러 장 (교과서마다): 목록 'tbl:padlist:<분석이름>' [{id, name}]
    첫 장(id '')은 예전 메모장 그대로 'pad:<분석이름>', 나머지는 'pad:<분석이름>:<id>' */
-const padLK = () => 'tbl:padlist:' + S.key, padCK = () => 'tbl:padcur:' + S.key;
+// 스터디에서는 메모장을 각자 따로 씀: 목록·파일 이름에 내 이메일을 넣음 ('tbl:padlist:<나>:<분석이름>', 'pad:<나>:<분석이름>…') → 팀원끼리 겹쳐 쓰지 않음
+const padU = () => { try { const m = JSON.parse(localStorage.getItem('imysync:me')); return GD.on && m?.email ? m.email.replace(/[^\w.-]/g, '_') + ':' : ''; } catch { return ''; } };
+const padLK = () => 'tbl:padlist:' + padU() + S.key, padCK = () => 'tbl:padcur:' + S.key;
 const padList = () => lsGet(padLK(), null) || [{id: '', name: '메모1'}];
-const padKeyOf = id => 'pad:' + S.key + (id ? ':' + id : '');
+const padKeyOf = id => 'pad:' + padU() + S.key + (id ? ':' + id : '');
+// 예전(나눠 쓰기 전) 메모장이 있으면 처음 열 때 내 메모장으로 복사
+async function padMigrate() {
+  if (!padU() || lsGet(padLK(), null) !== null) return;
+  const old = lsGet('tbl:padlist:' + S.key, null); let any = false;
+  for (const p of old || [{id: ''}]) { const v = await pdfGet('pad:' + S.key + (p.id ? ':' + p.id : '')).catch(() => null); if (v) { await pdfPut(padKeyOf(p.id), v); any = true; } }
+  if (old || any) lsSet(padLK(), old || [{id: '', name: '메모1'}]);
+}
 function padTabs() {
   const el = padEl('padTabs'), cur = P.cur;
   el.innerHTML = padList().map(p => `<button class="padtab ${p.id === cur ? 'on' : ''}" role="tab" aria-selected="${p.id === cur}" data-pt="${p.id}" title="${p.id === cur ? '한 번 더 누르면 이름 바꾸기' : esc(p.name)}">${esc(p.name)}</button>`).join('')
@@ -2140,6 +2160,7 @@ function padTabs() {
 }
 async function padLoad(id) {
   padFlush();
+  await padMigrate();
   if (id === undefined) { id = lsGet(padCK(), ''); if (!padList().some(p => p.id === id)) id = ''; }
   P.cur = id; P.key = padKeyOf(id); P.hist = [];
   P.text = ''; P.strokes = []; padEl('padText').value = ''; padEl('padSave').textContent = '';
