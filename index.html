@@ -701,7 +701,7 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .padinkc{position:absolute;left:0;top:0;pointer-events:none;touch-action:none}
 .pad.inking .padinkc{pointer-events:auto;cursor:crosshair}
 .pad.erasing .padinkc{cursor:cell}
-/* 드라이브에서 받는 중 로딩바 */
+/* 저장소에서 받는 중 로딩바 */
 .dlbar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:95;width:min(440px,calc(100% - 32px));background:var(--ink);color:#fff;border-radius:14px;padding:14px 18px 12px;box-shadow:0 14px 36px rgba(0,0,0,.3);border-left:6px solid var(--hl)}
 .dlbar .dlt{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .dlbar .dlt b{font-size:15.5px}
@@ -719,7 +719,7 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .gdbtn.sync i{background:var(--hl);animation:gdp .8s infinite alternate}
 .gdbtn.err i{background:#F08A7B}
 .top .gdbtn.need{background:var(--hl);color:var(--ink);padding:0 12px 0 9px;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:4px}
-.top .gdbtn.need::after{content:"다시 연결"}
+.top .gdbtn.need::after{content:"다시 로그인"}
 .gdbtn.need i{display:none}
 .top .gdbtn.need:hover{background:#F6E879;color:var(--ink)}
 /* 맨 위 「☁️ 구글 드라이브」 단추 (전체화면 단추 왼쪽): 누르면 연결 방법 안내 창 */
@@ -749,6 +749,26 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .gdst.sync::before{background:#D9B92E;animation:gdp .8s infinite alternate}
 .gdst.need{color:#8A6510;background:var(--hl-soft)} .gdst.need::before{background:#E3A81B}
 .gdst.err{color:var(--warn);background:#FBEDEA} .gdst.err::before{background:var(--warn)}
+/* 스터디 창: 로그인 · 내 스터디 목록 · 팀원 · 관리 페이지 */
+.gdlogin{margin:14px 0 6px;min-height:44px}
+.gdme{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.gdme small,.tmmem small{color:var(--sub);font-size:12.5px}
+.gdme>span:last-child{display:flex;gap:6px}
+.tmlist{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.tmrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.tmrow.on{border-color:var(--accent);background:var(--hl-soft)}
+.gdnew{display:flex;gap:8px;margin:8px 0}
+.gdnew input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit}
+.tmbox{margin-top:16px;padding:14px 16px;border:1px solid var(--line);border-radius:12px}
+.tmbox .gdhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.tmbox .gdhead h3{margin:0}
+.tmuse{margin:10px 0 6px;font-size:14px;color:var(--sub)}
+.tmmem{list-style:none;margin:0 0 10px;padding:0}
+.tmmem li{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 0;border-bottom:1px dashed var(--line)}
+.tmmem .tmr{display:flex;align-items:center;gap:6px}
+.admtbl{width:100%;border-collapse:collapse;font-size:14px}
+.admtbl th,.admtbl td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+@media (max-width:520px){.admtbl th:nth-child(2),.admtbl td:nth-child(2),.admtbl th:nth-child(5),.admtbl td:nth-child(5){display:none}}
 .gdlead{margin:8px 0 0;color:#3A4A44;max-width:62em}
 .gdwarn{margin-top:12px;background:#FBEDEA;border-left:5px solid var(--warn);border-radius:6px;padding:10px 14px;font-size:15px}
 .gdact{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin-top:14px}
@@ -893,7 +913,7 @@ body.editing .edonly{display:inline-flex!important}
   <div class="crumb" id="crumb"></div>
   <button class="btn small hidden" id="upBtn" title="자료실에 PDF 올리기">📄 PDF 올리기</button>
   <button class="btn small hidden" id="editBtn" title="자료 편집">✏️ 편집</button>
-  <button class="btn small gdbtn" id="gdBtn" title="구글 드라이브에 저장하기 · 연결 방법">☁️<span class="gdl">구글 드라이브</span><i></i></button>
+  <button class="btn small gdbtn" id="gdBtn" title="스터디 · 로그인">☁️<span class="gdl">스터디</span><i></i></button>
   <button class="iconbtn hidden" id="fsBtn" title="전체화면" aria-label="전체화면">⛶</button>
   <button class="iconbtn" id="setBtn" title="백업">⚙️</button>
 </div></header>
@@ -945,124 +965,92 @@ const blobDel = id => rawDel(id).then(r => { gdMark(id, 'del'); return r; });
 navigator.storage?.persist?.();
 
 /* =========================================================
-   구글 드라이브 연결 — 내 드라이브의 「임용 준비 앱」 폴더에 저장
-   · 로그인: Google Identity Services 토큰, 범위 drive.file (이 앱이 만든 파일만 보고 씀)
-   · 글 기록(localStorage 'imy:*')은 data.json 하나에, 큰 파일(PDF·영상·사진·메모장)은 하나씩
+   스터디 저장소 (Cloudflare R2) — 구글 로그인 + 스터디(팀)별 저장
+   · 로그인: 구글 로그인(이름·이메일만) → 저장소 문지기(Worker)가 확인하고 30일짜리 로그인 표를 줌 ('imysync:sess')
+   · 스터디: 누구나 만들고 초대 링크(#team=…)로 들어옴. 고른 스터디('imysync:team')에 저장하고 팀원끼리 같이 봄
+   · 글 기록(localStorage 'imy:*')은 팀의 data.json 하나에, 큰 파일(PDF·영상·사진·메모장)은 하나씩
    · 합치기: 지난번 맞춘 상태(IndexedDB 'sync:base')와 비교. id 있는 목록은 항목끼리 합침
+   · data.json은 내가 읽은 뒤로 남이 안 고쳤을 때만 저장 (고쳤으면 다시 읽어 합침)
    · 큰 파일은 다른 컴퓨터에서 처음 열 때 받아 옴
-   · 이 앱 전용 값은 'imysync:*' (드라이브로 안 올라감)
+   · 이 앱 전용 값은 'imysync:*' (저장소로 안 올라감). 교과서 분석도 같은 로그인·스터디를 씀
    ========================================================= */
-const GOOGLE_CLIENT_ID = '';   // 여기에 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (공개돼도 괜찮은 값)
-const SHARED_FOLDER_ID = '';   // 공용 폴더 (주소의 folders/ 뒤 글자) — 넣어 두면 컴퓨터마다 붙여 넣지 않아도 됨 (교과서 분석과 같은 값)
-const sharedFolderId = () => SHARED_FOLDER_ID || localStorage.getItem('imysync:sharedfolder') || '';
-const GD_TARGET_KEY = 'imysync:target';   // 마지막으로 맞춘 저장 장소 (own 또는 공용 폴더 id)
+const STORE_URL = 'https://imyong-store.kimminjae13579.workers.dev';
+const GOOGLE_CLIENT_ID = '379559393104-nsj44mhabqogcpv43rnrlkqor4c43jln.apps.googleusercontent.com';   // 공개돼도 괜찮은 값
 const GD = {
-  // drive: 공용 폴더에 함께 저장하고 다른 사람이 만든 파일도 고칠 수 있게 (두 앱이 같은 로그인을 쓰니 같은 값이어야 함)
-  scope: 'https://www.googleapis.com/auth/drive', folderName: '임용 준비 앱',
-  get clientId() { return GOOGLE_CLIENT_ID || localStorage.getItem('imysync:client') || ''; },
-  get on() { return localStorage.getItem('imysync:on') === '1'; },
-  token: '', exp: 0, state: 'off', msg: '', base: undefined, busy: false, again: false, timer: 0, gsi: null, fetching: new Map()
+  get sess() { try { return JSON.parse(localStorage.getItem('imysync:sess')) || null; } catch { return null; } },
+  get me() { try { return JSON.parse(localStorage.getItem('imysync:me')) || null; } catch { return null; } },
+  get team() { return localStorage.getItem('imysync:team') || ''; },
+  get on() { return !!this.sess && !!this.team; },
+  state: 'off', msg: '', base: undefined, busy: false, again: false, timer: 0, gsi: null, fetching: new Map(), etag: ''
 };
-try { const t = JSON.parse(localStorage.getItem('imysync:tok')); if (t && t.exp > Date.now() && t.s === GD.scope) { GD.token = t.t; GD.exp = t.exp; } /* 권한이 바뀌기 전 로그인은 다시 연결 */ } catch {}
-const DAPI = 'https://www.googleapis.com/drive/v3/files', UAPI = 'https://www.googleapis.com/upload/drive/v3/files';
-const gdReady = () => !!GD.token && Date.now() < GD.exp;
+const gdReady = () => { const s = GD.sess; return !!s && s.exp > Date.now(); };
 const gdLast = () => +localStorage.getItem('imysync:last') || 0;
 const gdPend = () => { try { return JSON.parse(localStorage.getItem('imysync:pend')) || {}; } catch { return {}; } };
 function gdMark(k, op) {
   k = String(k); if (k.startsWith('sync:')) return;
   const p = gdPend(); p[k] = {op, t: Date.now()}; localStorage.setItem('imysync:pend', JSON.stringify(p)); gdSoon();
 }
-// 고친 뒤 4초 동안 더 고치지 않으면 드라이브에 저장
+// 고친 뒤 4초 동안 더 고치지 않으면 저장
 function gdSoon() { if (!GD.on) return; clearTimeout(GD.timer); GD.timer = setTimeout(() => gdSync(), 4000); }
 async function gdBase() { if (GD.base === undefined) GD.base = (await rawGet('sync:base').catch(() => null)) || null; return GD.base; }
 
 function gsiLoad() {
-  if (window.google?.accounts?.oauth2) return Promise.resolve();
+  if (window.google?.accounts?.id) return Promise.resolve();
   return GD.gsi ||= new Promise((res, rej) => {
     const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
     s.onload = () => res(); s.onerror = () => { GD.gsi = null; rej(new Error('구글 로그인 도구를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.')); };
     document.head.appendChild(s);
   });
 }
-// 버튼을 누른 순간에 불러야 로그인 창이 막히지 않음
-function gdLogin() {
-  return new Promise((res, rej) => gsiLoad().then(() => {
-    const tc = google.accounts.oauth2.initTokenClient({client_id: GD.clientId, scope: GD.scope,
-      callback: r => {
-        if (r.error) return rej(new Error(r.error === 'access_denied' ? '구글 드라이브 사용을 허용하지 않았어요.' : (r.error_description || r.error)));
-        if (!google.accounts.oauth2.hasGrantedAllScopes(r, ...GD.scope.split(' '))) return rej(new Error('드라이브 사용 허용에 모두 체크해야 저장하고 공용 교과서를 볼 수 있어요. 다시 연결해 주세요.'));
-        GD.token = r.access_token; GD.exp = Date.now() + (Number(r.expires_in) - 120) * 1000;
-        localStorage.setItem('imysync:tok', JSON.stringify({t: GD.token, exp: GD.exp, s: GD.scope})); res();
-      },
-      error_callback: e => rej(new Error(e.type === 'popup_failed_to_open' ? '로그인 창이 막혔어요. 주소창 오른쪽의 팝업 차단을 풀고 다시 눌러 주세요.' : e.type === 'popup_closed' ? '로그인 창이 닫혔어요.' : '로그인하지 못했어요.'))});
-    tc.requestAccessToken({prompt: ''});
-  }, rej));
+// 구글 로그인 단추를 el 안에 그림 → 누르고 계정을 고르면 저장소에 로그인
+async function gdLoginButton(el, after) {
+  try { await gsiLoad(); } catch (e) { el.textContent = e.message; return; }
+  google.accounts.id.initialize({client_id: GOOGLE_CLIENT_ID, ux_mode: 'popup', callback: async r => {
+    try {
+      const res = await fetch(STORE_URL + '/auth', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({credential: r.credential})});
+      const j = await res.json(); if (!res.ok) throw new Error(j.error || '로그인하지 못했어요.');
+      localStorage.setItem('imysync:sess', JSON.stringify({token: j.token, exp: Date.now() + 29 * 864e5}));
+      gdSaveMe(j); GD.state = 'ok'; toast(`${j.name}님, 로그인했어요.`); after && after();
+    } catch (e) { toast(e.message.includes('fetch') ? '인터넷 연결을 확인해 주세요.' : e.message); }
+  }});
+  google.accounts.id.renderButton(el, {theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'ko'});
 }
-async function gapi(url, opt = {}) {
-  // 공유 드라이브의 파일도 다룰 수 있게 (보통 폴더에는 영향 없음)
-  if (/googleapis\.com\/(upload\/)?drive\/v3\/files/.test(url) && !/supportsAllDrives/.test(url)) url += (url.includes('?') ? '&' : '?') + 'supportsAllDrives=true' + (/[?&]q=/.test(url) ? '&includeItemsFromAllDrives=true' : '');
-  if (!gdReady()) throw Object.assign(new Error('구글 드라이브 연결 시간이 끝났어요. ☁️ 다시 연결을 눌러 주세요.'), {auth: true});
+const gdSaveMe = j => localStorage.setItem('imysync:me', JSON.stringify({email: j.email, name: j.name, admin: !!j.admin, teams: j.teams || []}));
+// 저장소에 묻기. 로그인이 끝났으면 auth 표시를 단 오류
+async function api(path, opt = {}) {
+  if (!gdReady()) throw Object.assign(new Error('로그인이 필요해요. 위쪽 ☁️를 눌러 다시 로그인해 주세요.'), {auth: true});
   let r;
-  try { r = await fetch(url, {...opt, headers: {Authorization: 'Bearer ' + GD.token, ...(opt.headers || {})}}); }
+  try { r = await fetch(STORE_URL + path, {...opt, headers: {Authorization: 'Bearer ' + GD.sess.token, ...(opt.headers || {})}}); }
   catch { throw new Error('인터넷 연결을 확인해 주세요.'); }
-  if (r.status === 401) { GD.token = ''; localStorage.removeItem('imysync:tok'); throw Object.assign(new Error('구글 드라이브 연결 시간이 끝났어요. ☁️ 다시 연결을 눌러 주세요.'), {auth: true}); }
-  if (!r.ok) {
-    const j = await r.json().catch(() => ({})), why = JSON.stringify(j);
-    if (/storageQuota|quotaExceeded/i.test(why)) throw new Error('구글 드라이브 공간이 가득 찼어요. 드라이브에서 필요 없는 파일을 지워 주세요.');
-    if (/accessNotConfigured|has not been used|is disabled/i.test(why)) throw new Error('Google Drive API가 꺼져 있어요. 연결 사용법 2번을 확인해 주세요.');
-    throw Object.assign(new Error(`드라이브 오류 (${r.status}) ${j.error?.message || ''}`), {status: r.status});
-  }
+  if (r.status === 401) { localStorage.removeItem('imysync:sess'); throw Object.assign(new Error('로그인이 끝났어요. 위쪽 ☁️를 눌러 다시 로그인해 주세요.'), {auth: true}); }
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw Object.assign(new Error(j.error || `저장소 오류 (${r.status})`), {status: r.status}); }
   return r;
 }
-async function gdFolder() {
-  // 공용 폴더가 정해져 있으면 모두 그 폴더에 함께 저장 (일정·Q&A·연습·메모 전부 같이 보고 고침)
-  // 저장 장소가 바뀌면 지난번 맞춘 상태를 버리고 처음 맞추듯 합침 — 이 기기의 기록은 지우지 않고 새 장소에 더해서 올림
-  const target = sharedFolderId() || 'own', was = localStorage.getItem(GD_TARGET_KEY);
-  if (!was) localStorage.setItem(GD_TARGET_KEY, 'own');   // 처음엔 지금까지처럼 내 폴더에 저장해 왔던 걸로
-  if ((was || 'own') !== target) { localStorage.setItem(GD_TARGET_KEY, target); GD.base = null; await rawDel('sync:base').catch(() => {}); }
-  if (target !== 'own') return target;
-  const cached = localStorage.getItem('imysync:folder');
-  if (cached) {
-    const f = await (await gapi(`${DAPI}/${cached}?fields=id,trashed`).catch(e => { if (e.status === 404) return null; throw e; }))?.json();
-    if (f && !f.trashed) return cached;
-  }
-  const q = encodeURIComponent(`name='${GD.folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  let id = (await (await gapi(`${DAPI}?q=${q}&fields=files(id)&orderBy=createdTime`)).json()).files?.[0]?.id;
-  if (!id) id = (await (await gapi(`${DAPI}?fields=id`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: GD.folderName, mimeType: 'application/vnd.google-apps.folder'})})).json()).id;
-  localStorage.setItem('imysync:folder', id); return id;
-}
-// 「임용 준비 앱」 안의 하위 폴더 이름
-const GD_DIRS = {demo: '수업실연', intv: '면접 연습', lib: '자료실'};
-// 「임용 준비 앱」 안의 하위 폴더 — 앱이 만든 폴더만 보이므로 없으면 만듦
-async function gdSubFolder(parent, name) {
-  const q = encodeURIComponent(`name='${name}' and '${parent}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const id = (await (await gapi(`${DAPI}?q=${q}&fields=files(id)&orderBy=createdTime`)).json()).files?.[0]?.id;
-  if (id) return id;
-  return (await (await gapi(`${DAPI}?fields=id`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, parents: [parent], mimeType: 'application/vnd.google-apps.folder'})})).json()).id;
-}
-// 올리기: 이어 올리기(resumable) 주소를 받아 한 번에 보냄. 주소를 못 받으면 multipart로
-async function gdUpload(fileId, meta, blob) {
+const apiJ = async (path, body, method = 'POST') => (await api(path, {method, headers: {'Content-Type': 'application/json'}, body: body === undefined ? undefined : JSON.stringify(body)})).json();
+const fpath = k => `/t/${GD.team}/f/imy/${encodeURIComponent(k)}`;
+// 올리기: 90MB가 넘으면 50MB씩 나눠 올림
+async function gdUpload(k, blob, show) {
   const type = blob.type || 'application/octet-stream';
-  const r = await gapi(`${fileId ? UAPI + '/' + fileId : UAPI}?uploadType=resumable&fields=id`, {
-    method: fileId ? 'PATCH' : 'POST', headers: {'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': type}, body: JSON.stringify(meta)});
-  const loc = r.headers.get('Location');
-  if (loc) {
-    let u; try { u = await fetch(loc, {method: 'PUT', headers: {'Content-Type': type}, body: blob}); } catch { throw new Error('인터넷 연결을 확인해 주세요.'); }
-    if (!u.ok) throw new Error(`드라이브에 올리지 못했어요 (${u.status})`);
-    return (await u.json()).id;
-  }
-  const bd = 'imy' + uid(), body = new Blob([`--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${bd}\r\nContent-Type: ${type}\r\n\r\n`, blob, `\r\n--${bd}--`]);
-  return (await (await gapi(`${fileId ? UAPI + '/' + fileId : UAPI}?uploadType=multipart&fields=id`, {method: fileId ? 'PATCH' : 'POST', headers: {'Content-Type': 'multipart/related; boundary=' + bd}, body})).json()).id;
+  if (blob.size <= 90e6) { await api(fpath(k), {method: 'PUT', headers: {'Content-Type': type}, body: blob}); return; }
+  const mp = `/t/${GD.team}/mp/imy/${encodeURIComponent(k)}`, PART = 50e6, n = Math.ceil(blob.size / PART);
+  const {uploadId} = await apiJ(`${mp}?a=create`, {type, size: blob.size});
+  try {
+    const parts = [];
+    for (let i = 0; i < n; i++) {
+      show && show(i, n);
+      parts.push(await (await api(`${mp}?a=part&u=${encodeURIComponent(uploadId)}&n=${i + 1}`, {method: 'PUT', body: blob.slice(i * PART, (i + 1) * PART)})).json());
+    }
+    await apiJ(`${mp}?a=done&u=${encodeURIComponent(uploadId)}`, {parts});
+  } catch (e) { apiJ(`${mp}?a=abort&u=${encodeURIComponent(uploadId)}`, {}).catch(() => {}); throw e; }
 }
-// 공용 폴더에서는 남이 만든 파일을 휴지통에 못 넣을 수 있음(403) — 그때는 목록에서만 빼고 넘어감
-const gdTrash = id => gapi(`${DAPI}/${id}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({trashed: true})}).catch(e => { if (e.status !== 404 && e.status !== 403) throw e; });
-// 큰 파일 ↔ 드라이브 파일: Blob은 그대로, 나머지(메모장 등)는 JSON으로
+const gdTrash = k => api(fpath(k), {method: 'DELETE'}).catch(e => { if (e.status !== 404) throw e; });
+// 큰 파일 ↔ 저장소 파일: Blob은 그대로, 나머지(메모장 등)는 JSON으로
 const gdPack = v => v instanceof Blob ? {kind: 'b', blob: v} : {kind: 'j', blob: new Blob([JSON.stringify(v)], {type: 'application/json'})};
 const gdUnpack = async (meta, b) => meta.kind === 'j' ? JSON.parse(await b.text()) : (b.type || !meta.type ? b : new Blob([b], {type: meta.type}));
 // 받는 중 로딩바 (화면 아래 가운데): 무엇을 받는지 · 막대 · 퍼센트 · 받은 양
 function dlBar(label) {
   const el = document.createElement('div'); el.className = 'dlbar'; el.setAttribute('role', 'progressbar'); el.setAttribute('aria-valuemin', 0); el.setAttribute('aria-valuemax', 100);
-  el.innerHTML = `<div class="dlt"><b>드라이브에서 받는 중</b><span>${esc(label)}</span></div><div class="dltrack"><i></i></div><div class="dlnum"><span class="pc">0%</span><span class="mb"></span></div><p>이 기기에서 처음 한 번만 받아요</p>`;
+  el.innerHTML = `<div class="dlt"><b>스터디 저장소에서 받는 중</b><span>${esc(label)}</span></div><div class="dltrack"><i></i></div><div class="dlnum"><span class="pc">0%</span><span class="mb"></span></div><p>이 기기에서 처음 한 번만 받아요</p>`;
   document.body.appendChild(el);
   const MB = n => n >= 1048576 ? (n / 1048576).toFixed(n >= 1e8 ? 0 : 1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB';
   return {
@@ -1074,11 +1062,11 @@ function dlBar(label) {
     done() { el.querySelector('i').style.width = '100%'; setTimeout(() => el.remove(), 250); }
   };
 }
-// 드라이브에서 받기 — 받은 만큼 로딩바로 보여 줌
-async function gdDownload(meta, label) {
-  const r = await gapi(`${DAPI}/${meta.id}?alt=media`);
+// 저장소에서 받기 — 받은 만큼 로딩바로 보여 줌
+async function gdDownload(k, meta, label) {
+  const r = await api(fpath(k));
   if (!label || !r.body) return r.blob();
-  const total = meta.size || +r.headers.get('Content-Length') || 0, bar = dlBar(label);
+  const total = meta.size || +r.headers.get('X-Size') || 0, bar = dlBar(label);
   try {
     const rd = r.body.getReader(), parts = []; let got = 0;
     bar.set(0, total);
@@ -1087,21 +1075,21 @@ async function gdDownload(meta, label) {
   } finally { bar.done(); }
 }
 const dlLabel = id => id.startsWith('vid:') ? '연습 영상' : id.startsWith('file:') ? 'PDF 자료' : id.startsWith('img:') ? '사진' : id.startsWith('pad:') ? '메모장' : '파일';
-// 이 컴퓨터에 없는 큰 파일을 드라이브에서 받아 옴 (다른 컴퓨터에서 올린 PDF·영상)
+// 이 컴퓨터에 없는 큰 파일을 저장소에서 받아 옴 (다른 컴퓨터·다른 팀원이 올린 PDF·영상)
 function gdFetch(id) {
   id = String(id); if (id.startsWith('sync:')) return Promise.resolve(undefined);
   if (GD.fetching.has(id)) return GD.fetching.get(id);
   const p = (async () => {
     const meta = (await gdBase())?.blobs?.[id]; if (!meta) return undefined;
-    if (!gdReady()) { toast('구글 드라이브에 있는 파일이에요. 위쪽 ☁️ 다시 연결을 누른 뒤 다시 열어 주세요.'); return undefined; }
+    if (!gdReady()) { toast('스터디 저장소에 있는 파일이에요. 위쪽 ☁️에서 다시 로그인한 뒤 다시 열어 주세요.'); return undefined; }
     try {
-      const v = await gdUnpack(meta, await gdDownload(meta, dlLabel(id)));
+      const v = await gdUnpack(meta, await gdDownload(id, meta, dlLabel(id)));
       await rawPut(id, v); return v;
     } catch (e) { toast(e.message); return undefined; }
   })().finally(() => GD.fetching.delete(id));
   GD.fetching.set(id, p); return p;
 }
-// 글 기록 합치기: 지난번 맞춘 값(b)과 비교해 바뀐 쪽을 씀. 처음 맞출 때(base 없음)는 드라이브 쪽이 이김
+// 글 기록 합치기: 지난번 맞춘 값(b)과 비교해 바뀐 쪽을 씀. 처음 맞출 때(base 없음)는 저장소 쪽이 이김
 const gdParse = s => { if (s === undefined) return undefined; try { return JSON.parse(s); } catch { return undefined; } };
 const gdIdList = a => Array.isArray(a) && a.every(x => x && typeof x === 'object' && x.id != null);
 function gdPick(l, r, b, first) {
@@ -1135,12 +1123,11 @@ async function gdSync({manual = false} = {}) {
   if (!gdReady()) { GD.state = 'need'; gdShow(); return; }
   if (GD.busy) { GD.again = true; return; }
   GD.busy = true; GD.state = 'sync'; GD.msg = '맞추는 중…'; gdShow();
-  let changed = false;
+  let changed = false, retry = false;
+  const team = GD.team, docPath = `/t/${team}/doc/data`;
   try {
-    const folder = await gdFolder();
-    const q = encodeURIComponent(`name='data.json' and '${folder}' in parents and trashed=false`);
-    const dataId = (await (await gapi(`${DAPI}?q=${q}&fields=files(id)&orderBy=modifiedTime desc`)).json()).files?.[0]?.id || null;
-    const remote = dataId ? await (await gapi(`${DAPI}/${dataId}?alt=media`)).json() : {};
+    const rr = await api(docPath); GD.etag = rr.headers.get('X-Etag') || '';
+    const remote = await rr.json();
     const rkv = remote.kv || {}, rblobs = remote.blobs || {};
     const base = await gdBase(), first = !base, B = base || {kv: {}, blobs: {}};
     // 1) 글 기록
@@ -1154,84 +1141,61 @@ async function gdSync({manual = false} = {}) {
     const blobs = {...rblobs}, pend = gdPend(), done = [];
     const keys = (await idbDo('readonly', st => st.getAllKeys())).map(String).filter(k => !k.startsWith('sync:'));
     for (const k of keys) if (B.blobs[k] && !blobs[k] && !pend[k]) { await rawDel(k); changed = true; }   // 다른 컴퓨터에서 지움
-    for (const [k, p] of Object.entries(pend)) if (p.op === 'del') { if (blobs[k]) await gdTrash(blobs[k].id); delete blobs[k]; done.push([k, p.t]); }
+    for (const [k, p] of Object.entries(pend)) if (p.op === 'del') { if (blobs[k]) await gdTrash(k); delete blobs[k]; done.push([k, p.t]); }
     const ups = [...new Set([...Object.entries(pend).filter(([, p]) => p.op === 'put').map(([k]) => k), ...keys.filter(k => !blobs[k] && !B.blobs[k])])];
+    // data.json 저장: 그사이 다른 사람이 고쳤으면(412) 이번 맞추기를 접고 바로 다시 맞춤
     const saveData = async () => {
-      const body = new Blob([JSON.stringify({format: 'imyong-drive', version: 1, at: Date.now(), kv, blobs})], {type: 'application/json'});
-      return gdUpload(GD.dataId || dataId, GD.dataId || dataId ? {} : {name: 'data.json', parents: [folder]}, body);
+      try {
+        const r = await api(docPath, {method: 'PUT', headers: {'Content-Type': 'application/json', ...(GD.etag ? {'If-Match': GD.etag} : {})},
+          body: JSON.stringify({format: 'imyong-r2', version: 1, at: Date.now(), kv, blobs})});
+        GD.etag = (await r.json()).etag;
+      } catch (e) { if (e.status === 412) throw Object.assign(new Error('changed'), {retry: true}); throw e; }
     };
-    GD.dataId = null;
-    // 드라이브에서 알아보기 쉽게: 「임용 준비 앱」 안의 폴더에 원래 이름으로
-    //   수업실연 연습 영상 → 「수업실연」 (기록 제목 그대로), 면접 연습 영상 → 「면접 연습」 (기록 제목 그대로),
-    //   면접 자료실 PDF → 「자료실」 (올린 PDF 파일 이름)
-    const vids = {};
-    for (const kd of Object.keys(KIND)) for (const r of gdParse(kv['imy:rec:' + kd]) || []) if (r?.id) vids['vid:' + r.id] = {dirName: GD_DIRS[kd], name: (r.title || '').trim() || `제목 없음 ${dstr(r.at)}`};
-    for (const d of gdParse(kv['imy:docs']) || []) if (d?.id) vids['file:' + d.id] = {dirName: GD_DIRS.lib, name: ((d.title || '').trim() || '자료') + '.pdf'};
-    const subs = {};
-    const sub = async dirName => subs[dirName] ||= await gdSubFolder(folder, dirName);
-    let n = 0;
+    let n = 0, saved = false;
     for (const k of ups) {
       n++; const v = await rawGet(k);
       if (v === undefined) { done.push([k, pend[k]?.t]); continue; }
-      const {kind, blob} = gdPack(v);
-      GD.msg = `올리는 중 ${n}/${ups.length}${blob.size > 5e6 ? ` (${(blob.size / 1048576).toFixed(0)}MB)` : ''}`; gdShow();
-      const old = blobs[k]?.id, vd = vids[k];
-      const meta = old ? {} : vd ? {name: vd.name, parents: [await sub(vd.dirName)], appProperties: {k}} : {name: k, parents: [folder], appProperties: {k}};
-      const id = await gdUpload(old, meta, blob);
-      blobs[k] = {...(old ? blobs[k] : {}), id, kind, type: blob.type || '', size: blob.size, at: Date.now(), ...(!old && vd ? {dir: meta.parents[0], dirName: vd.dirName, name: vd.name} : {})};
+      const {kind, blob} = gdPack(v), mb = blob.size > 5e6 ? ` (${(blob.size / 1048576).toFixed(0)}MB)` : '';
+      GD.msg = `올리는 중 ${n}/${ups.length}${mb}`; gdShow();
+      await gdUpload(k, blob, (i, parts) => { GD.msg = `올리는 중 ${n}/${ups.length}${mb} · ${Math.round(i / parts * 100)}%`; gdShow(); });
+      blobs[k] = {kind, type: blob.type || '', size: blob.size, at: Date.now()};
       done.push([k, pend[k]?.t]);
-      if (blob.size > 1e6) GD.dataId = await saveData();   // 큰 파일 하나 올릴 때마다 목록도 저장 (도중에 끊겨도 다시 안 올림)
-    }
-    // 이미 올라간 파일: 알맞은 폴더로 옮기고, 앱에서 제목을 바꿨으면 드라이브 파일 이름도 바꿈
-    const leftDirs = new Set();
-    for (const [k, vd] of Object.entries(vids)) {
-      const m = blobs[k]; if (!m || (m.dir && m.dirName === vd.dirName && m.name === vd.name)) continue;   // 이미 제자리
-      try {
-        const dir = await sub(vd.dirName);
-        if (m.dir === dir && m.name === vd.name) { blobs[k] = {...m, dirName: vd.dirName}; continue; }
-        let q = '';
-        if (m.dir !== dir) {
-          const from = m.dir || (await (await gapi(`${DAPI}/${m.id}?fields=parents`)).json()).parents?.join(',');
-          q = `?addParents=${dir}${from ? '&removeParents=' + from : ''}`;
-          if (m.dir && m.dir !== folder) leftDirs.add(m.dir);
-        }
-        await gapi(`${DAPI}/${m.id}${q}`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: vd.name})});
-        blobs[k] = {...m, dir, dirName: vd.dirName, name: vd.name};
-      } catch (e) { if (e.auth) throw e; console.warn('드라이브 폴더 정리', k, e); }
-    }
-    // 옮기고 나서 비어 버린 예전 폴더(예: 「면접」)는 휴지통으로
-    for (const d of leftDirs) {
-      try {
-        if (Object.values(blobs).some(m => m.dir === d)) continue;
-        const q = encodeURIComponent(`'${d}' in parents and trashed=false`);
-        if (!(await (await gapi(`${DAPI}?q=${q}&fields=files(id)&pageSize=1`)).json()).files?.length) await gdTrash(d);
-      } catch (e) { if (e.auth) throw e; console.warn('빈 폴더 정리', d, e); }
+      if (blob.size > 1e6) { await saveData(); saved = true; }   // 큰 파일 하나 올릴 때마다 목록도 저장 (도중에 끊겨도 다시 안 올림)
     }
     // 3) 목록 저장 (바뀐 것이 있을 때만)
     const same = (a, b, f = x => x) => Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(k => k in b && f(a[k]) === f(b[k]));
-    if (GD.dataId || !dataId || !same(kv, rkv) || !same(blobs, rblobs, JSON.stringify)) await saveData();
+    if (saved || !GD.etag || !same(kv, rkv) || !same(blobs, rblobs, JSON.stringify)) await saveData();
+    if (GD.team !== team) return;   // 맞추는 사이 스터디를 바꿈
     GD.base = {kv, blobs}; await rawPut('sync:base', GD.base);
     const p2 = gdPend(); for (const [k, t] of done) if (p2[k] && p2[k].t === t) delete p2[k];
     localStorage.setItem('imysync:pend', JSON.stringify(p2));
     localStorage.setItem('imysync:last', String(Date.now()));
     GD.state = 'ok'; GD.msg = '';
   } catch (e) {
-    GD.state = e.auth ? 'need' : 'err'; GD.msg = e.message;
-    if (manual || !e.auth) toast(e.message);
+    if (e.retry) { retry = true; GD.state = 'sync'; }
+    else if (e.status === 403 || e.status === 404) {   // 스터디에서 나가졌거나 스터디가 지워짐
+      localStorage.removeItem('imysync:team'); GD.state = 'off'; GD.msg = '';
+      toast('이 스터디에 더는 들어갈 수 없어요 (나가졌거나 지워졌어요). ☁️에서 스터디를 다시 골라 주세요.'); gdRefreshMe();
+    } else {
+      GD.state = e.auth ? 'need' : 'err'; GD.msg = e.message;
+      if (manual || !e.auth) toast(e.message);
+    }
   } finally {
     GD.busy = false; gdShow();
     if (changed) gdRefresh();
-    if (GD.again) { GD.again = false; gdSoon(); }
+    if (retry) setTimeout(() => gdSync(), 300);
+    else if (GD.again) { GD.again = false; gdSoon(); }
   }
 }
-// 드라이브에서 받은 내용 화면에 보이기: 쓰는 중이 아닐 때만 다시 그림
+// 저장소에서 받은 내용 화면에 보이기: 쓰는 중이 아닐 때만 다시 그림
 function gdRefresh() {
   const busy = $('#ovRoot').children.length || $('#modalRoot').innerHTML || document.activeElement?.matches?.('#app input, #app textarea, #app [contenteditable]');
-  if (busy) { toast('드라이브에서 새 내용을 받았어요. 다른 화면으로 갔다 오면 보여요.'); return; }
+  if (busy) { toast('스터디의 새 내용을 받았어요. 다른 화면으로 갔다 오면 보여요.'); return; }
   const y = scrollY; route(); scrollTo(0, y);
 }
 setInterval(() => { if (GD.on && document.visibilityState === 'visible' && !GD.busy) gdReady() ? gdSync() : (GD.state = 'need', gdShow()); }, 120000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && GD.on && gdReady()) gdSync(); });
+
 
 /* =========================================================
    모달
@@ -1285,13 +1249,12 @@ const ROUTES = {
   'qna': {title: 'Q&A', render: renderQna}
 };
 function route() {
-  // 초대 링크(#join=클라이언트ID~공용폴더ID)로 열면: 연결 정보를 저장하고 첫 화면에서 연결 안내 창을 엶
-  const jm = location.hash.match(/^#join=([\w.-]+\.apps\.googleusercontent\.com)(?:~([\w-]{10,}))?/);
-  if (jm) {
-    localStorage.setItem('imysync:client', jm[1]);
-    jm[2] ? localStorage.setItem('imysync:sharedfolder', jm[2]) : localStorage.removeItem('imysync:sharedfolder');
+  // 초대 링크(#team=팀id.코드)로 열면: 로그인돼 있으면 바로 들어가고, 아니면 ☁️ 창에서 로그인한 뒤 들어감
+  const tm = location.hash.match(/^#team=(w{6,20}.w{8,40})/);
+  if (tm) {
+    sessionStorage.setItem('imysync:invite', tm[1]);
     history.replaceState(null, '', location.pathname + location.search + '#home');
-    setTimeout(() => { openGdGuide(); toast('초대 링크로 연결 정보를 넣었어요. 「구글 드라이브 연결」을 눌러 주세요.'); gsiLoad().catch(() => {}); }, 300);
+    setTimeout(() => gdReady() ? gdJoin(tm[1]) : (openGdGuide(), toast('초대 링크로 열었어요. 구글로 로그인하면 스터디에 들어가요.')), 300);
   }
   const key = location.hash.replace(/^#\/?/, '').replace(/^home$/, '');
   let r = ROUTES[key];
@@ -1356,143 +1319,161 @@ function renderHome() {
   gdShow();
 }
 
-/* ---------- 구글 드라이브: 첫 화면 안내 · 위쪽 ☁️ 버튼 ---------- */
+/* ---------- 스터디: 위쪽 ☁️ 단추 · 로그인 · 스터디 만들기/고르기/관리 창 ---------- */
 const GD_ONFILE = location.protocol === 'file:';
-function gdHomeHtml() {
-  const origin = GD_ONFILE ? 'https://(내 아이디).github.io' : location.origin;
-  return `<section class="gdhome" id="gdPanel">
-    <div class="gdhead"><h2>☁️ 구글 드라이브에 저장하기</h2><span class="gdst" id="gdStat"></span></div>
-    <p class="gdlead">연결하면 연습 기록, 답변, 메모, 올린 PDF와 녹화 영상이 <b>내 구글 드라이브</b>에 저장돼요. 다른 컴퓨터에서도 같은 구글 계정으로 연결하면 그대로 이어서 볼 수 있어요.</p>
-    ${GD_ONFILE ? `<div class="gdwarn"><b>지금은 파일을 직접 연 상태라 연결할 수 없어요.</b> 구글 로그인은 인터넷 주소(https://…)로 연 앱에서만 돼요. 아래 사용법 0번부터 해 주세요.</div>` : ''}
-    ${GD_ONFILE ? '' : `<div class="gdsetup"><b class="gdst-t">연결 정보</b> <span class="gdst-s">대표가 보낸 초대 링크로 열면 저절로 채워져요. 아니면 받은 두 값을 넣고 저장한 뒤 「구글 드라이브 연결」을 눌러요.</span>
-      <label>클라이언트 ID<input type="text" id="gdClient" value="${esc(localStorage.getItem('imysync:client') || '')}" placeholder="0000-xxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false"></label>
-      <label>공용 폴더 주소 <small>(없으면 비워 두면 내 드라이브에 따로 저장)</small><input type="text" id="gdShared" value="${esc(localStorage.getItem('imysync:sharedfolder') || '')}" placeholder="https://drive.google.com/drive/folders/…" autocomplete="off" spellcheck="false"></label>
-      <div class="gdsetbtns"><button class="btn" data-gd="savesetup">저장</button><button class="btn" data-gd="invite" title="클라이언트 ID와 공용 폴더가 담긴 앱 주소를 복사해요. 스터디원은 이 링크로 열기만 하면 돼요">🔗 초대 링크 복사</button></div></div>`}
-    <div class="gdact" id="gdAct"></div>
-    <details class="gdhow" id="gdHow" ${GD.on ? '' : 'open'}><summary>연결 방법 (처음 한 번만)</summary>
-      <h3 class="gdpart">👑 스터디 대표가 할 일 <small>(한 사람만, 처음 한 번)</small></h3>
-      <ol class="gdsteps one">
-        <li><b class="t">구글 클라우드 프로젝트 만들기</b>
-          <p><a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a>에 내 구글 계정으로 들어가기 → 「새 프로젝트」 → 이름(예: 임용 준비) 쓰고 만들기. 무료이고 카드 등록 필요 없음.</p></li>
-        <li><b class="t">Google Drive API 켜기</b>
-          <p>위쪽에서 방금 만든 프로젝트가 골라져 있는지 확인하기 → 왼쪽 메뉴 「API 및 서비스 → 라이브러리」 → 「Google Drive API」 검색 → 「사용」 누르기.</p></li>
-        <li><b class="t">동의 화면 만들기</b>
-          <p>「API 및 서비스 → OAuth 동의 화면」(Google 인증 플랫폼) → 「시작하기」 → 앱 이름(임용 준비)·내 이메일 넣기 → 대상은 「외부」 고르기 → 만들기.</p></li>
-        <li><b class="t">스터디원을 테스트 사용자로 넣기</b>
-          <p>「대상」 메뉴 → 「테스트 사용자 → 사용자 추가」 → 나와 스터디원 모두의 지메일 주소 넣고 저장하기. 여기 없는 계정은 연결할 수 없음 (최대 100명).</p></li>
-        <li><b class="t">클라이언트 ID 만들기</b>
-          <p>「클라이언트」(사용자 인증 정보) 메뉴 → 「클라이언트 만들기 → OAuth 클라이언트 ID」 → 유형은 「웹 애플리케이션」 고르기.</p>
-          <p>「승인된 자바스크립트 원본」에 이 앱 주소 넣기: <code>${esc(origin)}</code>${GD_ONFILE ? '' : ' <button class="btn small" data-gd="copy">복사</button>'} → 만들기.</p>
-          <p>나오는 <b>클라이언트 ID</b>(…apps.googleusercontent.com으로 끝남) 복사해 두기. 「보안 비밀번호」는 필요 없으니 남에게 보내지 않기.</p></li>
-        <li><b class="t">공용 폴더 만들기</b>
-          <p><a href="https://drive.google.com" target="_blank" rel="noopener">drive.google.com</a> → 「+ 새로 만들기 → 새 폴더」(예: 임용 스터디) → 폴더 안에 교과서 PDF들과 내 컴퓨터 「임용 준비」 폴더의 <b>교과서분석_데이터.js</b> 올리기.</p></li>
-        <li><b class="t">공용 폴더 공유하기</b>
-          <p>폴더 오른쪽 클릭 → 「공유」 → 스터디원 지메일 넣기 → 권한을 <b>「편집자」</b>로 고르기 → 보내기. 「일반 액세스」는 「제한됨」 그대로 두기.</p>
-          <p class="gdbad">⚠️ 「링크가 있는 모든 사용자」로 열지 않기 (교과서 저작권 · 모두의 기록이 들어 있음).</p></li>
-        <li><b class="t">초대 링크 보내기</b>
-          <p>이 창 맨 위 「연결 정보」에 클라이언트 ID와 공용 폴더 주소(폴더를 열었을 때 주소창의 주소) 넣고 저장하기 → 「🔗 초대 링크 복사」 → 카톡 등으로 스터디원에게 보내기. 대표도 아래 「스터디원이 할 일」 2번부터 똑같이 하기.</p></li>
-      </ol>
-      <h3 class="gdpart">🙋 스터디원이 할 일 <small>(기기마다 처음 한 번)</small></h3>
-      <ol class="gdsteps one">
-        <li><b class="t">초대 링크 열기</b>
-          <p>대표가 보낸 초대 링크를 크롬에서 열기 → 연결 정보가 저절로 채워지고 이 창이 열림. (링크가 없으면 맨 위 「연결 정보」에 받은 값을 직접 넣고 저장하기)</p></li>
-        <li><b class="t">구글 드라이브 연결하기</b>
-          <p>「구글 드라이브 연결」 → 내 구글 계정 고르기 → 「Google에서 확인하지 않은 앱」이 나오면 「고급 → 계속」 → 드라이브 권한 <b>모두 허용</b>하기.</p></li>
-        <li><b class="t">확인하기</b>
-          <p>위쪽 상태가 「연결됨」이 되면 끝. 일정·Q&amp;A·연습 기록이 모두와 함께 보이고, 교과서 분석에 공용 폴더의 교과서가 나옴.</p></li>
-      </ol>
-      <div class="gdnote"><b>알아 두기</b><ul>
-        <li>공용 폴더에 저장된 건 스터디원 모두가 보고 고치고 지울 수 있음. 실수로 지운 영상·파일은 드라이브 휴지통에서 30일 안에 되살리기.</li>
-        <li>연결은 1시간쯤 지나면 끊김 → 위쪽 ☁️에 「다시 연결」이 보이면 누르기. 그동안 쓴 기록은 기기에 있다가 다시 연결하면 올라감.</li>
-        <li>처음 연결할 때 이 기기에 있던 기록은 지워지지 않고 공용 폴더에 더해짐.</li>
-        <li>영상은 공용 폴더를 만든 대표의 드라이브 용량을 씀 → 영상이 많으면 대표 계정 용량 확인하기.</li>
-        <li>공용 폴더 주소를 비워 두면 공유 없이 내 드라이브의 「${GD.folderName}」 폴더에 나만 저장됨.</li>
-      </ul></div>
-    </details>
-  </section>`;
-}
+const fmtMB = n => n >= 1073741824 ? (n / 1073741824).toFixed(1) + 'GB' : n >= 1048576 ? Math.round(n / 1048576) + 'MB' : n ? Math.max(1, Math.round(n / 1024)) + 'KB' : '0';
 function gdStatus() {
   if (GD_ONFILE) return {c: 'off', t: '파일로 연 앱 · 연결할 수 없음'};
-  if (!GD.on) return {c: 'off', t: '연결 안 됨'};
+  if (!GD.sess) return {c: 'off', t: '로그인 안 됨'};
+  if (!gdReady() || GD.state === 'need') return {c: 'need', t: '다시 로그인이 필요해요'};
+  if (!GD.team) return {c: 'off', t: '스터디를 골라 주세요'};
   if (GD.busy) return {c: 'sync', t: GD.msg || '맞추는 중…'};
-  if (!gdReady() || GD.state === 'need') return {c: 'need', t: '다시 연결이 필요해요'};
   if (GD.state === 'err') return {c: 'err', t: '저장하지 못했어요'};
   const last = gdLast();
-  return {c: 'ok', t: last ? `연결됨 · ${dtstr(last)}에 저장` : '연결됨'};
+  return {c: 'ok', t: last ? `${dtstr(last)}에 저장` : '연결됨'};
 }
+const gdTeamName = () => (GD.me?.teams || []).find(t => t.id === GD.team)?.name || '';
 function gdShow() {
   const s = gdStatus(), b = $('#gdBtn');
-  if (b) { b.className = 'btn small gdbtn ' + s.c; b.title = '구글 드라이브 · ' + s.t; }
+  if (b) { b.className = 'btn small gdbtn ' + s.c; b.title = '스터디 · ' + s.t; const l = $('.gdl', b); if (l) l.textContent = gdTeamName() || '스터디'; }
   const st = $('#gdStat'); if (st) { st.className = 'gdst ' + s.c; st.textContent = s.t; }
-  const act = $('#gdAct'); if (!act) return;
-  act.innerHTML = GD_ONFILE ? ''
-    : !GD.on ? `<button class="btn primary" data-gd="connect" ${GD.clientId ? '' : 'disabled'}>☁️ 구글 드라이브 연결</button>${GD.clientId ? '' : '<span class="gdhint">위 「연결 정보」에 클라이언트 ID를 먼저 넣고 저장해 주세요.</span>'}`
-    : s.c === 'need' ? `<button class="btn primary" data-gd="connect">☁️ 다시 연결</button><span class="gdhint">그동안 쓴 기록은 이 컴퓨터에 저장돼 있어요.</span>`
-    : `<button class="btn" data-gd="sync" ${GD.busy ? 'disabled' : ''}>지금 저장</button><button class="btn ghost" data-gd="off">연결 끊기</button>${s.c === 'err' ? `<span class="gdhint bad">${esc(GD.msg)}</span>` : ''}`;
+  const act = $('#gdAct'); if (act) act.innerHTML = s.c === 'ok' || s.c === 'err' || s.c === 'sync'
+    ? `<button class="btn" data-gd="sync" ${GD.busy ? 'disabled' : ''}>지금 저장</button>${s.c === 'err' ? `<span class="gdhint bad">${esc(GD.msg)}</span>` : ''}` : '';
 }
-async function gdConnect() {
-  if (GD_ONFILE) return toast('파일로 연 앱에서는 연결할 수 없어요. 인터넷 주소(https://…)로 열어 주세요.');
-  if (!GD.clientId) return toast('연결 위 「연결 정보」에 클라이언트 ID를 먼저 넣고 저장해 주세요.');
-  const firstTime = !GD.on;
-  try { await gdLogin(); } catch (e) { toast(e.message); return; }
-  localStorage.setItem('imysync:on', '1'); GD.state = 'ok';
-  if (firstTime) toast('연결됐어요. 드라이브와 맞추는 중이에요. 영상이 많으면 시간이 걸려요.');
-  const how = $('#gdHow'); if (how) how.open = false;
+// 내 정보·스터디 목록을 저장소에서 다시 받음
+async function gdRefreshMe() {
+  try { gdSaveMe(await apiJ('/me', undefined, 'GET')); } catch (e) { if (!e.auth) console.warn(e); }
+  if (GD.team && !(GD.me?.teams || []).some(t => t.id === GD.team)) localStorage.removeItem('imysync:team');
+  gdShow(); gdPanel();
+}
+const gdHasLocal = async () => Object.keys(gdLocalKV()).length > 0 || (await idbDo('readonly', st => st.getAllKeys())).some(k => !String(k).startsWith('sync:'));
+// 이 컴퓨터의 기록 비우기 (다른 스터디로 바꿀 때)
+async function gdWipeLocal() {
+  Object.keys(gdLocalKV()).forEach(k => localStorage.removeItem(k));
+  await idbDo('readwrite', st => st.clear());
+  ['imysync:pend', 'imysync:last'].forEach(k => localStorage.removeItem(k));
+  GD.base = null; GD.etag = '';
+}
+// 스터디 고르기: 지금 스터디에 다 올린 뒤, 이 컴퓨터를 비우고 새 스터디의 기록을 받음
+// 처음 스터디에 들어갈 때(지금 스터디 없음)는 이 컴퓨터의 기록을 올릴지 물음
+async function gdUseTeam(id) {
+  if (id === GD.team) return;
+  const name = (GD.me?.teams || []).find(t => t.id === id)?.name || '스터디';
+  if (GD.team) {
+    if (Object.keys(gdPend()).length) { await gdSync({manual: true}); if (Object.keys(gdPend()).length) return toast('아직 올리지 못한 기록이 있어서 스터디를 바꾸지 않았어요. 인터넷 연결을 확인하고 다시 해 주세요.'); }
+    if (!confirm(`「${name}」로 바꿀까요?\n지금 스터디의 기록은 저장소에 있어서, 다시 고르면 그대로 받아 와요.`)) return;
+    await gdWipeLocal();
+  } else if (await gdHasLocal()) {
+    if (!confirm(`이 컴퓨터에 있던 기록을 「${name}」에 올릴까요?\n\n확인: 이 기록을 스터디원과 같이 봐요.\n취소: 백업 파일로 내려받아 둔 뒤 이 컴퓨터를 비우고 스터디 기록만 받아요.`)) {
+      await exportAll(); await gdWipeLocal();
+    } else { GD.base = null; await rawDel('sync:base').catch(() => {}); }
+  }
+  localStorage.setItem('imysync:team', id); GD.state = 'ok';
+  route(); gdShow(); gdPanel();
+  toast(`「${name}」 스터디를 열었어요. 기록을 맞추는 중이에요.`);
   gdSync({manual: true});
 }
-function gdDisconnect() {
-  if (!confirm('구글 드라이브 연결을 끊을까요?\n이 컴퓨터의 기록은 그대로 남고, 드라이브에 저장된 파일도 지우지 않아요.')) return;
-  ['imysync:on', 'imysync:tok', 'imysync:folder', 'imysync:last', 'imysync:pend'].forEach(k => localStorage.removeItem(k));
-  GD.token = ''; GD.exp = 0; GD.base = null; GD.state = 'off'; rawDel('sync:base');
-  gdShow(); toast('연결을 끊었어요.');
+// 초대 링크(#team=팀id.코드)로 들어가기
+async function gdJoin(invite) {
+  try {
+    const t = await apiJ('/join', {invite}); sessionStorage.removeItem('imysync:invite');
+    await gdRefreshMe(); toast(`「${t.name}」 스터디에 들어왔어요.`);
+    await gdUseTeam(t.id);
+  } catch (e) { sessionStorage.removeItem('imysync:invite'); toast(e.message); gdPanel(); }
 }
-document.addEventListener('click', e => {
-  const a = e.target.closest('[data-gd]')?.dataset.gd; if (!a) return;
-  if (a === 'connect') return gdConnect();
+const gdAfterLogin = () => { const inv = sessionStorage.getItem('imysync:invite'); gdPanel(); gdShow(); inv ? gdJoin(inv) : gdRefreshMe().then(() => { if (GD.team) gdSync({manual: true}); }); };
+function gdLogout() {
+  if (!confirm('로그아웃할까요?\n이 컴퓨터의 기록은 그대로 남고, 스터디에 저장된 것도 지우지 않아요.')) return;
+  ['imysync:sess', 'imysync:me', 'imysync:team', 'imysync:last', 'imysync:pend'].forEach(k => localStorage.removeItem(k));
+  GD.base = null; GD.state = 'off'; rawDel('sync:base'); try { google.accounts.id.disableAutoSelect(); } catch {}
+  gdShow(); gdPanel(); toast('로그아웃했어요.');
+}
+// ☁️ 창 안의 내용 (창이 열려 있을 때만 그림)
+let gdTeamInfo = null;
+function gdPanel() {
+  const el = $('#gdPanel'); if (!el) return;
+  const me = GD.me, teams = me?.teams || [], inv = sessionStorage.getItem('imysync:invite');
+  if (GD_ONFILE) { el.innerHTML = `<div class="gdwarn"><b>지금은 파일을 직접 연 상태라 연결할 수 없어요.</b> 인터넷 주소(https://…)로 연 앱에서만 로그인할 수 있어요.</div>`; return; }
+  if (!gdReady()) {
+    el.innerHTML = `<p class="gdlead">구글 계정으로 로그인하고 <b>스터디</b>를 만들거나 초대 링크로 들어가면, 연습 기록·답변·메모·PDF·녹화 영상을 <b>스터디원과 함께</b> 저장하고 봐요. 다른 컴퓨터에서도 같은 계정으로 로그인하면 이어서 볼 수 있어요.</p>
+      ${inv ? '<div class="gdwarn">초대 링크로 열었어요. 로그인하면 바로 그 스터디에 들어가요.</div>' : ''}
+      <div id="gdLoginBtn" class="gdlogin"></div>
+      <p class="gdhint">구글에서는 이름과 이메일만 받아요. 드라이브나 다른 정보는 보지 않아요.</p>`;
+    gdLoginButton($('#gdLoginBtn', el), gdAfterLogin); return;
+  }
+  const cur = teams.find(t => t.id === GD.team);
+  el.innerHTML = `<div class="gdme"><span>👤 ${esc(me?.name || '')} <small>${esc(me?.email || '')}</small></span><span>${me?.admin ? '<button class="btn small" data-gd="admin">🛠 관리 페이지</button>' : ''}<button class="btn small ghost" data-gd="logout">로그아웃</button></span></div>
+    <h3 class="gdpart">내 스터디</h3>
+    ${teams.length ? `<div class="tmlist">${teams.map(t => `<label class="tmrow ${t.id === GD.team ? 'on' : ''}"><input type="radio" name="gdTeam" value="${t.id}" ${t.id === GD.team ? 'checked' : ''}><b>${esc(t.name)}</b>${t.leader === me.email ? '<span class="qbase">팀장</span>' : ''}</label>`).join('')}</div>`
+      : '<p class="gdhint">아직 들어간 스터디가 없어요. 새로 만들거나, 팀장에게 받은 초대 링크를 열어 주세요.</p>'}
+    <div class="gdnew"><input type="text" id="gdNewName" placeholder="새 스터디 이름 (예: 국어 화요팀)" maxlength="40"><button class="btn primary" data-gd="create">＋ 새 스터디 만들기</button></div>
+    ${cur ? `<div class="tmbox" id="gdTeamBox"><p class="gdhint">스터디 정보를 불러오는 중…</p></div>` : ''}`;
+  $$('input[name=gdTeam]', el).forEach(r => r.onchange = () => gdUseTeam(r.value).then(() => gdPanel()));
+  if (cur) gdTeamBox();
+}
+async function gdTeamBox() {
+  const box = $('#gdTeamBox'); if (!box) return;
+  let t; try { t = gdTeamInfo = await apiJ(`/t/${GD.team}`, undefined, 'GET'); } catch (e) { box.innerHTML = `<p class="gdhint bad">${esc(e.message)}</p>`; return; }
+  if (!$('#gdTeamBox')) return;
+  const link = `${location.origin}${location.pathname}#team=${t.invite}`, L = t.isLeader;
+  box.innerHTML = `<div class="gdhead"><h3>${esc(t.name)}</h3><span class="gdst" id="gdStat"></span></div>
+    <div class="gdact" id="gdAct"></div>
+    <div class="tmuse">사용한 공간 <b>${fmtMB(t.used)}</b>${t.quota ? ` / ${fmtMB(t.quota)}` : ''} · 팀원 ${t.members.length}명</div>
+    <ul class="tmmem">${t.members.map(e => `<li><span>${esc(t.names[e] || e.split('@')[0])} <small>${esc(e)}</small>${e === t.leader ? ' <span class="qbase">팀장</span>' : ''}</span><span class="tmr"><small>${fmtMB(t.byMember[e] || 0)}</small>${L && e !== t.leader ? `<button class="btn small" data-gd="toleader" data-e="${esc(e)}">팀장 넘기기</button><button class="btn small danger" data-gd="kick" data-e="${esc(e)}">내보내기</button>` : ''}</span></li>`).join('')}</ul>
+    <div class="gdsetup"><b class="gdst-t">초대 링크</b> <span class="gdst-s">스터디원에게 보내면, 열고 구글 로그인만 하면 들어와요.</span>
+      <div class="gdnew"><input type="text" value="${esc(link)}" readonly id="gdLink"><button class="btn" data-gd="copylink">🔗 복사</button></div></div>
+    <div class="gdsetbtns">${L ? '<button class="btn small" data-gd="newlink" title="예전 초대 링크로는 더 들어올 수 없게 돼요">초대 링크 새로 만들기</button><button class="btn small" data-gd="rename">이름 바꾸기</button><button class="btn small danger" data-gd="delteam">스터디 삭제</button>' : ''}<button class="btn small ghost" data-gd="leave">이 스터디 나가기</button></div>`;
+  gdShow();
+}
+// 관리 페이지 (관리자만): 모든 스터디 · 사용 공간 · 지우기
+async function gdAdmin() {
+  let j; try { j = await apiJ('/admin/teams', undefined, 'GET'); } catch (e) { return toast(e.message); }
+  const rows = j.teams.sort((a, b) => b.used - a.used);
+  const box = modal('🛠 관리 페이지', `<p class="gdhint">스터디 ${rows.length}개 · 전체 <b>${fmtMB(j.total)}</b> (R2 10GB까지 무료, 그 뒤 1GB당 월 약 $0.015)</p>
+    <table class="admtbl"><thead><tr><th>스터디</th><th>팀장</th><th>팀원</th><th>공간</th><th>만든 날</th><th></th></tr></thead><tbody>
+    ${rows.map(t => `<tr><td>${esc(t.name)}</td><td><small>${esc(t.leader)}</small></td><td>${t.members}</td><td>${fmtMB(t.used)}</td><td><small>${dstr(t.created)}</small></td><td><button class="btn small danger" data-adm="${t.id}" data-n="${esc(t.name)}">삭제</button></td></tr>`).join('')}
+    </tbody></table>`, [{label: '닫기', primary: true}]);
+  box.classList.add('gdbox');
+  $$('[data-adm]', box).forEach(b => b.onclick = async () => {
+    if (!confirm(`「${b.dataset.n}」 스터디를 지울까요?\n그 스터디의 기록·영상·파일이 모두 지워지고 되살릴 수 없어요.`)) return;
+    try { await api(`/t/${b.dataset.adm}`, {method: 'DELETE'}); toast('지웠어요.'); closeModal(); gdAdmin(); } catch (e) { toast(e.message); }
+  });
+}
+document.addEventListener('click', async e => {
+  const btn = e.target.closest('[data-gd]'), a = btn?.dataset.gd; if (!a) return;
+  const run = async f => { btn.disabled = true; try { await f(); } catch (er) { toast(er.message); } finally { btn.disabled = false; } };
   if (a === 'sync') return gdSync({manual: true});
-  if (a === 'off') return gdDisconnect();
-  if (a === 'copy') { navigator.clipboard?.writeText(location.origin).then(() => toast('주소를 복사했어요'), () => toast('복사하지 못했어요. 직접 골라 복사해 주세요.')); return; }
-  if (a === 'invite') {   // 초대 링크: 이 앱 주소 + #join=클라이언트ID~공용폴더ID (앱 파일에는 넣지 않음)
-    const c = localStorage.getItem('imysync:client') || '', fo = localStorage.getItem('imysync:sharedfolder') || '';
-    if (!c) return toast('먼저 클라이언트 ID(와 공용 폴더 주소)를 넣고 저장해 주세요.');
-    const link = `${location.origin}${location.pathname}#join=${c}${fo ? '~' + fo : ''}`;
-    navigator.clipboard?.writeText(link).then(() => toast('초대 링크를 복사했어요. 카톡 등으로 스터디원에게 보내 주세요.'), () => prompt('아래 초대 링크를 복사해 주세요.', link));
-    return;
-  }
-  if (a === 'savesetup') {   // 연결 정보: 클라이언트 ID와 공용 폴더를 한 번에 저장
-    const c = $('#gdClient').value.trim(), raw = $('#gdShared').value.trim();
-    const fo = (raw.match(/folders\/([\w-]{10,})/) || raw.match(/[?&]id=([\w-]{10,})/) || [, raw])[1];
-    if (c && !/\.apps\.googleusercontent\.com$/.test(c)) return toast('클라이언트 ID는 .apps.googleusercontent.com으로 끝나요. 다시 확인해 주세요.');
-    if (fo && !/^[\w-]{10,}$/.test(fo)) return toast('공용 폴더 주소를 다시 확인해 주세요. 드라이브에서 폴더를 열었을 때 주소창의 주소예요.');
-    c ? localStorage.setItem('imysync:client', c) : localStorage.removeItem('imysync:client');
-    fo ? localStorage.setItem('imysync:sharedfolder', fo) : localStorage.removeItem('imysync:sharedfolder');
-    $('#gdShared').value = fo || ''; gdShow(); if (c) gsiLoad().catch(() => {});
-    return toast(c ? '저장했어요. 이제 「구글 드라이브 연결」을 눌러 주세요.' : '연결 정보를 지웠어요.');
-  }
-  if (a === 'savefolder') {   // 공용 교과서 폴더 — 주소 전체를 넣어도 folders/ 뒤 글자만 씀 (교과서 분석이 같이 씀)
-    const raw = $('#gdShared').value.trim(), v = (raw.match(/folders\/([\w-]{10,})/) || raw.match(/[?&]id=([\w-]{10,})/) || [, raw])[1];
-    if (v && !/^[\w-]{10,}$/.test(v)) return toast('폴더 주소를 다시 확인해 주세요. 드라이브에서 폴더를 열었을 때 주소창의 주소예요.');
-    v ? localStorage.setItem('imysync:sharedfolder', v) : localStorage.removeItem('imysync:sharedfolder');
-    $('#gdShared').value = v || '';
-    return toast(v ? '공용 폴더를 저장했어요. 교과서 분석을 열면 그 폴더의 교과서가 나와요.' : '공용 폴더를 지웠어요.');
-  }
-  if (a === 'saveid') {
-    const v = $('#gdClient').value.trim();
-    if (v && !/\.apps\.googleusercontent\.com$/.test(v)) return toast('클라이언트 ID는 .apps.googleusercontent.com으로 끝나요. 다시 확인해 주세요.');
-    v ? localStorage.setItem('imysync:client', v) : localStorage.removeItem('imysync:client');
-    toast(v ? '클라이언트 ID를 저장했어요. 이제 구글 드라이브 연결을 눌러 주세요.' : '클라이언트 ID를 지웠어요.'); gdShow();
-    if (v) gsiLoad().catch(() => {});
-  }
+  if (a === 'logout') return gdLogout();
+  if (a === 'admin') return gdAdmin();
+  if (a === 'create') return run(async () => {
+    const name = $('#gdNewName').value.trim(); if (!name) return toast('새 스터디 이름을 써 주세요.');
+    const t = await apiJ('/teams', {name}); await gdRefreshMe();
+    toast(`「${t.name}」 스터디를 만들었어요. 아래 초대 링크를 스터디원에게 보내 주세요.`); await gdUseTeam(t.id); gdPanel();
+  });
+  if (a === 'copylink') { const v = $('#gdLink').value; navigator.clipboard?.writeText(v).then(() => toast('초대 링크를 복사했어요. 카톡 등으로 스터디원에게 보내 주세요.'), () => prompt('아래 초대 링크를 복사해 주세요.', v)); return; }
+  const T = `/t/${GD.team}`;
+  if (a === 'newlink') return run(async () => { if (!confirm('초대 링크를 새로 만들까요?\n예전 링크로는 더 들어올 수 없어요. 이미 들어온 팀원은 그대로예요.')) return; await apiJ(T + '/invite', {}); toast('새 초대 링크를 만들었어요.'); gdTeamBox(); });
+  if (a === 'rename') return run(async () => { const n = prompt('새 스터디 이름', gdTeamInfo?.name || ''); if (!n?.trim()) return; await apiJ(T + '/rename', {name: n.trim()}); await gdRefreshMe(); });
+  if (a === 'kick') return run(async () => { if (!confirm(`${btn.dataset.e} 님을 스터디에서 내보낼까요?`)) return; await apiJ(T + '/kick', {email: btn.dataset.e}); gdTeamBox(); });
+  if (a === 'toleader') return run(async () => { if (!confirm(`${btn.dataset.e} 님에게 팀장을 넘길까요?`)) return; await apiJ(T + '/leader', {email: btn.dataset.e}); await gdRefreshMe(); });
+  if (a === 'delteam') return run(async () => {
+    if (!confirm(`「${gdTeamInfo?.name}」 스터디를 지울까요?\n스터디원 모두의 기록·영상·파일이 저장소에서 지워지고 되살릴 수 없어요.\n(각자 컴퓨터에 받아 둔 것은 남아요)`)) return;
+    await api(T, {method: 'DELETE'}); localStorage.removeItem('imysync:team'); toast('스터디를 지웠어요.'); await gdRefreshMe();
+  });
+  if (a === 'leave') return run(async () => {
+    const t = gdTeamInfo, alone = t && t.isLeader && t.members.length === 1;
+    if (t?.isLeader && !alone) return toast('팀장은 먼저 다른 팀원에게 팀장을 넘겨야 나갈 수 있어요.');
+    if (!confirm(alone ? '혼자 있는 스터디라 나가면 스터디가 지워져요. 나갈까요?' : '이 스터디에서 나갈까요?\n이 컴퓨터의 기록은 남아요.')) return;
+    await apiJ(T + '/leave', {}); localStorage.removeItem('imysync:team'); toast('스터디에서 나왔어요.'); await gdRefreshMe();
+  });
 });
-// 맨 위 「☁️ 구글 드라이브」: 다시 연결이 필요하면 바로 연결, 아니면 연결 상태·방법 안내 창
+// 맨 위 「☁️ 스터디」: 로그인 · 스터디 고르기 · 관리 창
 function openGdGuide() {
-  const box = modal('☁️ 구글 드라이브에 저장하기', gdHomeHtml(), [{label: '닫기', primary: true}]);
-  box.classList.add('gdbox'); gdShow();
+  const box = modal('☁️ 스터디', '<section class="gdhome" id="gdPanel"></section>', [{label: '닫기', primary: true}]);
+  box.classList.add('gdbox'); gdPanel(); gdShow();
+  if (gdReady()) gdRefreshMe();
 }
-$('#gdBtn').onclick = () => {
-  if (GD.on && !GD_ONFILE && gdStatus().c === 'need') return gdConnect();
-  openGdGuide();
-};
+$('#gdBtn').onclick = openGdGuide;
 // 예전 수업실연·면접 화면(#demo, #intv)은 이제 첫 화면 칸반 보드로
 function renderDemo() { history.replaceState(null, '', '#home'); route(); }
 function renderIntv() { renderDemo(); }
@@ -2439,51 +2420,76 @@ function renderSchedKeep() { const y = scrollY; renderSched(); scrollTo(0, y); }
 /* =========================================================
    Q&A: 질문 목록 → 누르면 답변이 펼쳐짐 (＋ 질문 추가하기 · 펼친 질문 아래 편집으로 고치기·지우기)
    ========================================================= */
-/* 공통 Q&A: 앱 파일에 들어 있어서 이 앱을 여는 모든 사람에게 보임 (고치거나 지울 수 없음)
-   내 Q&A를 공통으로 만들려면: 「📤 공통 Q&A로 보낼 글 복사」 → 복사된 글을 이 목록에 넣음 */
+/* 공통 Q&A: 관리자가 올리면 로그인한 모든 사람에게 보임 (스터디 저장소의 public/qna.json, 이 기기에는 'imysync:qna'로 기억)
+   관리자만 ＋ 공통 질문 추가 · 고치기 · 지우기, 우리 스터디 질문을 「📌 공통으로」 올리기도 함
+   QNA_BUILTIN: 앱 파일에 넣어 둔 공통 질문 (로그인하지 않아도 보임) */
 const QNA_BUILTIN = [];
+const qnaCommon = () => { try { return JSON.parse(localStorage.getItem('imysync:qna')) || []; } catch { return []; } };
+const isAdmin = () => gdReady() && !!GD.me?.admin;
+let qnaLoaded = 0;
+async function qnaFetch() {
+  if (!gdReady() || Date.now() - qnaLoaded < 60000) return;
+  qnaLoaded = Date.now();
+  try {
+    const list = await apiJ('/qna', undefined, 'GET'), was = localStorage.getItem('imysync:qna') || '[]', now = JSON.stringify(list);
+    localStorage.setItem('imysync:qna', now);
+    if (was !== now && location.hash === '#qna' && !$('#modalRoot').innerHTML) renderQna();
+  } catch (e) { qnaLoaded = 0; console.warn(e); }
+}
+async function qnaSaveCommon(list) {
+  try { await apiJ('/qna', list, 'PUT'); localStorage.setItem('imysync:qna', JSON.stringify(list)); renderQna(); toast('공통 Q&A에 저장했어요. 모두에게 보여요.'); return true; }
+  catch (e) { toast(e.message); return false; }
+}
 function renderQna() {
-  const list = D.qna, open = new Set($$('.faq.open').map(x => x.dataset.id));
-  // 이미 공통에 들어간 질문(같은 질문 글)은 내 목록에서 겹쳐 보이지 않게
-  const inBase = new Set(QNA_BUILTIN.map(x => x.q.trim()));
+  qnaFetch();
+  const list = D.qna, open = new Set($$('.faq.open').map(x => x.dataset.id)), common = qnaCommon(), adm = isAdmin();
+  // 이미 공통에 들어간 질문(같은 질문 글)은 우리 스터디 목록에서 겹쳐 보이지 않게
+  const inBase = new Set([...QNA_BUILTIN, ...common].map(x => x.q.trim()));
   const mine = list.filter(q => !inBase.has(q.q.trim()));
-  const item = (q, base) => `<div class="faq ${open.has(q.id) ? 'open' : ''}${base ? ' base' : ''}" data-id="${q.id}">
-      <button class="qq" aria-expanded="${open.has(q.id)}"><span class="qm">Q</span><span class="qt">${esc(q.q)}</span>${base ? '<span class="qbase">공통</span>' : ''}</button>
+  const item = (q, base, canEdit) => `<div class="faq ${open.has(q.id) ? 'open' : ''}${base ? ' base' : ''}" data-id="${q.id}" data-kind="${base ? (canEdit ? 'common' : 'builtin') : 'mine'}">
+      <button class="qq" aria-expanded="${open.has(q.id)}"><span class="qm">Q</span><span class="qt">${esc(q.q)}</span>${base ? '<span class="qbase">📌 공통</span>' : ''}</button>
       <div class="qa"><span class="am">A</span><div class="at">${q.a ? esc(q.a) : '<span style="color:var(--sub)">아직 답변이 없어요.</span>'}</div></div>
-      ${base ? '' : '<div class="qed"><button class="btn small" data-q="edit">편집</button><button class="btn small danger" data-q="del">삭제</button></div>'}
+      ${base && !canEdit ? '' : `<div class="qed"><button class="btn small" data-q="edit">편집</button><button class="btn small danger" data-q="del">삭제</button>${!base && adm ? '<button class="btn small" data-q="pub" title="모든 사용자에게 보이는 공통 Q&A로 올려요">📌 공통으로</button>' : ''}</div>`}
     </div>`;
-  app().innerHTML = `<div class="lhead"><h1 class="h1">Q&amp;A</h1>${mine.length ? '<button class="btn" id="qExport" title="내 Q&A를 모두가 보는 공통 Q&A로 넣을 수 있게 글로 복사해요">📤 공통으로 보낼 글 복사</button>' : ''}<button class="btn primary" id="addQ">＋ 질문 추가하기</button></div>
-    ${QNA_BUILTIN.length || mine.length ? `<div class="qna">${QNA_BUILTIN.map((q, i) => item({...q, id: 'base' + i}, true)).join('')}${mine.map(q => item(q, false)).join('')}</div>`
-    : `<div class="empty"><span class="ic">💬</span>아직 질문이 없어요.</div>`}`;
+  const all = [...QNA_BUILTIN.map((q, i) => item({...q, id: 'base' + i}, true, false)), ...common.map(q => item(q, true, adm)), ...mine.map(q => item(q, false))];
+  app().innerHTML = `<div class="lhead"><h1 class="h1">Q&amp;A</h1>${adm ? '<button class="btn" id="addC">📌 공통 질문 추가</button>' : ''}<button class="btn primary" id="addQ">＋ 질문 추가하기</button></div>
+    ${all.length ? `<div class="qna">${all.join('')}</div>` : `<div class="empty"><span class="ic">💬</span>아직 질문이 없어요.</div>`}`;
   $('#addQ').onclick = () => editQ(null);
-  if ($('#qExport')) $('#qExport').onclick = () => {
-    const txt = JSON.stringify(mine.map(({q, a}) => ({q, a})), null, 2);
-    navigator.clipboard?.writeText(txt).then(() => toast(`내 질문 ${mine.length}개를 복사했어요. 이 글을 앱의 공통 Q&A 목록에 넣으면 모두에게 보여요.`), () => toast('복사하지 못했어요.'));
-  };
+  if ($('#addC')) $('#addC').onclick = () => editQ(null, true);
   $$('.faq').forEach(el => {
-    const id = el.dataset.id;
+    const id = el.dataset.id, kind = el.dataset.kind;
     $('.qq', el).onclick = () => { const o = el.classList.toggle('open'); $('.qq', el).setAttribute('aria-expanded', o); };
-    if (el.classList.contains('base')) return;
+    if (kind === 'builtin') return;
+    if (kind === 'common') {
+      $('[data-q=edit]', el).onclick = () => editQ(qnaCommon().find(x => x.id === id), true);
+      $('[data-q=del]', el).onclick = () => { if (confirm('이 공통 질문을 지울까요?\n모든 사람의 화면에서 사라져요.')) qnaSaveCommon(qnaCommon().filter(x => x.id !== id)); };
+      return;
+    }
     $('[data-q=edit]', el).onclick = () => editQ(D.qna.find(x => x.id === id));
     $('[data-q=del]', el).onclick = () => { if (confirm('이 질문을 지울까요?')) { D.qna = D.qna.filter(x => x.id !== id); renderQna(); } };
+    const pub = $('[data-q=pub]', el);
+    if (pub) pub.onclick = () => { const q = D.qna.find(x => x.id === id); if (q && confirm('이 질문을 모든 사용자에게 보이는 공통 Q&A로 올릴까요?')) qnaSaveCommon([...qnaCommon(), {id: uid(), q: q.q, a: q.a}]); };
   });
 }
-function editQ(q) {
+function editQ(q, common = false) {
   const isNew = !q; q = q ? {...q} : {id: uid(), q: '', a: ''};
-  modal(isNew ? '💬 질문 추가' : '💬 질문 편집', `<div class="form">
+  const rows = () => common ? qnaCommon() : D.qna;
+  const put = all => common ? qnaSaveCommon(all) : (D.qna = all, renderQna(), true);
+  modal((common ? '📌 공통 ' : '💬 ') + (isNew ? '질문 추가' : '질문 편집'), `<div class="form">
+    ${common ? '<p class="gdhint">공통 질문은 로그인한 모든 사람에게 보여요.</p>' : ''}
     <div class="fl"><label for="qQ">질문</label><textarea id="qQ" rows="2" placeholder="예: 2차 시험 날 무엇을 챙겨 가나요?">${esc(q.q)}</textarea></div>
     <div class="fl"><label for="qA">답변</label><textarea id="qA" rows="7">${esc(q.a)}</textarea></div></div>`, [
-    ...(isNew ? [] : [{label: '삭제', danger: true, onClick: () => {
-      if (!confirm('이 질문을 지울까요?')) return false;
-      D.qna = D.qna.filter(x => x.id !== q.id); renderQna();
+    ...(isNew ? [] : [{label: '삭제', danger: true, onClick: async () => {
+      if (!confirm(common ? '이 공통 질문을 지울까요?\n모든 사람의 화면에서 사라져요.' : '이 질문을 지울까요?')) return false;
+      return (await put(rows().filter(x => x.id !== q.id))) ? undefined : false;
     }}]),
     {label: '취소'},
-    {label: '저장', primary: true, onClick: box => {
+    {label: '저장', primary: true, onClick: async box => {
       q.q = $('#qQ', box).value.trim(); if (!q.q) { toast('질문을 써 주세요'); return false; }
       q.a = $('#qA', box).value.trim();
-      const all = D.qna, i = all.findIndex(x => x.id === q.id);
+      const all = rows(), i = all.findIndex(x => x.id === q.id);
       if (i < 0) all.push(q); else all[i] = q;
-      D.qna = all; renderQna();
+      return (await put(all)) ? undefined : false;
     }}
   ], box => $('#qQ', box).focus());
 }
@@ -3542,7 +3548,7 @@ async function exportAll() {
   const {file, miss} = await packAll(), d = new Date(), a = document.createElement('a');
   a.href = URL.createObjectURL(file); a.download = `임용준비_전체_${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.imy`;
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-  toast(`내보냈어요 (${(file.size / 1048576).toFixed(0)}MB)${miss ? ` · 드라이브에만 있는 파일 ${miss}개는 빠졌어요` : ''}`);
+  toast(`내보냈어요 (${(file.size / 1048576).toFixed(0)}MB)${miss ? ` · 스터디 저장소에만 있는 파일 ${miss}개는 빠졌어요` : ''}`);
 }
 async function packAll() {
   const keys = (await idbDo('readonly', st => st.getAllKeys())).map(String).filter(k => !k.startsWith('sync:'));
@@ -3553,7 +3559,7 @@ async function packAll() {
     const {kind, blob} = gdPack(v);
     head.blobs.push({k, kind, type: blob.type || '', off, size: blob.size}); parts.push(blob); off += blob.size;
   }
-  // 드라이브에만 있고 이 컴퓨터에 안 받은 파일은 빠짐
+  // 저장소에만 있고 이 컴퓨터에 안 받은 파일은 빠짐
   const base = await gdBase(); if (base) miss = Object.keys(base.blobs).filter(k => !keys.includes(k)).length;
   const h = new TextEncoder().encode(JSON.stringify(head));
   return {file: new Blob(['IMYONG1', String(h.length).padStart(12, '0'), h, ...parts], {type: 'application/octet-stream'}), miss};
@@ -4087,9 +4093,10 @@ if (!lsGet('typesSeed:typo:v1', false)) {
   } catch { pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; }
 })();
 route();
-// 구글 드라이브: 연결해 둔 상태면 열자마자 맞춤 (연결 시간이 끝났으면 ☁️ 다시 연결 표시)
-if (!GD_ONFILE && GD.clientId) gsiLoad().catch(() => {});
+// 스터디: 로그인·스터디가 있으면 열자마자 맞춤 (로그인이 끝났으면 ☁️ 다시 로그인 표시)
 if (GD.on && !GD_ONFILE) gdReady() ? gdSync() : (GD.state = 'need', gdShow());
+if (gdReady() && !GD_ONFILE) gdRefreshMe();
+gdShow();
 gdShow();
 </script>
 </body>

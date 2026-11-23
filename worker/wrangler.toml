@@ -1,0 +1,15 @@
+# 임용 준비 저장소 문지기 — 올리기: (이 폴더에서) npx wrangler deploy
+name = "imyong-store"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+preview_urls = false
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "imyong"
+
+[vars]
+# 공개돼도 괜찮은 값들. 비밀 값은 여기 적지 않고 `npx wrangler secret put 이름`으로만 넣음:
+#   SESSION_SECRET (로그인 표 서명), ADMIN_EMAILS (관리자 이메일, 쉼표로 여러 명)
+CLIENT_ID = "379559393104-nsj44mhabqogcpv43rnrlkqor4c43jln.apps.googleusercontent.com"
+ORIGINS = "https://kimminjae13579-netizen.github.io,http://localhost:8080"
