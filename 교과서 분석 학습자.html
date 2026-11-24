@@ -891,6 +891,17 @@ body.docking .pad{display:none}
 
 <script>
 'use strict';
+// 로그인한 계정이 이 컴퓨터 기록의 주인('imysync:owner')과 다르면, 먼저 임용 준비 첫 화면에서 확인·정리한 뒤 다시 옴
+(() => {
+  if (location.protocol === 'file:') return;
+  try {
+    const me = JSON.parse(localStorage.getItem('imysync:me') || 'null')?.email, owner = localStorage.getItem('imysync:owner');
+    if (!me || owner === me) return;
+    if (owner) return location.replace('./#home');   // 다른 계정의 기록: 첫 화면에서 지우고 옴
+    // 주인 표시가 없는 예전 기록: 인터넷이 될 때 한 번만 첫 화면에서 확인 (안 되면 그냥 엶 · 끝없이 돌지 않게)
+    if (navigator.onLine && !sessionStorage.getItem('imysync:ownerTried')) { sessionStorage.setItem('imysync:ownerTried', '1'); location.replace('./#home'); }
+  } catch {}
+})();
 /* =========================================================
    기본 설정 / 저장소
    ========================================================= */
