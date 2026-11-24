@@ -960,7 +960,13 @@ function gdMark(k, op) {
   k = String(k); if (!gdBlobOk(k)) return;
   const p = gdPend(); p[k] = {op, t: Date.now()}; localStorage.setItem('tblsync:pend', JSON.stringify(p)); gdSoon();
 }
-function gdSoon() { if (!GD.on) return; clearTimeout(GD.timer); GD.timer = setTimeout(() => gdSync(), 4000); }
+function gdSoon() { if (!GD.on) return; clearTimeout(GD.timer); GD.timer = setTimeout(() => { GD.timer = 0; gdSync(); }, 4000); gdShow(); }
+// 아직 스터디에 안 올라간 것이 있는지 (맞추는 중 · 곧 맞출 예정 · 올리지 못한 파일)
+const gdWaiting = () => GD.on && (GD.busy || !!GD.timer || Object.keys(gdPend()).length > 0);
+// 창을 닫으려 할 때 남은 것이 있으면 브라우저가 한 번 물어봄
+addEventListener('beforeunload', e => { if (gdWaiting()) { e.preventDefault(); e.returnValue = ''; } });
+// 다른 앱·탭으로 가면 기다리지 않고 바로 올림 (휴대폰은 닫을 때 묻지 못할 수 있어서)
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && GD.on && GD.timer && gdReady()) { clearTimeout(GD.timer); GD.timer = 0; gdSync(); } });
 async function gdBase() { if (GD.base === undefined) GD.base = (await rawGet('sync:base').catch(() => null)) || null; return GD.base; }
 async function api(path, opt = {}) {
   if (!gdReady()) throw Object.assign(new Error('로그인이 끝났어요. 임용 준비 첫 화면의 ☁️에서 다시 로그인해 주세요.'), {auth: true});
@@ -1094,6 +1100,7 @@ async function gdSync({manual = false, force = false} = {}) {
   if (!(GD.on || (force && GD.team && GD.sess))) return;
   if (!gdReady()) { GD.state = 'need'; gdShow(); return; }
   if (GD.busy) { GD.again = true; return; }
+  clearTimeout(GD.timer); GD.timer = 0;
   GD.busy = true; GD.state = 'sync'; GD.msg = '맞추는 중…'; gdShow();
   let changed = false, retry = false;
   const team = GD.team, docPath = `/t/${team}/doc/textbook`;
@@ -1174,6 +1181,7 @@ function gdStatus() {
   if (!GD.on) return {c: 'off', t: '이 컴퓨터의 교과서는 아직 스터디에 연결하지 않았어요'};
   if (GD.busy) return {c: 'sync', t: GD.msg || '맞추는 중…'};
   if (GD.state === 'err') return {c: 'err', t: '저장하지 못했어요 · ' + GD.msg};
+  { const n = Object.keys(gdPend()).length; if (n) return {c: 'sync', t: `⏳ 아직 올리지 못한 파일 ${n}개 · 창을 열어 두세요`}; if (GD.timer) return {c: 'sync', t: '⏳ 곧 저장해요'}; }
   const last = gdLast(), d = new Date(last);
   return {c: 'ok', t: '스터디에 저장됨' + (last ? ` · ${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : '')};
 }

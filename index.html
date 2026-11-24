@@ -997,7 +997,13 @@ function gdMark(k, op) {
   const p = gdPend(); p[k] = {op, t: Date.now()}; localStorage.setItem('imysync:pend', JSON.stringify(p)); gdSoon();
 }
 // 고친 뒤 4초 동안 더 고치지 않으면 저장
-function gdSoon() { if (!GD.on) return; clearTimeout(GD.timer); GD.timer = setTimeout(() => gdSync(), 4000); }
+function gdSoon() { if (!GD.on) return; clearTimeout(GD.timer); GD.timer = setTimeout(() => { GD.timer = 0; gdSync(); }, 4000); gdShow(); }
+// 아직 스터디에 안 올라간 것이 있는지 (맞추는 중 · 곧 맞출 예정 · 올리지 못한 파일)
+const gdWaiting = () => GD.on && (GD.busy || !!GD.timer || Object.keys(gdPend()).length > 0);
+// 창을 닫으려 할 때 남은 것이 있으면 브라우저가 한 번 물어봄
+addEventListener('beforeunload', e => { if (gdWaiting()) { e.preventDefault(); e.returnValue = ''; } });
+// 다른 앱·탭으로 가면 기다리지 않고 바로 올림 (휴대폰은 닫을 때 묻지 못할 수 있어서)
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && GD.on && GD.timer && gdReady()) { clearTimeout(GD.timer); GD.timer = 0; gdSync(); } });
 async function gdBase() { if (GD.base === undefined) GD.base = (await rawGet('sync:base').catch(() => null)) || null; return GD.base; }
 
 function gsiLoad() {
@@ -1137,6 +1143,7 @@ async function gdSync({manual = false} = {}) {
   if (!GD.on) return;
   if (!gdReady()) { GD.state = 'need'; gdShow(); return; }
   if (GD.busy) { GD.again = true; return; }
+  clearTimeout(GD.timer); GD.timer = 0;
   GD.busy = true; GD.state = 'sync'; GD.msg = '맞추는 중…'; gdShow();
   let changed = false, retry = false;
   const team = GD.team, docPath = `/t/${team}/doc/data`;
@@ -1304,7 +1311,11 @@ function route() {
   document.title = key ? r.title + ' · 임용 준비' : '임용 준비';  scrollTo(0, 0);
   r.render();
 }
-addEventListener('hashchange', route);
+// 주소가 바뀌면(뒤로 가기 등) 열려 있던 보기 화면을 각자의 「닫기」로 닫음 (저장·확인 절차 그대로)
+addEventListener('hashchange', () => {
+  document.querySelectorAll('.ov').forEach(ov => ov.querySelector('[data-a="close"]')?.click());
+  route();
+});
 
 /* ---------- 전체화면 ----------
    자동으로 전체화면이 되지는 않음 — 위쪽 ⛶를 눌러야 켜고 끔.
@@ -1353,6 +1364,7 @@ function gdStatus() {
   if (!GD.team) return {c: 'off', t: '스터디를 골라 주세요'};
   if (GD.busy) return {c: 'sync', t: GD.msg || '맞추는 중…'};
   if (GD.state === 'err') return {c: 'err', t: '저장하지 못했어요'};
+  { const n = Object.keys(gdPend()).length; if (n) return {c: 'sync', t: `⏳ 아직 올리지 못한 파일 ${n}개 · 창을 열어 두세요`}; if (GD.timer) return {c: 'sync', t: '⏳ 곧 저장해요'}; }
   const last = gdLast();
   return {c: 'ok', t: last ? `${dtstr(last)}에 저장` : '연결됨'};
 }
