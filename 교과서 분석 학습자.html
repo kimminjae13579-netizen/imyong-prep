@@ -838,6 +838,7 @@ body.docking .pad{display:none}
     <input type="file" id="teachInput" accept="application/json,.json" class="hidden">
     <button class="btn hidden" id="syncBtn"></button>
     <button class="btn" id="bmBtn" title="지금 보는 쪽 책갈피">🔖 책갈피</button>
+    <button class="btn" id="pdfDlBtn" title="이 PDF를 파일로 저장">⬇ PDF 받기</button>
     <button class="btn" id="padBtn" title="내 메모장 열기/닫기">📒 메모장</button>
     <button class="iconbtn fsbtn hidden" title="전체화면" aria-label="전체화면">⛶</button>
   </header>
@@ -1506,7 +1507,7 @@ async function openBook(id) {
     ({b, blob} = r);
   } else { if (!b) return; blob = await pdfGet(id); }
   if (!blob) return toast('저장된 PDF를 찾을 수 없어요.');
-  S.book = b; S.key = b.analysis;
+  S.book = b; S.key = b.analysis; S.blob = blob;
   await loadImgs();
   S.data = buildData(S.key); S.selItem = null;
   S.answers = lsGet(ansKey(S.key), {});
@@ -1634,6 +1635,12 @@ function setZoom(z) {
   buildPages(); goPage(keep, false);
 }
 $('#zoomIn').onclick = () => setZoom(S.scale + 0.1);
+$('#pdfDlBtn').onclick = () => {   // 지금 연 교과서 PDF만 받기
+  if (!S.blob || !S.book) return toast('먼저 교과서를 열어 주세요.');
+  const nm = String(S.book.name || S.book.analysis || '교과서').replace(/\.pdf$/i, '').replace(/[\\/:*?"<>|]/g, '_') + '.pdf';
+  const x = document.createElement('a'); x.href = URL.createObjectURL(new Blob([S.blob], {type: 'application/pdf'})); x.download = nm;
+  x.click(); setTimeout(() => URL.revokeObjectURL(x.href), 1000);
+};
 $('#zoomOut').onclick = () => setZoom(S.scale - 0.1);
 
 /* ---------- 태블릿: 화면 전환 / 폭 맞춤 ---------- */
