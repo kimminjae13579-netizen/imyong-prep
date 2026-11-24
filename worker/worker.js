@@ -14,7 +14,7 @@
 
 const SESSION_DAYS = 30;
 // 제한 (0 = 제한 없음). 나중에 필요하면 숫자만 바꾸면 됨
-const TEAM_QUOTA_BYTES = 0;      // 팀당 용량
+const TEAM_QUOTA_BYTES = 20 * 1024 ** 3;   // 팀(스터디)당 용량: 20GB
 const TEAMS_PER_USER = 0;        // 한 사람이 만들 수 있는 팀 수
 const DOC_NAMES = new Set(['data', 'textbook']);
 const KEY_RE = /^[\w:.\-\/]{1,200}$/;
@@ -250,7 +250,15 @@ async function account(env, t, addBy, addSize, subBy, subSize) {
     x.used = Math.max(0, (x.used || 0) + (addSize || 0) - (subSize || 0)); return x;
   });
 }
-const quotaCheck = (t, more) => { if (TEAM_QUOTA_BYTES && (t.used || 0) + more > TEAM_QUOTA_BYTES) fail('스터디 저장 공간이 가득 찼어요. 필요 없는 영상을 지워 주세요.', 413); };
+const QUOTA_MSG = () => `스터디 저장 공간(${TEAM_QUOTA_BYTES / 1024 ** 3}GB)이 가득 찼어요. 필요 없는 영상·파일을 지워 주세요.`;
+const quotaCheck = (t, more, less = 0) => { if (TEAM_QUOTA_BYTES && (t.used || 0) - less + more > TEAM_QUOTA_BYTES) fail(QUOTA_MSG(), 413); };
+// 다 올린 뒤 실제 크기로 한 번 더: 넘으면 방금 올린 파일을 지우고 거절 (덮어쓴 예전 파일은 이미 없어졌으므로 그만큼 사용량에서 뺌)
+async function quotaAfter(env, t, key, size, old) {
+  if (!TEAM_QUOTA_BYTES || (t.used || 0) - (old?.size || 0) + size <= TEAM_QUOTA_BYTES) return;
+  await env.BUCKET.delete(key);
+  if (old) await account(env, t, null, 0, old.customMetadata?.by, old.size);
+  fail(QUOTA_MSG(), 413);
+}
 async function teamFile(req, env, me, t, k) {
   const key = fileKey(t, k), m = req.method;
   if (m === 'GET') {
@@ -258,9 +266,12 @@ async function teamFile(req, env, me, t, k) {
     return new Response(o.body, {headers: {'Content-Type': o.httpMetadata?.contentType || 'application/octet-stream', 'Content-Length': String(o.size), 'X-Size': String(o.size), 'X-Type': o.customMetadata?.type || ''}});
   }
   if (m === 'PUT') {
-    const size = +req.headers.get('Content-Length') || 0; quotaCheck(t, size);
+    if (!req.headers.get('Content-Length')) fail('파일 크기를 알 수 없어서 올리지 못했어요. 다시 올려 주세요.', 411);   // 저장소(R2)도 크기 모르는 파일은 안 받음
+    const size = +req.headers.get('Content-Length') || 0;
     const old = await env.BUCKET.head(key), type = req.headers.get('Content-Type') || 'application/octet-stream';
+    quotaCheck(t, size, old?.size || 0);
     const r = await env.BUCKET.put(key, req.body, {httpMetadata: {contentType: type}, customMetadata: {by: me.email, type}});
+    await quotaAfter(env, t, key, r.size, old);
     await account(env, t, me.email, r.size, old?.customMetadata?.by, old?.size || 0);
     return json({size: r.size});
   }
@@ -285,6 +296,7 @@ async function teamMultipart(req, env, me, t, k, url) {
   if (a === 'done') {
     const {parts} = await req.json(), old = await env.BUCKET.head(key);
     const o = await mp.complete(parts);
+    await quotaAfter(env, t, key, o.size, old);
     await account(env, t, me.email, o.size, old?.customMetadata?.by, old?.size || 0);
     return json({size: o.size});
   }
