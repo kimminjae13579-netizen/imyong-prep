@@ -793,7 +793,7 @@ body.docking .pad{display:none}
     <h1>📘 교과서 분석</h1>
     <button class="btn ownadd hidden" id="sharedPick" title="공용 폴더의 교과서를 다시 읽어 와요">↻ 공용 폴더</button>
     <button class="btn primary ownadd" id="ownAdd" title="내 컴퓨터의 PDF를 올려서 교과서처럼 메모·형광펜·메모장을 써요">＋ 내 PDF 올리기</button>
-    <a class="homelink" href="임용 준비.html#demo">← 수업실연</a>
+    <button class="homelink" id="pageBack" type="button">← 뒤로가기</button>
     <button class="btn fsbtn hidden" title="전체화면" aria-label="전체화면">⛶</button>
   </div>
   <div class="gdlib hidden" id="gdLib"></div>
@@ -817,7 +817,7 @@ body.docking .pad{display:none}
 <!-- ================= 작업 화면 ================= -->
 <section id="work" class="hidden">
   <header class="top">
-    <button class="btn" id="backBtn" title="서재로">← 서재</button>
+    <button class="btn" id="backBtn" title="바로 전 화면으로">← 뒤로가기</button>
     <div class="title" id="bookTitle"></div>
     <div class="seg hidden" id="modeSeg">
       <button data-mode="learn" class="on">🎓 학습자 보기</button>
@@ -1549,6 +1549,7 @@ async function openBook(id) {
   S.bms = lsGet(bmKey(S.key), []);
   S.sel = S.data.subunits[0]?.id || null;
   $('#library').classList.add('hidden'); $('#work').classList.remove('hidden');
+  if (!history.state?.book) tbPush('book');
   $('#bookTitle').textContent = b.analysis;
   if (S.pdf) { S.pdf.destroy(); S.pdf = null; }
   S.pdf = await pdfjsLib.getDocument({data: new Uint8Array(await blob.arrayBuffer())}).promise;
@@ -1571,7 +1572,8 @@ async function openBook(id) {
   renderToc(); renderPanel(); renderBms();
   padLoad();
 }
-$('#backBtn').onclick = () => {
+function closeBook() {
+  if ($('#work').classList.contains('hidden')) return;
   padFlush();
   if (S.key) { lsSet(lastKey(S.key), S.cur); clearTimeout(saveTimer); lsSet(mineKey(S.key), collectMine()); }
   if (S.observer) S.observer.disconnect();
@@ -1579,7 +1581,25 @@ $('#backBtn').onclick = () => {
   if (S.pdf) { S.pdf.destroy(); S.pdf = null; }
   $('#work').classList.add('hidden'); $('#library').classList.remove('hidden');
   renderLibrary(); sharedRefresh();
+}
+/* ---------- 뒤로가기: 단추·휴대폰·브라우저 모두 바로 전 화면으로 ----------
+   책을 열면 한 칸(book), 문제 풀기·편집 창(#fs)을 열면 한 칸(fs)을 쌓음. 단추로 닫으면 그 칸을 되돌림 */
+let tbSkip = 0;
+const tbD = () => history.state?.d || 0;
+if (!history.state || history.state.d == null) history.replaceState({d: 0}, '');
+const tbPush = kind => history.pushState({d: tbD() + 1, [kind]: 1}, '');
+const tbUndo = kind => { if (history.state?.[kind]) { tbSkip++; history.back(); } };
+$('#backBtn').onclick = () => { if ($('#fs')) return closeFs(); closeBook(); tbUndo('book'); };   // 문제 창이 떠 있으면 그것부터
+$('#pageBack').onclick = () => {   // 서재에서: 임용 준비의 바로 전 화면으로 (전 화면이 없으면 첫 화면)
+  let fromApp = false; try { fromApp = !!document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1; } catch {}
+  if (fromApp) history.back(); else location.href = './#home';
 };
+addEventListener('popstate', () => {
+  if (tbSkip) { tbSkip--; return; }
+  const st = history.state || {};
+  if ($('#fs') && !st.fs) { closeFs(); return; }
+  if (!$('#work').classList.contains('hidden') && !st.book && !st.fs) closeBook();
+});
 addEventListener('pagehide', () => { padFlush(); if (S.key && S.data) { lsSet(lastKey(S.key), S.cur); lsSet(mineKey(S.key), collectMine()); } });
 
 /* =========================================================
@@ -2484,7 +2504,9 @@ function openFs(html, taskId, dock) {
     d.style.top = ($('header.top')?.getBoundingClientRect().bottom || 0) + 'px';
     d.dataset.w = Math.round(Math.min(700, Math.max(480, innerWidth * 0.4)));
   }
-  d.innerHTML = html; document.body.appendChild(d); updateDock(); return d;
+  d.innerHTML = html; document.body.appendChild(d); updateDock();
+  if (!history.state?.fs) tbPush('fs');   // 문제 풀기·편집 창도 뒤로가기 한 칸
+  return d;
 }
 // 왼쪽 창이 열려 있으면 목차 자리를 비워 교과서가 가려지지 않게
 function updateDock() {
@@ -2497,6 +2519,7 @@ let fsOnClose = null;
 function closeFs(silent) {
   const d = $('#fs'); if (!d) return;
   d.remove(); endPick(); updateDock(); const cb = fsOnClose; fsOnClose = null;
+  if (!silent) tbUndo('fs');   // 단추로 닫았으면 쌓아 둔 칸을 되돌림 (다른 창으로 바꿀 때는 그대로)
   if (!silent && cb) cb();
 }
 
@@ -2581,7 +2604,7 @@ function openTaskSolve(s, t) {
   const n = s.tasks.indexOf(t) + 1, a = S.answers[t.id] || {};
   const fs = openFs(`
     <div class="fh">
-      <button class="btn" id="fsDone">← 돌아가기</button>
+      <button class="btn" id="fsDone">← 뒤로가기</button>
       <span class="t">✍️ 직접 정리하기 · 문제 ${n} <span class="mloc">${esc(s.title || '')}</span></span>
     </div>
     <div class="fbody">

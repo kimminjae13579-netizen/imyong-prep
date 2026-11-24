@@ -63,6 +63,12 @@ body[data-sec=intv]{--accent:var(--intv);--accent-soft:var(--intv-soft)}
 .top .crumb a{color:rgba(244,247,242,.72);text-decoration:none;font-weight:500;font-size:16px;padding:4px 8px;border-radius:6px}
 .top .crumb a:hover{background:rgba(255,255,255,.1);color:#fff}
 .top .crumb .sep{color:rgba(244,247,242,.4);font-weight:400}
+.top .crumb .backbtn{font:inherit;font-weight:600;font-size:15px;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+.top .crumb .backbtn:hover{background:rgba(255,255,255,.22)}
+.top .crumb .backbtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.top .crumb .backbtn,.top .crumb a{flex-shrink:0}
+@media (max-width:520px){.top .in{padding:8px 12px;gap:4px}.top .tlb{display:none}.top .crumb .backbtn{padding:6px 10px}}
+@media (max-width:420px){.top .crumb .cur{display:none}}
 .top .crumb .cur{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top .btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.28);color:var(--chalk)}
 .top .btn:hover{background:rgba(255,255,255,.16)}
@@ -934,8 +940,8 @@ body.editing .edonly{display:inline-flex!important}
 
 <header class="top"><div class="in">
   <div class="crumb" id="crumb"></div>
-  <button class="btn small hidden" id="upBtn" title="자료실에 PDF 올리기">📄 PDF 올리기</button>
-  <button class="btn small hidden" id="editBtn" title="자료 편집">✏️ 편집</button>
+  <button class="btn small hidden" id="upBtn" title="자료실에 PDF 올리기">📄<span class="tlb"> PDF 올리기</span></button>
+  <button class="btn small hidden" id="editBtn" title="자료 편집">✏️<span class="tlb"> 편집</span></button>
   <button class="btn small gdbtn" id="gdBtn" title="스터디 · 로그인">☁️<span class="gdl">스터디</span><i></i></button>
   <button class="iconbtn hidden" id="fsBtn" title="전체화면" aria-label="전체화면">⛶</button>
   <button class="iconbtn" id="setBtn" title="백업">⚙️</button>
@@ -1318,11 +1324,10 @@ function route() {
   }
   r = r || ROUTES[''];
   document.body.dataset.sec = r.sec || '';
-  const crumbs = [`<a href="#home">🏠</a>`];
-  if (r.parent) crumbs.push(`<span class="sep">›</span><a href="#home" data-parent="${r.parent}">${ROUTES[r.parent].title}</a>`);   // 수업실연·면접은 첫 화면 칸반 보드의 열
-  if (r.up) crumbs.push(`<span class="sep">›</span><a href="${r.up.href}">${r.up.title}</a>`);   // 좁은 화면에서도 폴더 목록으로 돌아갈 수 있게
-  if (key) crumbs.push(`<span class="sep">›</span><span class="cur">${esc(r.title)}</span>`);
-  else crumbs.push(`<span class="cur">임용 준비</span>`);
+  // 위쪽: 「← 뒤로가기」(바로 전 화면) · 🏠(첫 화면) · 지금 화면 이름
+  navUp = r.up?.href || (key ? '#home' : '');   // 전 화면이 없을 때(주소로 바로 옴) 갈 곳
+  const crumbs = key ? [`<button class="backbtn" id="navBack" type="button">← 뒤로가기</button>`, `<a href="#home" title="첫 화면">🏠</a>`, `<span class="cur">${esc(r.title)}</span>`]
+    : [`<span class="cur">🏠 임용 준비</span>`];
   $('#crumb').innerHTML = crumbs.join('');
   $('#editBtn').classList.toggle('hidden', !r.edit);
   $('#upBtn').classList.toggle('hidden', !r.upload);
@@ -1331,11 +1336,44 @@ function route() {
   document.title = key ? r.title + ' · 임용 준비' : '임용 준비';  scrollTo(0, 0);
   r.render();
 }
-// 주소가 바뀌면(뒤로 가기 등) 열려 있던 보기 화면을 각자의 「닫기」로 닫음 (저장·확인 절차 그대로)
-addEventListener('hashchange', () => {
-  document.querySelectorAll('.ov').forEach(ov => ov.querySelector('[data-a="close"]')?.click());
+/* ---------- 뒤로가기: 어디서 누르든(단추·휴대폰·브라우저) 바로 전 화면으로 ----------
+   history.state.d = 이 앱 안에서 몇 번째 화면인지 (0이면 전 화면이 없음 → 한 단계 위로)
+   겹쳐 뜨는 보기 화면(.ov)도 열 때 한 칸을 쌓고, 닫으면 그 칸을 되돌림 */
+let navUp = '', ovSkip = 0;
+const navD = () => history.state?.d || 0;
+if (!history.state || history.state.d == null) history.replaceState({d: 0}, '');
+function goBack() {
+  if (navD() > 0) return history.back();
+  // 전 화면이 없으면 한 단계 위로 (지금 칸을 바꿔치기해서, 다시 누르면 또 위로 감)
+  try { sessionStorage.setItem('imy:navd', '-1'); } catch {}
+  location.replace((navUp || '#home'));
+}
+document.addEventListener('click', e => { if (e.target.closest('#navBack')) goBack(); });
+const ovClose = ov => ov.querySelector(':scope > .bar [data-a="close"], [data-a="close"]') || ov.querySelector('[data-p="close"]');
+new MutationObserver(muts => {
+  for (const m of muts) {
+    m.addedNodes.forEach(n => { if (n.nodeType === 1 && n.classList.contains('ov') && !n.dataset.h) { n.dataset.h = 'on'; history.pushState({d: navD() + 1, ov: 1}, ''); } });
+    m.removedNodes.forEach(n => { if (n.nodeType === 1 && n.classList?.contains('ov') && n.dataset.h === 'on' && history.state?.ov) { ovSkip++; history.back(); } });
+  }
+}).observe(document.body, {childList: true, subtree: true});
+addEventListener('popstate', () => {
+  if (ovSkip) { ovSkip--; return; }   // 단추로 닫아서 되돌린 칸
+  const ovs = [...document.querySelectorAll('.ov[data-h="on"]')], top = ovs[ovs.length - 1];
+  if (!top) return;
+  top.dataset.h = 'popped'; ovClose(top)?.click();   // 휴대폰·브라우저 뒤로가기: 맨 위 보기 화면을 각자의 「뒤로가기」로 닫음 (저장 확인 그대로)
+  setTimeout(() => { if (document.contains(top)) { top.dataset.h = 'on'; history.pushState({d: navD() + 1, ov: 1}, ''); } }, 400);   // 닫기를 취소했으면 칸을 다시 쌓음
+});
+// 주소가 바뀌면 열려 있던 보기 화면을 닫고(칸은 이미 넘어감) 새 화면을 그림. 새로 연 화면이면 몇 번째인지 적어 둠
+addEventListener('hashchange', e => {
+  document.querySelectorAll('.ov').forEach(ov => { ov.dataset.h = 'popped'; ovClose(ov)?.click(); });
+  if (!history.state || history.state.d == null) {
+    let prev = 0; try { prev = +(sessionStorage.getItem('imy:navd') || 0); } catch {}
+    history.replaceState({d: prev + 1}, '');
+  }
+  try { sessionStorage.setItem('imy:navd', String(navD())); } catch {}
   route();
 });
+addEventListener('popstate', () => { try { sessionStorage.setItem('imy:navd', String(navD())); } catch {} });
 
 /* ---------- 전체화면 ----------
    자동으로 전체화면이 되지는 않음 — 위쪽 ⛶를 눌러야 켜고 끔.
@@ -1879,7 +1917,7 @@ async function openViewer({fileId, title, type, extra, onClose}) {
   if (!blob) return toast('파일을 찾을 수 없어요.');
   const ov = document.createElement('div'); ov.className = 'ov pv padhost';
   ov.innerHTML = `<div class="bar">
-      <button class="btn ghost" data-a="close">← 닫기</button>
+      <button class="btn ghost" data-a="close">← 뒤로가기</button>
       <button class="iconbtn" data-a="side" title="책갈피·메모 목록">☰</button>
       <div class="t">${esc(title)}</div>
       <span class="pgnum"><input id="pvPage" inputmode="numeric" value="1"> / <span id="pvTotal">1</span></span>
@@ -2253,7 +2291,7 @@ const SHEET_TPLS = [{
 function openSheets(t) {
   let sel = null;
   const ov = document.createElement('div'); ov.className = 'ov sheets';
-  ov.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← 닫기</button><div class="t">${esc(t.title)}</div></div>
+  ov.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← 뒤로가기</button><div class="t">${esc(t.title)}</div></div>
     <div class="body"><div class="shwrap">
       <div class="shpages">${t.sheets.map((s, i) => `<figure class="shpage"><figcaption>${esc(s.name)}</figcaption><div class="shimg"><img src="${encodeURI(s.src)}" alt="${esc(s.name)}">
         ${t.regions.filter(r => r.sheet === i).map(r => `<button class="hit ${r.lab === 'b' ? 'lb' : ''}" data-r="${r.id}" style="left:${r.rect[0] * 100}%;top:${r.rect[1] * 100}%;width:${(r.rect[2] - r.rect[0]) * 100}%;height:${(r.rect[3] - r.rect[1]) * 100}%" title="${esc(r.label)}"><span>${esc(r.label)}</span></button>`).join('')}</div></figure>`).join('')}</div>
@@ -2285,7 +2323,7 @@ const CHALKS = [{id: 'chalkW', c: '#F4F4EE', n: '흰 분필'}, {id: 'chalkY', c:
 function openBoard(t) {
   const ov = document.createElement('div'); ov.className = 'ov chalkov';
   ov.innerHTML = `<aside class="bdside">
-      <div class="bdtop"><button class="btn ghost" data-a="close">← 문제지로</button></div>
+      <div class="bdtop"><button class="btn ghost" data-a="close">← 뒤로가기</button></div>
       <ul class="bdnotes">${t.board.map(n => `<li><b>${esc(n.tag)}</b><span>${esc(n.text)}</span></li>`).join('')}</ul>
     </aside>
     <section class="bdwall"><div class="bdframe">
@@ -2926,7 +2964,7 @@ function openType(t) {
   };
   const draw = () => {
     saveDesc();
-    main.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← 닫기</button><div class="t">🗂️ ${esc(t.name)}</div><button class="btn small${ov.classList.contains('padon') ? ' on' : ''}" data-a="pad">📒 메모장</button></div>
+    main.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← 뒤로가기</button><div class="t">🗂️ ${esc(t.name)}</div><button class="btn small${ov.classList.contains('padon') ? ' on' : ''}" data-a="pad">📒 메모장</button></div>
     <div class="body tvbody"><div class="tview1">
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="card dcard${dEdit ? ' editing' : ''}${pen ? ' pen' : ''}"><h3 class="dh">답변 방향<span style="flex:1"></span><button class="btn small${pen ? ' on' : ''}" data-a="dPen" aria-pressed="${pen}" title="글자를 골라 노랗게 칠하기 · 드래그 후 Ctrl+D">🖍 형광펜</button><button class="btn small${dEdit ? ' on' : ''}" data-a="dEdit">${dEdit ? '✓ 편집 끝' : '✏️ 편집'}</button></h3>
@@ -3354,7 +3392,7 @@ function qaHtml(qa, editing, edited, ev) {
 /* ---------- 녹화 ---------- */
 async function openRecorder(kind) {
   const ov = document.createElement('div'); ov.className = 'ov recv';
-  ov.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← 닫기</button><div class="t">${KIND[kind].name} 녹화</div></div>
+  ov.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← 뒤로가기</button><div class="t">${KIND[kind].name} 녹화</div></div>
     <div class="body"><video autoplay muted playsinline></video>
       <div class="clock"><span class="dot"></span><span id="rClock">0:00</span></div>
       <div class="rctl"><span></span><button class="recbtn" title="녹화 시작/정지"><i></i></button>
@@ -3462,7 +3500,7 @@ async function openEditor(kind, rec, file) {
             <button class="vidnone${blob ? ' hidden' : ''}" data-a="addVid"><span class="ic">🎬</span><b>영상 올리기</b><span>${K.name} 영상이나 녹음 파일을 골라요</span></button>
             ${vboxHtml}</section>`;
   const ov = document.createElement('div'); ov.className = 'ov ed' + (uni ? ' uni' : '');
-  ov.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← ${isUpload ? '취소' : '닫기'}</button><div class="t">${K.name} 연습 기록</div>
+  ov.innerHTML = `<div class="bar"><button class="btn ghost" data-a="close">← 뒤로가기</button><div class="t">${K.name} 연습 기록</div>
       ${isUpload ? '' : `${noMedia ? '' : '<button class="btn small ghost" data-a="dl" title="파일로 저장">⬇ <span id="dlW">영상</span></button>'}<button class="btn small ghost danger" data-a="del">삭제</button>`}
       <button class="btn primary" data-a="save">저장</button></div>
     ${uni ? `<div class="body">
