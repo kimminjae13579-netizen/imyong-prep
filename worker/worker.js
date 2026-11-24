@@ -52,6 +52,7 @@ async function handle(req, env) {
   const me = await session(req, env);
   if (p[0] === 'me' && m === 'GET') return json(await meInfo(env, me));
   if (p[0] === 'qna') return qna(req, env, me, p.slice(1));
+  if (p[0] === 'req') return requests(req, env, me, p.slice(1));
   if (p[0] === 'admin' && p[1] === 'teams' && m === 'GET') return adminTeams(env, me);
   if (p[0] === 'teams' && m === 'POST' && p.length === 1) return createTeam(req, env, me);
   if (p[0] === 'join' && m === 'POST') return joinTeam(req, env, me);
@@ -288,6 +289,45 @@ async function teamMultipart(req, env, me, t, k, url) {
     return json({size: o.size});
   }
   if (a === 'abort') { await mp.abort(); return json({ok: true}); }
+  fail('없는 주소예요.', 404);
+}
+
+/* ---------- 관리자에게 요청: 보낸 사람과 관리자만 봄 (admin/requests.json) ---------- */
+const REQ_KEY = 'admin/requests.json', REQ_MAX = 30;
+async function requests(req, env, me, sub) {
+  const m = req.method, what = sub[0] || '', adm = isAdmin(env, me.email);
+  const mineView = ({id, text, at, reply, repliedAt}) => ({id, text, at, reply: reply || '', repliedAt: repliedAt || 0});
+  if (what === 'mine' && m === 'GET') return json(((await getJSON(env, REQ_KEY))?.v || []).filter(x => x.by === me.email).map(mineView));
+  if (what === 'mine' && m === 'POST') {
+    const {id, text} = await req.json().catch(() => ({})), t = String(text || '').trim().slice(0, 4000);
+    if (!t) fail('요청 내용을 써 주세요.');
+    const rqid = /^[\w-]{4,40}$/.test(String(id || '')) ? String(id) : rid(12);
+    await mutate(env, REQ_KEY, L => {
+      L = L || [];
+      if (L.some(x => x.id === rqid)) return undefined;
+      if (L.filter(x => x.by === me.email && !x.reply).length >= REQ_MAX) fail(`답을 기다리는 요청이 ${REQ_MAX}개예요. 답이 온 뒤에 더 보내 주세요.`, 429);
+      L.push({id: rqid, text: t, by: me.email, name: me.name || '', at: Date.now(), reply: '', repliedAt: 0}); return L;
+    });
+    return json({id: rqid});
+  }
+  if (what === 'mine' && m === 'DELETE' && sub[1]) {   // 내 요청 지우기
+    await mutate(env, REQ_KEY, L => L && L.some(x => x.id === sub[1] && x.by === me.email) ? L.filter(x => !(x.id === sub[1] && x.by === me.email)) : undefined);
+    return json({ok: true});
+  }
+  if (what === 'all') {
+    if (!adm) fail('관리자만 볼 수 있어요.', 403);
+    if (m === 'GET') return json((await getJSON(env, REQ_KEY))?.v || []);
+    if (m === 'DELETE' && sub[1]) { await mutate(env, REQ_KEY, L => L && L.some(x => x.id === sub[1]) ? L.filter(x => x.id !== sub[1]) : undefined); return json({ok: true}); }
+  }
+  if (what === 'reply' && m === 'POST') {
+    if (!adm) fail('관리자만 답할 수 있어요.', 403);
+    const {id, reply} = await req.json().catch(() => ({})), r = String(reply || '').trim().slice(0, 8000);
+    if (!r) fail('답을 써 주세요.');
+    let found = false;
+    await mutate(env, REQ_KEY, L => { const x = (L || []).find(y => y.id === id); if (!x) return undefined; found = true; x.reply = r; x.repliedAt = Date.now(); x.repliedBy = me.email; return L; });
+    if (!found) fail('지워졌거나 없는 요청이에요.', 404);
+    return json({ok: true});
+  }
   fail('없는 주소예요.', 404);
 }
 
