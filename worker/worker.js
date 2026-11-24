@@ -311,7 +311,8 @@ async function adminTeams(env, me) {
     const l = await env.BUCKET.list({prefix: 'teams/', delimiter: '/', cursor});
     for (const pre of l.delimitedPrefixes) {
       const t = (await getJSON(env, pre + 'team.json'))?.v; if (!t) continue;
-      out.push({id: t.id, name: t.name, leader: t.leader, members: t.members.length, used: t.used || 0, created: t.created, updated: t.updated});
+      out.push({id: t.id, name: t.name, leader: t.leader, members: t.members.length,
+        people: t.members.map(e => ({email: e, name: (t.names || {})[e] || '', used: (t.byMember || {})[e] || 0, leader: e === t.leader})), used: t.used || 0, created: t.created, updated: t.updated});
       total += t.used || 0;
     }
     cursor = l.truncated ? l.cursor : undefined;

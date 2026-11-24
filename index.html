@@ -103,6 +103,7 @@ main{max-width:1080px;margin:0 auto;padding:36px 20px 80px}
 .doc .mt{font-size:13px;color:var(--sub)}
 .doc .del{position:absolute;top:8px;right:6px}
 .doc .mv{position:absolute;top:8px;right:46px}
+.libq{margin:0 0 16px}.libq input{width:100%;max-width:420px;border:1px solid #C4D0CA;border-radius:8px;padding:10px 12px;background:#fff;font-size:15px}
 .fold .mt{font-size:13px;color:#7A6A3A}
 
 /* 녹화 기록 카드 */
@@ -769,6 +770,7 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .tmmem li{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 0;border-bottom:1px dashed var(--line)}
 .tmmem .tmr{display:flex;align-items:center;gap:6px}
 .admtbl{width:100%;border-collapse:collapse;font-size:14px}
+.admtbl summary{cursor:pointer;color:var(--accent)}.admp{padding:3px 0;white-space:nowrap}.admp small{color:#6B7A74}
 .admtbl th,.admtbl td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 @media (max-width:520px){.admtbl th:nth-child(2),.admtbl td:nth-child(2),.admtbl th:nth-child(5),.admtbl td:nth-child(5){display:none}}
 .gdlead{margin:8px 0 0;color:#3A4A44;max-width:62em}
@@ -1453,7 +1455,7 @@ async function gdAdmin() {
   const rows = j.teams.sort((a, b) => b.used - a.used);
   const box = modal('🛠 관리 페이지', `<p class="gdhint">스터디 ${rows.length}개 · 전체 <b>${fmtMB(j.total)}</b> (R2 10GB까지 무료, 그 뒤 1GB당 월 약 $0.015)</p>
     <table class="admtbl"><thead><tr><th>스터디</th><th>팀장</th><th>팀원</th><th>공간</th><th>만든 날</th><th></th></tr></thead><tbody>
-    ${rows.map(t => `<tr><td>${esc(t.name)}</td><td><small>${esc(t.leader)}</small></td><td>${t.members}</td><td>${fmtMB(t.used)}</td><td><small>${dstr(t.created)}</small></td><td><button class="btn small danger" data-adm="${t.id}" data-n="${esc(t.name)}">삭제</button></td></tr>`).join('')}
+    ${rows.map(t => `<tr><td>${esc(t.name)}</td><td><small>${esc(t.leader)}</small></td><td>${t.people ? `<details><summary>${t.members}명</summary>${t.people.sort((x, y) => y.leader - x.leader).map(p => `<div class="admp">${p.leader ? '👑 ' : ''}${esc(p.name || '이름 없음')} <small>${esc(p.email)}${p.used ? ' · ' + fmtMB(p.used) : ''}</small></div>`).join('')}</details>` : t.members}</td><td>${fmtMB(t.used)}</td><td><small>${dstr(t.created)}</small></td><td><button class="btn small danger" data-adm="${t.id}" data-n="${esc(t.name)}">삭제</button></td></tr>`).join('')}
     </tbody></table>`, [{label: '닫기', primary: true}]);
   box.classList.add('gdbox');
   $$('[data-adm]', box).forEach(b => b.onclick = async () => {
@@ -1531,38 +1533,53 @@ async function pdfPages(blob) {
    ========================================================= */
 // 위쪽 「📄 PDF 올리기」 (자료실에서만 보임)
 $('#upBtn').onclick = async () => {
-  const f = await pickFile('application/pdf'); if (!f) return;
-  toast('PDF를 읽는 중…');
-  try {
-    const pages = await pdfPages(f), id = uid();
-    await blobPut('file:' + id, f);
-    D.docs = [{id, title: f.name.replace(/\.pdf$/i, ''), pages, added: Date.now(), folder: LIB_FOLDER}, ...D.docs];
-    renderLib(LIB_FOLDER);
-  } catch (e) { toast('PDF를 열 수 없어요.'); }
+  const fs = await new Promise(res => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'application/pdf'; i.multiple = true; i.onchange = () => res([...i.files]); i.click(); });
+  if (!fs.length) return;
+  const bad = [], folder = LIB_FOLDER; let n = 0;
+  for (const f of fs) {
+    n++; toast(fs.length > 1 ? `PDF를 읽는 중… ${n}/${fs.length}` : 'PDF를 읽는 중…');
+    try {
+      const pages = await pdfPages(f), id = uid();
+      await blobPut('file:' + id, f);
+      D.docs = [{id, title: f.name.replace(/\.pdf$/i, ''), pages, added: Date.now(), folder}, ...D.docs];
+    } catch (e) { bad.push(f.name); }
+  }
+  if (bad.length) toast(`열 수 없는 PDF가 있어요: ${bad.join(', ')}`);
+  else if (fs.length > 1) toast(`PDF ${fs.length}개를 올렸어요.`);
+  if (/^#intv\/lib/.test(location.hash)) renderLib(LIB_FOLDER);
 };
-let LIB_FOLDER = null;   // 지금 보고 있는 자료실 폴더 (null = 맨 바깥)
+let LIB_FOLDER = null, LIB_Q = '';   // 지금 보고 있는 자료실 폴더 (null = 맨 바깥) · 검색어
+const libNorm = v => String(v || '').replace(/\s+/g, '').toLowerCase();
 function renderLib(fid = null) {
   const FS = D.libFolders;
   if (fid && !FS.some(f => f.id === fid)) fid = null;
+  if (LIB_FOLDER !== fid) LIB_Q = '';
   LIB_FOLDER = fid;
   const cur = FS.find(f => f.id === fid), inFold = d => (FS.some(f => f.id === d.folder) ? d.folder : null) === fid;
-  const docs = D.docs.filter(inFold);
-  const folds = fid ? '' : FS.length ? `<div class="folds">${FS.map(f => {
+  const q = libNorm(LIB_Q), fname = id => FS.find(f => f.id === id)?.name;
+  const docs = q ? D.docs.filter(d => (fid ? inFold(d) : true) && libNorm(d.title).includes(q)) : D.docs.filter(inFold);
+  const folds = fid || q ? '' : FS.length ? `<div class="folds">${FS.map(f => {
       const n = D.docs.filter(d => d.folder === f.id).length;
       return `<div class="fold lfold" data-id="${f.id}" role="link" tabindex="0" aria-label="${esc(f.name)} 폴더 열기">
         <div class="nm">${esc(f.name)}</div><div class="mt">${n}개</div>
         <button class="iconbtn fed" data-f="edit" title="폴더 이름 바꾸기·지우기" aria-label="${esc(f.name)} 폴더 이름 바꾸기">✎</button></div>`;
     }).join('')}</div>` : '';
   app().innerHTML = `<div class="lhead"><h1 class="h1">${cur ? '📁 ' + esc(cur.name) : '자료실'}</h1>${fid ? '<button class="btn" id="libFed">✎ 폴더 이름</button>' : '<button class="btn" id="newLibF">＋ 폴더 만들기</button>'}</div>
-    ${folds}
+    ${D.docs.length ? `<div class="libq"><input type="search" id="libQ" placeholder="🔍 ${fid ? '이 폴더에서' : '자료실 전체에서'} 제목 찾기" value="${esc(LIB_Q)}" aria-label="자료 제목 찾기"></div>` : ''}
+    <div id="libList">${folds}
     ${docs.length ? `<div class="grid" style="margin-top:${folds ? 26 : 0}px">${docs.map(d => {
       const a = D.ann(d.id);
       return `<div class="card doc" data-id="${d.id}"><div class="nm">📄 ${esc(d.title)}</div>
-        <div class="mt">${d.pages}쪽${a.memos.length ? ` · 📝 ${a.memos.length}` : ''}${a.bms.length ? ` · 🔖 ${a.bms.length}` : ''}</div>
+        <div class="mt">${q && !fid && fname(d.folder) ? `📁 ${esc(fname(d.folder))} · ` : ''}${d.pages}쪽${a.memos.length ? ` · 📝 ${a.memos.length}` : ''}${a.bms.length ? ` · 🔖 ${a.bms.length}` : ''}</div>
         <button class="iconbtn mv" title="다른 폴더로 옮기기" aria-label="다른 폴더로 옮기기">📁</button>
         <button class="iconbtn del" title="삭제">🗑</button></div>`;
     }).join('')}</div>`
-    : folds ? '' : `<div class="empty"><span class="ic">📚</span>${fid ? '이 폴더가 비어 있어요. ' : ''}위쪽 <b>📄 PDF 올리기</b>로 자료를 추가하세요.</div>`}`;
+    : q ? `<div class="empty"><span class="ic">🔍</span>'${esc(LIB_Q)}'이(가) 들어간 자료가 없어요.</div>`
+    : folds ? '' : `<div class="empty"><span class="ic">📚</span>${fid ? '이 폴더가 비어 있어요. ' : ''}위쪽 <b>📄 PDF 올리기</b>로 자료를 추가하세요.</div>`}</div>`;
+  const qi = $('#libQ');
+  // 한글을 조합하는 동안에는 다시 그리지 않음 (글자가 끊기지 않게), 다 쓴 뒤 다시 그리고 입력 칸 커서를 되돌림
+  const reQ = () => { LIB_Q = qi.value; const pos = qi.selectionStart; renderLib(fid); const n = $('#libQ'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } };
+  if (qi) { qi.oninput = e => { if (!e.isComposing) reQ(); }; qi.addEventListener('compositionend', reQ); }
   if ($('#newLibF')) $('#newLibF').onclick = () => editLibFolder(null);
   if ($('#libFed')) $('#libFed').onclick = () => editLibFolder(cur);
   $$('.lfold').forEach(c => {
@@ -4189,6 +4206,7 @@ if (GD.on && !GD_ONFILE) gdReady() ? gdSync() : (GD.state = 'need', gdShow());
 if (gdReady() && !GD_ONFILE) gdRefreshMe();
 gdShow();
 gdShow();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});   // 인터넷 없어도 앱이 열리게
 </script>
 </body>
 </html>
