@@ -1279,7 +1279,7 @@ const ROUTES = {
 };
 function route() {
   // 초대 링크(#team=팀id.코드)로 열면: 로그인돼 있으면 바로 들어가고, 아니면 ☁️ 창에서 로그인한 뒤 들어감
-  const tm = location.hash.match(/^#team=(w{6,20}.w{8,40})/);
+  const tm = location.hash.match(/^#team=(\w{6,20}\.\w{8,40})/);
   if (tm) {
     sessionStorage.setItem('imysync:invite', tm[1]);
     history.replaceState(null, '', location.pathname + location.search + '#home');
