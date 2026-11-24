@@ -99,9 +99,11 @@ main{max-width:1080px;margin:0 auto;padding:36px 20px 80px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:6px;box-shadow:0 1px 0 #C9D5CF}
 .doc{padding:18px 18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;position:relative;border-top:5px solid var(--accent)}
 .doc:hover{border-color:var(--accent)}
-.doc .nm{font-weight:700;padding-right:28px;font-size:17px}
+.doc .nm{font-weight:700;padding-right:76px;font-size:17px}
 .doc .mt{font-size:13px;color:var(--sub)}
 .doc .del{position:absolute;top:8px;right:6px}
+.doc .mv{position:absolute;top:8px;right:46px}
+.fold .mt{font-size:13px;color:#7A6A3A}
 
 /* 녹화 기록 카드 */
 .rec{cursor:pointer;overflow:hidden;display:flex;flex-direction:column}
@@ -1231,6 +1233,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modalR
 const D = {
   get templates() { return lsGet('templates', []); }, set templates(v) { lsSet('templates', v); },
   get docs() { return lsGet('docs', []); }, set docs(v) { lsSet('docs', v); },
+  get libFolders() { return lsGet('libFolders', []); }, set libFolders(v) { lsSet('libFolders', v); },
   get types() { return lsGet('types', []); }, set types(v) { lsSet('types', v); },
   get sched() { return lsGet('sched', []); }, set sched(v) { lsSet('sched', v); },
   get qna() { return lsGet('qna', []); }, set qna(v) { lsSet('qna', v); },
@@ -1276,6 +1279,13 @@ function route() {
     const k = fm[1], f = D.folders(k).find(x => x.id === fm[2]);
     if (f) r = {title: f.name, sec: k, parent: k, up: {href: `#${k}/practice`, title: KIND[k].name + ' 연습'}, render: () => renderFolder(k, f.id)};
     else { history.replaceState(null, '', `#${k}/practice`); r = ROUTES[`${k}/practice`]; }
+  }
+  // 자료실 폴더: #intv/lib/<폴더id>
+  const lm = !r && key.match(/^intv\/lib\/([\w-]+)$/);
+  if (lm) {
+    const f = D.libFolders.find(x => x.id === lm[1]);
+    if (f) r = {title: f.name, sec: 'intv', parent: 'intv', up: {href: '#intv/lib', title: '자료실'}, render: () => renderLib(f.id), upload: true};
+    else { history.replaceState(null, '', '#intv/lib'); r = ROUTES['intv/lib']; }
   }
   r = r || ROUTES[''];
   document.body.dataset.sec = r.sec || '';
@@ -1526,22 +1536,42 @@ $('#upBtn').onclick = async () => {
   try {
     const pages = await pdfPages(f), id = uid();
     await blobPut('file:' + id, f);
-    D.docs = [{id, title: f.name.replace(/\.pdf$/i, ''), pages, added: Date.now()}, ...D.docs];
-    renderLib();
+    D.docs = [{id, title: f.name.replace(/\.pdf$/i, ''), pages, added: Date.now(), folder: LIB_FOLDER}, ...D.docs];
+    renderLib(LIB_FOLDER);
   } catch (e) { toast('PDF를 열 수 없어요.'); }
 };
-function renderLib() {
-  const docs = D.docs;
-  app().innerHTML = `<div class="lhead"><h1 class="h1">자료실</h1></div>
-    ${docs.length ? `<div class="grid">${docs.map(d => {
+let LIB_FOLDER = null;   // 지금 보고 있는 자료실 폴더 (null = 맨 바깥)
+function renderLib(fid = null) {
+  const FS = D.libFolders;
+  if (fid && !FS.some(f => f.id === fid)) fid = null;
+  LIB_FOLDER = fid;
+  const cur = FS.find(f => f.id === fid), inFold = d => (FS.some(f => f.id === d.folder) ? d.folder : null) === fid;
+  const docs = D.docs.filter(inFold);
+  const folds = fid ? '' : FS.length ? `<div class="folds">${FS.map(f => {
+      const n = D.docs.filter(d => d.folder === f.id).length;
+      return `<div class="fold lfold" data-id="${f.id}" role="link" tabindex="0" aria-label="${esc(f.name)} 폴더 열기">
+        <div class="nm">${esc(f.name)}</div><div class="mt">${n}개</div>
+        <button class="iconbtn fed" data-f="edit" title="폴더 이름 바꾸기·지우기" aria-label="${esc(f.name)} 폴더 이름 바꾸기">✎</button></div>`;
+    }).join('')}</div>` : '';
+  app().innerHTML = `<div class="lhead"><h1 class="h1">${cur ? '📁 ' + esc(cur.name) : '자료실'}</h1>${fid ? '<button class="btn" id="libFed">✎ 폴더 이름</button>' : '<button class="btn" id="newLibF">＋ 폴더 만들기</button>'}</div>
+    ${folds}
+    ${docs.length ? `<div class="grid" style="margin-top:${folds ? 26 : 0}px">${docs.map(d => {
       const a = D.ann(d.id);
       return `<div class="card doc" data-id="${d.id}"><div class="nm">📄 ${esc(d.title)}</div>
         <div class="mt">${d.pages}쪽${a.memos.length ? ` · 📝 ${a.memos.length}` : ''}${a.bms.length ? ` · 🔖 ${a.bms.length}` : ''}</div>
+        <button class="iconbtn mv" title="다른 폴더로 옮기기" aria-label="다른 폴더로 옮기기">📁</button>
         <button class="iconbtn del" title="삭제">🗑</button></div>`;
     }).join('')}</div>`
-    : `<div class="empty"><span class="ic">📚</span>위쪽 <b>📄 PDF 올리기</b>로 자료를 추가하세요.</div>`}`;
+    : folds ? '' : `<div class="empty"><span class="ic">📚</span>${fid ? '이 폴더가 비어 있어요. ' : ''}위쪽 <b>📄 PDF 올리기</b>로 자료를 추가하세요.</div>`}`;
+  if ($('#newLibF')) $('#newLibF').onclick = () => editLibFolder(null);
+  if ($('#libFed')) $('#libFed').onclick = () => editLibFolder(cur);
+  $$('.lfold').forEach(c => {
+    c.onclick = e => { const f = D.libFolders.find(x => x.id === c.dataset.id); if (e.target.closest('[data-f=edit]')) return editLibFolder(f); location.hash = '#intv/lib/' + f.id; };
+    c.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === c) { e.preventDefault(); c.click(); } };
+  });
   $$('.doc').forEach(c => c.onclick = async e => {
     const d = D.docs.find(x => x.id === c.dataset.id);
+    if (e.target.closest('.mv')) return moveLibDoc(d);
     if (e.target.closest('.del')) {
       if (!confirm(`'${d.title}'을(를) 삭제할까요?`)) return;
       D.docs = D.docs.filter(x => x.id !== d.id); await blobDel('file:' + d.id); await blobDel('pad:' + d.id); localStorage.removeItem('imy:ann:' + d.id);
@@ -1549,10 +1579,41 @@ function renderLib() {
       localStorage.removeItem('imy:padlist:pad:' + d.id); localStorage.removeItem('imy:padcur:pad:' + d.id);
       const U = padUser();   // 스터디에서 쓴 내 메모장도 (팀원 메모장은 각자 것이라 그대로 둠)
       if (U) { await blobDel(`pad:${U}:${d.id}`); for (const p of lsGet(`padlist:pad:${U}:${d.id}`, [])) if (p.id) await blobDel(`pad:${U}:${d.id}:${p.id}`); localStorage.removeItem(`imy:padlist:pad:${U}:${d.id}`); }
-      return renderLib();
+      return renderLib(fid);
     }
-    openViewer({fileId: d.id, title: d.title, type: 'application/pdf', onClose: renderLib});
+    openViewer({fileId: d.id, title: d.title, type: 'application/pdf', onClose: () => renderLib(LIB_FOLDER)});
   });
+}
+function editLibFolder(f) {
+  const isNew = !f;
+  modal(isNew ? '📁 새 폴더' : '📁 폴더 이름', `<div class="fl"><label for="fName">폴더 이름</label><input type="text" id="fName" value="${esc(f?.name || '')}" maxlength="40"></div>`, [
+    ...(isNew ? [] : [{label: '삭제', danger: true, onClick: () => {
+      const n = D.docs.filter(d => d.folder === f.id).length;
+      if (!confirm(n ? `'${f.name}' 폴더를 지울까요? 안에 있는 자료 ${n}개는 자료실 맨 바깥으로 옮겨져요.` : `'${f.name}' 폴더를 지울까요?`)) return false;
+      if (n) D.docs = D.docs.map(d => d.folder === f.id ? {...d, folder: null} : d);
+      D.libFolders = D.libFolders.filter(x => x.id !== f.id);
+      if (location.hash === '#intv/lib') renderLib(null); else location.hash = '#intv/lib';
+    }}]),
+    {label: '취소'},
+    {label: isNew ? '만들기' : '저장', primary: true, onClick: box => {
+      const name = $('#fName', box).value.trim(); if (!name) { toast('폴더 이름을 써 주세요'); return false; }
+      const all = D.libFolders;
+      if (isNew) { D.libFolders = [...all, {id: uid(), name, at: Date.now()}]; renderLib(LIB_FOLDER); }
+      else { all.find(y => y.id === f.id).name = name; D.libFolders = all; route(); }
+    }}
+  ], box => { const i = $('#fName', box); i.focus(); i.select(); i.onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) $('.mf .primary', box).click(); }; });
+}
+function moveLibDoc(d) {
+  const FS = D.libFolders, now = FS.some(f => f.id === d.folder) ? d.folder : '';
+  if (!FS.length) return toast('먼저 자료실에서 ＋ 폴더 만들기를 해 주세요.');
+  modal('📁 옮기기', `<div class="fl"><label for="mvTo">'${esc(d.title)}'을(를) 어디로 옮길까요?</label>
+    <select id="mvTo"><option value="">자료실 맨 바깥</option>${FS.map(f => `<option value="${f.id}"${f.id === now ? ' selected' : ''}>📁 ${esc(f.name)}</option>`).join('')}</select></div>`, [
+    {label: '취소'},
+    {label: '옮기기', primary: true, onClick: box => {
+      const to = $('#mvTo', box).value || null;
+      D.docs = D.docs.map(x => x.id === d.id ? {...x, folder: to} : x); renderLib(LIB_FOLDER);
+    }}
+  ]);
 }
 
 /* =========================================================
@@ -1732,6 +1793,7 @@ async function openViewer({fileId, title, type, extra, onClose}) {
       <button class="iconbtn" data-a="zo" title="축소">－</button><button class="iconbtn" data-a="zi" title="확대">＋</button>
       <button class="btn small" id="pvBm">🔖 책갈피</button>
       <button class="btn small" id="pvPad">📒 메모장</button>
+      <button class="btn small" data-a="dl" title="파일로 저장">⬇ 받기</button>
       ${extra ? `<button class="btn small" data-a="extra">${extra.btn}</button>` : ''}
     </div>
     <div class="body" style="position:relative">
@@ -1777,6 +1839,12 @@ async function openViewer({fileId, title, type, extra, onClose}) {
   ov.addEventListener('click', e => {
     const a = e.target.closest('[data-a]')?.dataset.a;
     if (a === 'close') return pvClose();
+    if (a === 'dl') {
+      const bt = blob.type || type || '', ext = /pdf/.test(bt) ? 'pdf' : (bt.split('/')[1] || 'bin').replace('jpeg', 'jpg').replace(/\+.*/, '');
+      const nm = String(title || '자료').replace(/[\\/:*?"<>|]/g, '_'), x = document.createElement('a');
+      x.href = URL.createObjectURL(blob); x.download = new RegExp('\\.' + ext + '$', 'i').test(nm) ? nm : `${nm}.${ext}`;
+      x.click(); setTimeout(() => URL.revokeObjectURL(x.href), 1000); return;
+    }
     if (a === 'side') return ov.classList.toggle('side');
     if (a === 'extra') return ov.classList.toggle('extra');
     if (a === 'zi' || a === 'zo') { const k = PV.cur; PV.scale = Math.max(0.4, Math.min(3, PV.scale + (a === 'zi' ? .15 : -.15))); lsSet('pvScale', PV.scale); pvBuild(); pvGo(k, false); }
