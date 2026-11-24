@@ -770,6 +770,11 @@ table.mbt2.hot{text-decoration:none;border-bottom:3px solid #E8574A}
 .tmmem li{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 0;border-bottom:1px dashed var(--line)}
 .tmmem .tmr{display:flex;align-items:center;gap:6px}
 .admtbl{width:100%;border-collapse:collapse;font-size:14px}
+.qwait{border:1px dashed #D9B92E;background:#FFFBEA;border-radius:10px;padding:12px 14px;margin:0 0 16px}.qwh{font-weight:700;font-size:14px;margin-bottom:6px}
+.qwi{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:4px 0;border-top:1px solid #F1E6B8}.qwi:first-of-type{border-top:0}.qwi span{word-break:keep-all;overflow-wrap:anywhere}
+.qbase.qmine{background:#E7F0FF;color:#1D4F91;margin-right:6px}
+.qto{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 0;cursor:pointer}.qto small{color:var(--sub);width:100%;padding-left:24px}
+.inq{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}.inqh small{color:var(--sub)}.inqb{display:flex;gap:8px;justify-content:flex-end}
 .admtbl summary{cursor:pointer;color:var(--accent)}.admp{padding:3px 0;white-space:nowrap}.admp small{color:#6B7A74}
 .admtbl th,.admtbl td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
 @media (max-width:520px){.admtbl th:nth-child(2),.admtbl td:nth-child(2),.admtbl th:nth-child(5),.admtbl td:nth-child(5){display:none}}
@@ -2547,14 +2552,49 @@ const QNA_BUILTIN = [];
 const qnaCommon = () => { try { return JSON.parse(localStorage.getItem('imysync:qna')) || []; } catch { return []; } };
 const isAdmin = () => gdReady() && !!GD.me?.admin;
 let qnaLoaded = 0;
-async function qnaFetch() {
-  if (!gdReady() || Date.now() - qnaLoaded < 60000) return;
+// 관리자에게 물은 질문: 내 것(답 기다리는 중)은 'imysync:qnaMine', 관리자의 질문함은 'imysync:qnaInbox', 내가 물은 질문 id는 'imysync:asked'
+const lsJ = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const qnaMine = () => lsJ('imysync:qnaMine', []), qnaInbox = () => lsJ('imysync:qnaInbox', []), qnaAsked = () => new Set(lsJ('imysync:asked', []));
+async function qnaFetch(force = false) {
+  if (!gdReady() || (!force && Date.now() - qnaLoaded < 60000)) return;
   qnaLoaded = Date.now();
   try {
-    const list = await apiJ('/qna', undefined, 'GET'), was = localStorage.getItem('imysync:qna') || '[]', now = JSON.stringify(list);
-    localStorage.setItem('imysync:qna', now);
-    if (was !== now && location.hash === '#qna' && !$('#modalRoot').innerHTML) renderQna();
+    const keep = (k, v) => { const was = localStorage.getItem(k) || '[]', now = JSON.stringify(v); localStorage.setItem(k, now); return was !== now; };
+    const [list, mine, inbox] = await Promise.all([apiJ('/qna', undefined, 'GET'), apiJ('/qna/mine', undefined, 'GET').catch(() => null), isAdmin() ? apiJ('/qna/inbox', undefined, 'GET').catch(() => null) : null]);
+    let ch = keep('imysync:qna', list);
+    if (mine) ch = keep('imysync:qnaMine', mine) || ch;
+    if (inbox) ch = keep('imysync:qnaInbox', inbox) || ch;
+    if (ch && location.hash === '#qna' && !$('#modalRoot').innerHTML) renderQna();
   } catch (e) { qnaLoaded = 0; console.warn(e); }
+}
+async function qnaAsk(text) {
+  const id = uid();
+  try {
+    await apiJ('/qna/ask', {id, q: text});
+    localStorage.setItem('imysync:asked', JSON.stringify([...qnaAsked(), id]));
+    localStorage.setItem('imysync:qnaMine', JSON.stringify([...qnaMine(), {id, q: text, at: Date.now()}]));
+    toast('관리자에게 보냈어요. 답이 달리면 모든 사람에게 (이름 없이) 보여요.'); renderQna(); qnaFetch(true); return true;
+  } catch (e) { toast(e.message); return false; }
+}
+// 관리자: 받은 질문에 답하기 → 공통 Q&A로
+function openQnaInbox() {
+  const L = qnaInbox().sort((a, b) => a.at - b.at);
+  const box = modal('📥 받은 질문', L.length ? `<p class="gdhint">답을 쓰고 「답변하고 공개」를 누르면 📌 공통 Q&A로 옮겨져 모든 사람에게 보여요. 묻는 사람 이름은 관리자에게만 보이고, 공개할 때는 빠져요.</p>
+    ${L.map(x => `<div class="inq" data-id="${x.id}"><div class="inqh"><b>${esc(x.name || '이름 없음')}</b> <small>${esc(x.by)} · ${dtstr(x.at)}</small></div>
+      <div class="fl"><label>질문 (다듬어서 공개할 수 있어요)</label><textarea rows="2" data-f="q">${esc(x.q)}</textarea></div>
+      <div class="fl"><label>답변</label><textarea rows="4" data-f="a" placeholder="답변을 써 주세요"></textarea></div>
+      <div class="inqb"><button class="btn small danger" data-i="del">지우기</button><button class="btn small primary" data-i="ans">답변하고 공개</button></div></div>`).join('')}`
+    : '<div class="empty"><span class="ic">📭</span>받은 질문이 없어요.</div>', [{label: '닫기', primary: true}]);
+  box.classList.add('gdbox');
+  $$('.inq', box).forEach(el => {
+    const id = el.dataset.id, run = async (f, b) => { b.disabled = true; try { await f(); } catch (e) { toast(e.message); } finally { b.disabled = false; } };
+    $('[data-i=ans]', el).onclick = e => run(async () => {
+      const a = $('[data-f=a]', el).value.trim(), q = $('[data-f=q]', el).value.trim(); if (!a) return toast('답변을 써 주세요.');
+      await apiJ('/qna/answer', {id, q, a}); toast('공개했어요. 모든 사람에게 보여요.');
+      qnaLoaded = 0; await qnaFetch(true); closeModal(); renderQna(); if (qnaInbox().length) openQnaInbox();
+    }, e.target);
+    $('[data-i=del]', el).onclick = e => { if (confirm('이 질문을 답하지 않고 지울까요?')) run(async () => { await api('/qna/inbox/' + id, {method: 'DELETE'}); await qnaFetch(true); closeModal(); renderQna(); openQnaInbox(); }, e.target); };
+  });
 }
 async function qnaSaveCommon(list) {
   try { await apiJ('/qna', list, 'PUT'); localStorage.setItem('imysync:qna', JSON.stringify(list)); renderQna(); toast('공통 Q&A에 저장했어요. 모두에게 보여요.'); return true; }
@@ -2562,19 +2602,27 @@ async function qnaSaveCommon(list) {
 }
 function renderQna() {
   qnaFetch();
-  const list = D.qna, open = new Set($$('.faq.open').map(x => x.dataset.id)), common = qnaCommon(), adm = isAdmin();
+  const list = D.qna, open = new Set($$('.faq.open').map(x => x.dataset.id)), common = qnaCommon(), adm = isAdmin(), asked = qnaAsked();
   // 이미 공통에 들어간 질문(같은 질문 글)은 우리 스터디 목록에서 겹쳐 보이지 않게
   const inBase = new Set([...QNA_BUILTIN, ...common].map(x => x.q.trim()));
   const mine = list.filter(q => !inBase.has(q.q.trim()));
   const item = (q, base, canEdit) => `<div class="faq ${open.has(q.id) ? 'open' : ''}${base ? ' base' : ''}" data-id="${q.id}" data-kind="${base ? (canEdit ? 'common' : 'builtin') : 'mine'}">
-      <button class="qq" aria-expanded="${open.has(q.id)}"><span class="qm">Q</span><span class="qt">${esc(q.q)}</span>${base ? '<span class="qbase">📌 공통</span>' : ''}</button>
+      <button class="qq" aria-expanded="${open.has(q.id)}"><span class="qm">Q</span><span class="qt">${esc(q.q)}</span>${base && asked.has(q.id) ? '<span class="qbase qmine">🙋 내 질문</span>' : ''}${base ? '<span class="qbase">📌 공통</span>' : ''}</button>
       <div class="qa"><span class="am">A</span><div class="at">${q.a ? esc(q.a) : '<span style="color:var(--sub)">아직 답변이 없어요.</span>'}</div></div>
       ${base && !canEdit ? '' : `<div class="qed"><button class="btn small" data-q="edit">편집</button><button class="btn small danger" data-q="del">삭제</button>${!base && adm ? '<button class="btn small" data-q="pub" title="모든 사용자에게 보이는 공통 Q&A로 올려요">📌 공통으로</button>' : ''}</div>`}
     </div>`;
   const all = [...QNA_BUILTIN.map((q, i) => item({...q, id: 'base' + i}, true, false)), ...common.map(q => item(q, true, adm)), ...mine.map(q => item(q, false))];
-  app().innerHTML = `<div class="lhead"><h1 class="h1">Q&amp;A</h1>${adm ? '<button class="btn" id="addC">📌 공통 질문 추가</button>' : ''}<button class="btn primary" id="addQ">＋ 질문 추가하기</button></div>
+  const wait = gdReady() ? qnaMine() : [], inN = adm ? qnaInbox().length : 0;
+  const waitHtml = wait.length ? `<div class="qwait"><div class="qwh">⏳ 관리자 답변을 기다리는 내 질문</div>${wait.map(x => `<div class="qwi" data-id="${x.id}"><span>${esc(x.q)}</span><button class="btn small ghost" data-w="del" title="질문 거두기">거두기</button></div>`).join('')}</div>` : '';
+  app().innerHTML = `<div class="lhead"><h1 class="h1">Q&amp;A</h1>${adm ? `<button class="btn${inN ? ' primary' : ''}" id="inbox">📥 받은 질문${inN ? ` <b>${inN}</b>` : ''}</button><button class="btn" id="addC">📌 공통 질문 추가</button>` : ''}<button class="btn primary" id="addQ">＋ 질문하기</button></div>
+    ${waitHtml}
     ${all.length ? `<div class="qna">${all.join('')}</div>` : `<div class="empty"><span class="ic">💬</span>아직 질문이 없어요.</div>`}`;
-  $('#addQ').onclick = () => editQ(null);
+  $('#addQ').onclick = () => askQ();
+  if ($('#inbox')) $('#inbox').onclick = openQnaInbox;
+  $$('.qwi [data-w=del]').forEach(b => b.onclick = async () => {
+    const id = b.closest('.qwi').dataset.id; if (!confirm('이 질문을 거둘까요? 관리자에게서도 지워져요.')) return;
+    try { await api('/qna/mine/' + id, {method: 'DELETE'}); localStorage.setItem('imysync:qnaMine', JSON.stringify(qnaMine().filter(x => x.id !== id))); renderQna(); } catch (e) { toast(e.message); }
+  });
   if ($('#addC')) $('#addC').onclick = () => editQ(null, true);
   $$('.faq').forEach(el => {
     const id = el.dataset.id, kind = el.dataset.kind;
@@ -2590,6 +2638,22 @@ function renderQna() {
     const pub = $('[data-q=pub]', el);
     if (pub) pub.onclick = () => { const q = D.qna.find(x => x.id === id); if (q && confirm('이 질문을 모든 사용자에게 보이는 공통 Q&A로 올릴까요?')) qnaSaveCommon([...qnaCommon(), {id: uid(), q: q.q, a: q.a}]); };
   });
+}
+function askQ() {
+  const can = gdReady(), team = !!GD.team;
+  if (!can) return editQ(null);   // 로그인 안 했으면 이 기기(스터디) 질문으로
+  modal('💬 질문하기', `<div class="form">
+    <div class="fl"><label for="qQ">질문</label><textarea id="qQ" rows="3" placeholder="예: 2차 시험 날 무엇을 챙겨 가나요?"></textarea></div>
+    <div class="fl"><label>누구에게 물을까요?</label>
+      <label class="qto"><input type="radio" name="qto" value="admin" checked> 🙋 <b>관리자에게</b> <small>답이 달리면 모든 사용자에게 공개돼요 (이름은 빠져요)</small></label>
+      ${team ? '<label class="qto"><input type="radio" name="qto" value="team"> 👥 <b>우리 스터디에서만</b> <small>스터디원끼리 보고 답해요</small></label>' : ''}</div></div>`, [
+    {label: '취소'},
+    {label: '보내기', primary: true, onClick: async box => {
+      const q = $('#qQ', box).value.trim(); if (!q) { toast('질문을 써 주세요'); return false; }
+      if ($('input[name=qto]:checked', box).value === 'team') { D.qna = [...D.qna, {id: uid(), q, a: ''}]; renderQna(); return; }
+      return (await qnaAsk(q)) ? undefined : false;
+    }}
+  ], box => $('#qQ', box).focus());
 }
 function editQ(q, common = false) {
   const isNew = !q; q = q ? {...q} : {id: uid(), q: '', a: ''};

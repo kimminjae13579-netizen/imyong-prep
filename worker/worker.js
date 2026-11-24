@@ -51,7 +51,7 @@ async function handle(req, env) {
   if (p[0] === '' || p.length === 0) return json({ok: true});
   const me = await session(req, env);
   if (p[0] === 'me' && m === 'GET') return json(await meInfo(env, me));
-  if (p[0] === 'qna') return qna(req, env, me);
+  if (p[0] === 'qna') return qna(req, env, me, p.slice(1));
   if (p[0] === 'admin' && p[1] === 'teams' && m === 'GET') return adminTeams(env, me);
   if (p[0] === 'teams' && m === 'POST' && p.length === 1) return createTeam(req, env, me);
   if (p[0] === 'join' && m === 'POST') return joinTeam(req, env, me);
@@ -292,7 +292,47 @@ async function teamMultipart(req, env, me, t, k, url) {
 }
 
 /* ---------- 공통 Q&A ---------- */
-async function qna(req, env, me) {
+// 관리자에게 묻기: 질문함(public/qna-inbox.json)에 쌓이고, 관리자가 답하면 공통 Q&A로 옮겨 모두에게 (익명으로) 보임
+const INBOX = 'public/qna-inbox.json', ASK_MAX = 20;
+async function qna(req, env, me, sub = []) {
+  const m = req.method, what = sub[0] || '';
+  if (what === 'ask' && m === 'POST') {
+    const {id, q} = await req.json().catch(() => ({})), text = String(q || '').trim().slice(0, 2000);
+    if (!text) fail('질문을 써 주세요.');
+    const qid = /^[\w-]{4,40}$/.test(String(id || '')) ? String(id) : rid(12);
+    await mutate(env, INBOX, L => {
+      L = L || [];
+      if (L.some(x => x.id === qid)) return undefined;
+      if (L.filter(x => x.by === me.email).length >= ASK_MAX) fail(`답변을 기다리는 질문이 ${ASK_MAX}개예요. 답이 달린 뒤에 더 물어봐 주세요.`, 429);
+      L.push({id: qid, q: text, by: me.email, name: me.name || '', at: Date.now()}); return L;
+    });
+    return json({id: qid});
+  }
+  if (what === 'mine' && m === 'GET') {
+    const L = (await getJSON(env, INBOX))?.v || [];
+    return json(L.filter(x => x.by === me.email).map(({id, q, at}) => ({id, q, at})));
+  }
+  if (what === 'mine' && m === 'DELETE' && sub[1]) {   // 내 질문 거두기 (답이 달리기 전)
+    await mutate(env, INBOX, L => { if (!L || !L.some(x => x.id === sub[1] && x.by === me.email)) return undefined; return L.filter(x => !(x.id === sub[1] && x.by === me.email)); });
+    return json({ok: true});
+  }
+  if (what === 'inbox') {
+    if (!isAdmin(env, me.email)) fail('관리자만 볼 수 있어요.', 403);
+    if (m === 'GET') return json((await getJSON(env, INBOX))?.v || []);
+    if (m === 'DELETE' && sub[1]) { await mutate(env, INBOX, L => L && L.some(x => x.id === sub[1]) ? L.filter(x => x.id !== sub[1]) : undefined); return json({ok: true}); }
+  }
+  if (what === 'answer' && m === 'POST') {
+    if (!isAdmin(env, me.email)) fail('관리자만 답할 수 있어요.', 403);
+    const {id, q, a} = await req.json().catch(() => ({})), ans = String(a || '').trim();
+    if (!ans) fail('답변을 써 주세요.');
+    let item = null;
+    await mutate(env, INBOX, L => { item = (L || []).find(x => x.id === id) || null; return item ? L.filter(x => x.id !== id) : undefined; });
+    if (!item) fail('이미 답했거나 지워진 질문이에요.', 404);
+    const qa = {id: item.id, q: String(q || item.q).trim().slice(0, 2000), a: ans.slice(0, 20000), asked: true, at: Date.now()};
+    await mutate(env, 'public/qna.json', L => { L = L || []; return L.some(x => x.id === qa.id) ? undefined : [...L, qa]; });
+    return json(qa);
+  }
+  if (what) fail('없는 주소예요.', 404);
   if (req.method === 'GET') { const o = await getJSON(env, 'public/qna.json'); return json(o?.v || []); }
   if (req.method === 'PUT') {
     if (!isAdmin(env, me.email)) fail('공통 Q&A는 관리자만 고칠 수 있어요.', 403);
