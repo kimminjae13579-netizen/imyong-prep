@@ -103,6 +103,7 @@ main{max-width:1080px;margin:0 auto;padding:36px 20px 80px}
 /* 카드 목록: 종이 한 장 */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:6px;box-shadow:0 1px 0 #C9D5CF}
+.card.rec.pink{background:#FCE4EC;border-color:#F4A7BF;box-shadow:0 1px 0 #E9A3B9}
 .doc{padding:18px 18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;position:relative;border-top:5px solid var(--accent)}
 .doc:hover{border-color:var(--accent)}
 .doc .nm{font-weight:700;padding-right:76px;font-size:17px}
@@ -3082,7 +3083,7 @@ function renderFolder(kind, fid) {
   const recs = D.recs(kind).filter(r => r.folder === fid).sort((a, b) => b.at - a.at);
   app().innerHTML = `<div class="lhead"><h1 class="h1">${esc(f.name)}</h1>
       ${kind === 'intv' ? '<button class="btn" id="upAll">⬆ 업로드</button>' : '<button class="btn" id="upVid">📁 영상·녹음 올리기</button>'}<button class="btn primary" id="newRec">● 녹화</button></div>
-    ${recs.length ? `<div class="grid">${recs.map(r => `<div class="card rec" data-id="${r.id}">
+    ${recs.length ? `<div class="grid">${recs.map(r => `<div class="card rec${r.pink ? ' pink' : ''}" data-id="${r.id}">
       <div class="bd"><div class="ti ${r.title || r.unit ? '' : 'no'}">${r.title || r.unit ? esc(r.title || r.unit) : '제목을 아직 안 썼어요'}</div>
         <div class="mt">${dstr(r.at)}${recDur(r) ? ' · ' + fmtK(recDur(r)) : ''}</div>
         </div></div>`).join('')}</div>`
@@ -3094,7 +3095,17 @@ function renderFolder(kind, fid) {
   };
   // 면접: ⬆ 업로드 하나로 — 클로바노트 글·문제 사진·영상을 한 화면에서 올림
   if ($('#upAll')) $('#upAll').onclick = () => openEditor(kind, null, null);
-  $$('.rec').forEach(c => c.onclick = () => openEditor(kind, D.recs(kind).find(r => r.id === c.dataset.id)));
+  // 한 번 누르면 열기, 두 번 누르면 핑크 표시 켜고 끄기
+  $$('.rec').forEach(c => {
+    let t = 0;
+    c.onclick = e => { if (e.detail > 1) return; clearTimeout(t); t = setTimeout(() => openEditor(kind, D.recs(kind).find(r => r.id === c.dataset.id)), 250); };
+    c.ondblclick = e => {
+      clearTimeout(t); e.preventDefault(); getSelection()?.removeAllRanges();
+      const all = D.recs(kind), x = all.find(r => r.id === c.dataset.id); if (!x) return;
+      if (x.pink) delete x.pink; else x.pink = true;
+      D.setRecs(kind, all); c.classList.toggle('pink', !!x.pink);
+    };
+  });
 }
 const recDur = r => Math.max(0, (r.out ?? r.dur) - (r.in || 0));
 // 수업실연 영상 자기 점검 체크리스트 (칠판 화면의 문제별 체크리스트와는 따로)
