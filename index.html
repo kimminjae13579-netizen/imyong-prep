@@ -3886,6 +3886,7 @@ function thumbAt(v, t) {
 const b64 = blob => new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
 $('#setBtn').onclick = () => {
   modal('⚙️ 백업', `<div class="form">
+    <div class="fl"><label>사용설명서</label><div style="display:flex;gap:8px"><a class="btn" id="manualDl" href="manual.hwpx" download="임용 준비 앱 사용설명서.hwpx" style="text-decoration:none">⬇ 다운</a></div></div>
     <div class="fl"><label>자료 (만능틀 · 자료실 · 유형정리)</label><div style="display:flex;gap:8px"><button class="btn" id="exC">⬇ 내보내기</button><button class="btn" id="imC">⬆ 불러오기</button></div></div>
     <div class="fl"><label>내 기록 (연습 기록 · 답변 · 메모 · 책갈피)</label><div style="display:flex;gap:8px"><button class="btn" id="exM">⬇ 내보내기</button><button class="btn" id="imM">⬆ 불러오기</button></div>
       <span class="hint">영상까지 옮기려면 아래 전부 옮기기를 쓰세요.</span></div>
